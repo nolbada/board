@@ -102,7 +102,8 @@ var REGULAR = [
   {id:"s4",t:"개별독해책",kind:"auto"},
   {id:"s5",t:"클카 독해 TEST",kind:"self"},
   {id:"s6",t:"M1 · M2 리딩",kind:"auto"},
-  {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"}
+  {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"},
+  {id:"sw",t:"SW 단어테스트",kind:"self"}
 ];
 /* 반마다 다른 정규반 항목: 여기 있는 반은 REGULAR 대신 이 목록을 씀 */
 var CLASS_ITEMS = {
@@ -113,7 +114,8 @@ var CLASS_ITEMS = {
     {id:"s4",t:"독해진도",kind:"teacher"},
     {id:"s5",t:"클카 독해 TEST",kind:"self"},
     {id:"s6",t:"M1 · M2 리딩",kind:"auto"},
-    {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"}
+    {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"},
+    {id:"sw",t:"SW 단어테스트",kind:"self"}
   ],
   "T중1A":[
     {id:"s1",t:"단어시험",kind:"auto"},
@@ -121,13 +123,12 @@ var CLASS_ITEMS = {
     {id:"s3",t:"개별독해책",kind:"auto"},
     {id:"s4",t:"보카링크",kind:"score"},
     {id:"s5",t:"클카 독해 TEST",kind:"self"},
-    {id:"s6",t:"비단챌 채점",kind:"auto"}
+    {id:"s6",t:"비단챌 채점",kind:"auto"},
+    {id:"sw",t:"SW 단어테스트",kind:"self"}
   ]
 };
 /* 모두 끝낸 학생에게만 보이는 칸. 내용은 선생님이 정함 */
-var EXTRA = {t:"마지막 관문", items:[
-  {id:"sw",t:"SW 단어장",kind:"self"}
-]};
+var EXTRA = {t:"마지막 관문", items:[]};
 var CARDS = [
   {id:"reg",label:"정규반",items:REGULAR},
   {id:"fri",label:"금요일",items:[]},
@@ -180,7 +181,7 @@ function render(){
           h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="'+card+'"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>';
     });
     h+='</div>';
-    if(card==="reg" && cd.items.length && cd.items.every(function(i){return done[i.id]})){
+    if(card==="reg" && EXTRA.items.length && cd.items.length && cd.items.every(function(i){return done[i.id]})){
       var ex=chk(name,"extra");
       h+='<div class="h">'+EXTRA.t+'</div><div class="card">';
       EXTRA.items.forEach(function(it,ix){
