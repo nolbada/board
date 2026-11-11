@@ -52,6 +52,12 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .score{width:84px;border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:16px;font-weight:700;font-family:inherit;text-align:center}
 .leave{border:0;background:var(--ink);color:#fff;border-radius:14px;padding:15px;font-size:15px;font-weight:700;width:100%}
 .back{border:0;background:none;font-size:14px;font-weight:700;color:var(--soft);padding:4px 0;text-align:left}
+.gc{background:var(--sf);border:1px solid var(--bd);border-top:4px solid var(--ac);border-radius:18px;padding:12px 12px 14px;box-shadow:var(--sh)}
+.gh{font-size:13px;font-weight:700;color:var(--ac);margin:0 2px 10px;letter-spacing:.02em}
+.gg{display:grid;grid-template-columns:repeat(var(--c),1fr);gap:8px}
+.t2{display:flex;align-items:center;justify-content:center;text-align:center;min-height:56px;padding:8px 6px;border-radius:12px;background:var(--sf2);color:var(--ink);text-decoration:none;font-size:15px;font-weight:700;line-height:1.25}
+.t2:active{background:var(--ac);color:#fff}
+.t2.off{opacity:.45}
 </style>
 </head>
 <body>
@@ -72,27 +78,22 @@ var GROUPS = {
   "화·목·금":["T초6B","T초6C","T중1A"]
 };
 var BASE = "https://nolbada.github.io/via/";
-var APPS = [
-  {n:"V시그널 K", u:BASE+"vsignal-k/"},
-  {n:"V시그널 E", u:BASE+"vsignal-e/"},
-  {n:"V시그널 Y", u:BASE+"vsignal-y/"},
-  {n:"문장 엑스레이", u:BASE+"xray/"},
-  {n:"비단챌 기본", u:BASE+"bidanchael/gibon/"},
-  {n:"비단챌 발전", u:BASE+"bidanchael/baljeon/"},
-  {n:"비단챌 심화", u:BASE+"bidanchael/simhwa/"},
-  {n:"비단챌 고교", u:BASE+"bidanchael/gogyo/"},
-  {n:"워마", u:BASE+"wama2000/"},
-  {n:"보카링크", u:BASE+"vocalink/"},
-  {n:"보카스위치 고교", u:BASE+"switch-mission-h.html"},
-  {n:"보카스위치 수능", u:BASE+"switch-mission-s.html"},
-  {n:"M1 리딩", u:BASE+"m1-reading/"},
-  {n:"M2 리딩", u:BASE+"m2-reading/"},
-  {n:"독해33권", u:BASE+"reading/tablet/", not:["M초6A"]}
-];
 var TESTS = [
   {n:"비단챌 말하기", u:BASE+"shared/?a=index.html&new=1"},
   {n:"보카스위치 고교", u:BASE+"shared/?a=vocaswitch-speak/h/&new=1"},
   {n:"보카스위치 수능", u:BASE+"shared/?a=vocaswitch-speak/s/&new=1"}
+];
+/* 메인 화면 묶음: 이름, 강조색, 한 줄 칸 수, 항목 */
+var HUB = [
+  {h:"V시그널", ac:"#1F7A5C", cols:4, items:[
+    {n:"K", u:BASE+"vsignal-k/"}, {n:"E", u:BASE+"vsignal-e/"}, {n:"Y", u:BASE+"vsignal-y/"}, {n:"문장 엑스레이", u:BASE+"xray/"}]},
+  {h:"독해", ac:"#2F6FD6", cols:3, items:[
+    {n:"독해33권", u:BASE+"reading/tablet/", not:["M초6A"]}, {n:"M1 리딩", u:BASE+"m1-reading/"}, {n:"M2 리딩", u:BASE+"m2-reading/"}]},
+  {h:"비단챌", ac:"#D6336C", cols:4, items:[
+    {n:"기본", u:BASE+"bidanchael/gibon/"}, {n:"발전", u:BASE+"bidanchael/baljeon/"}, {n:"심화", u:BASE+"bidanchael/simhwa/"}, {n:"고교", u:BASE+"bidanchael/gogyo/"}]},
+  {h:"어휘", ac:"#C77A00", cols:2, items:[
+    {n:"보카스위치 고교", u:BASE+"switch-mission-h.html"}, {n:"보카스위치 수능", u:BASE+"switch-mission-s.html"}, {n:"워마", u:BASE+"wama2000/"}, {n:"보카링크", u:BASE+"vocalink/"}]},
+  {h:"말하기 시험", ac:"#C22E1C", cols:3, items:TESTS}
 ];
 /* kind: auto = 앱 기록에서 자동 연동, self = 학생이 직접 체크 */
 var REGULAR = [
@@ -155,6 +156,15 @@ function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+
 function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
 function defCard(cls){var w=new Date().getDay();return w===5?"fri":"reg"}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function hubHtml(c1){
+  var o="";
+  HUB.forEach(function(g){
+    var its=g.items.filter(function(a){return !(a.not&&a.not.indexOf(c1)>-1)});
+    if(!its.length)return;
+    o+='<div class="gc" style="--ac:'+g.ac+'"><div class="gh">'+esc(g.h)+'</div><div class="gg" style="--c:'+Math.min(g.cols,its.length)+'">'+its.map(function(a){return a.u?'<a class="t2" href="'+a.u+'">'+esc(a.n)+'</a>':'<span class="t2 off">'+esc(a.n)+'</span>'}).join("")+'</div></div>';
+  });
+  return o;
+}
 /* ---------- 화면 ---------- */
 function render(){
   var app=document.getElementById("app"),h="",name=who();
@@ -194,8 +204,7 @@ function render(){
     var c1=clsOf(name),dcard=defCard(c1),cdn=chk(name,dcard),reg=itemsFor(c1,dcard),dn=reg.filter(function(i){return cdn[i.id]}).length;
     h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div><button class="ghost" data-go="switch">다른 학생</button></div>';
     h+='<button class="today" data-go="today"><div><b>오늘 할 일</b></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
-    h+='<div class="h">학습</div><div class="grid">'+APPS.filter(function(a){return !(a.not&&a.not.indexOf(c1)>-1)}).map(function(a){return a.u?'<a class="tile" href="'+a.u+'">'+esc(a.n)+'</a>':'<span class="tile off">'+esc(a.n)+'</span>'}).join("")+'</div>';
-    h+='<div class="h">TEST</div><div class="grid">'+TESTS.map(function(a){return a.u?'<a class="tile test" href="'+a.u+'">'+esc(a.n)+'</a>':'<span class="tile test off">'+esc(a.n)+'</span>'}).join("")+'</div>';
+    h+=hubHtml(c1);
     h+='<button class="leave" data-go="leave">저장하고 나가기</button>';
   }
   app.innerHTML=h;
