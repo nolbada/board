@@ -38,15 +38,18 @@
   }
   var AN={vk:"V시그널 K",ve:"V시그널 E",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
   function lastRec(o){
-    var d=o.d,ok=o.ok,w,nx;
-    if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":"");nx=ok?AN[APP]+" Day "+((+d||0)+1):AN[APP]+" Day "+d+" 다시"}
-    else if(APP==="m1"||APP==="m2"){w=AN[APP]+" Reading "+d+(ok?" 통과":" 다시 도전");nx=ok?AN[APP]+" Reading "+((+d||0)+1):AN[APP]+" Reading "+d+" 다시"}
-    else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"다음 문장 분석":d+" 다시"}
+    var d=o.d,ok=o.ok,w,nx="",nn=(+d||0)+1,chk=null;
+    if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":"");nx=ok?(nn<=64?AN[APP]+" Day "+nn:AN[APP]+" 끝"):AN[APP]+" Day "+d+" 다시"}
+    else if(APP==="m1"||APP==="m2"){w=AN[APP]+" Reading "+d+(ok?" 통과":" 다시 도전");nx=ok?"":AN[APP]+" Reading "+d+" 다시";
+      if(ok)chk=fetch("https://nolbada.github.io/via/"+(APP==="m1"?"m1-reading":"m2-reading")+"/reading_"+("0"+nn).slice(-2)+".html",{method:"HEAD"}).then(function(r){nx=r.ok?AN[APP]+" Reading "+nn:AN[APP]+" 끝"}).catch(function(){})}
+    else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"":d+" 다시"}
     else return;
-    lr=JSON.stringify({w:w,nx:nx,t:hm(),d:date});
-    fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(who.n)).then(function(r){return r.json()}).then(function(j){
-      var cd=(j&&j.chk&&j.chk.app)||{};cd["l_"+APP]=lr;
-      return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({a:"put",date:"2000-01-01",cls:who.c,name:who.n,card:"app",chk:cd})});
+    (chk||Promise.resolve()).then(function(){
+      lr=JSON.stringify({w:w,nx:nx,t:hm(),d:date});dirty=true;report(false);
+      return fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(who.n)).then(function(r){return r.json()}).then(function(j){
+        var cd=(j&&j.chk&&j.chk.app)||{};cd["l_"+APP]=lr;
+        return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({a:"put",date:"2000-01-01",cls:who.c,name:who.n,card:"app",chk:cd})});
+      });
     }).catch(function(){});
   }
   var lr=null;
