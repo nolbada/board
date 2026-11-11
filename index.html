@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공용 보드</title>
+<style>
+:root{--bg:#F1F3F0;--sf:#fff;--sf2:#E9EDE9;--ink:#182420;--soft:#5B6B62;--bd:#DCE3DC;--o:#1F7A5C;--os:#DCEFE6;--b:#2F6FD6;--r:#C22E1C;--sh:0 1px 2px rgba(24,36,32,.06),0 8px 24px -12px rgba(24,36,32,.18)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased}
+#app{max-width:560px;margin:0 auto;padding:20px 16px 56px;display:flex;flex-direction:column;gap:14px}
+button{font-family:inherit;color:inherit;cursor:pointer}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.who{font-size:26px;font-weight:700;line-height:1.1}
+.who small{display:block;font-size:12.5px;font-weight:500;color:var(--soft);margin-top:4px}
+.ghost{border:1px solid var(--bd);background:var(--sf);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:16px;box-shadow:var(--sh)}
+.h{font-size:13px;font-weight:700;color:var(--soft);margin:8px 2px 0;letter-spacing:.02em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--bd);background:var(--sf);border-radius:12px;padding:11px 15px;font-size:15px;font-weight:700;border-left:5px solid var(--o)}
+.chip.mid{border-left-color:var(--b)}
+.chip.on{background:var(--o);color:#fff;border-color:var(--o)}
+.chip.mid.on{background:var(--b);border-color:var(--b)}
+.names{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.name{border:1px solid var(--bd);background:var(--sf);border-radius:16px;padding:22px 10px;font-size:19px;font-weight:700;box-shadow:var(--sh)}
+.today{width:100%;text-align:left;border:0;background:var(--o);color:#fff;border-radius:18px;padding:18px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh)}
+.today b{font-size:20px}.today span{font-size:13px;opacity:.9}
+.today .n{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tile{display:block;text-decoration:none;color:var(--ink);background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:16px 14px;box-shadow:var(--sh);font-size:15.5px;font-weight:700;line-height:1.3}
+.tile small{display:block;font-size:12px;font-weight:500;color:var(--soft);margin-top:5px}
+.tile.test{border-left:5px solid var(--r)}
+.tile.off{opacity:.45;pointer-events:none}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tab{flex:0 0 auto;border:1px solid var(--bd);background:var(--sf);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;color:var(--soft)}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.item{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--bd);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+.item:last-child{border-bottom:0}
+.box{width:30px;height:30px;border-radius:50%;border:2px dashed var(--bd);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--o)}
+.item.done .box{border:3px solid var(--o);background:var(--os)}
+.item.done .t{color:var(--soft);text-decoration:line-through}
+.t{font-size:16px;font-weight:700;flex:1}
+.t small{display:block;font-size:12px;font-weight:500;color:var(--soft);text-decoration:none;margin-top:3px}
+.tag{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 8px;background:var(--sf2);color:var(--soft)}
+.tag.auto{background:var(--os);color:var(--o)}
+.empty{padding:22px 4px;color:var(--soft);font-size:14px}
+.score{width:84px;border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:16px;font-weight:700;font-family:inherit;text-align:center}
+.leave{border:0;background:var(--ink);color:#fff;border-radius:14px;padding:15px;font-size:15px;font-weight:700;width:100%}
+.back{border:0;background:none;font-size:14px;font-weight:700;color:var(--soft);padding:4px 0;text-align:left}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ---------- 설정: 선생님이 고치는 부분 ---------- */
+var ROSTER = {
+  "M초6A":["윤여름","조서인"],
+  "M초6C":["김동권","김은찬","김이한","민윤찬","박윤수","신도건","이상윤"],
+  "T초6B":["김지율","김태율","노지훈","이재빈","연휘건"],
+  "T초6C":["김예슬","노예린","류이안","이연서","이재인","조은유","연다혜"],
+  "M중1B":["김시원","김윤슬","류이안","박대환","이지성","임건호","정해윤"],
+  "T중1A":["김태건","장도율","조이준","최민준","홍윤제"]
+};
+/* 학생에게는 반 이름 대신 요일 묶음만 보임. 반 이름은 내부 구분용 */
+var GROUPS = {
+  "월·수·금":["M초6A","M초6C","M중1B"],
+  "화·목·금":["T초6B","T초6C","T중1A"]
+};
+var BASE = "https://nolbada.github.io/via/";
+var APPS = [
+  {n:"V시그널 문장 엑스레이", u:BASE+"xray/"},
+  {n:"비단챌 4권", u:BASE+"bidanchael/"},
+  {n:"워마", u:BASE+"wama2000/"},
+  {n:"보카링크", u:BASE+"vocalink/"},
+  {n:"보카스위치 고교·수능", u:""},
+  {n:"M1 리딩", u:BASE+"m1-reading/"},
+  {n:"M2 리딩", u:BASE+"m2-reading/"},
+  {n:"독해33권", u:BASE+"reading/", not:["M초6A"]}
+];
+var TESTS = [
+  {n:"비단챌", u:BASE},
+  {n:"보카스위치 고교", u:""},
+  {n:"보카스위치 수능", u:""}
+];
+/* kind: auto = 앱 기록에서 자동 연동, self = 학생이 직접 체크 */
+var REGULAR = [
+  {id:"s1",t:"단어시험",kind:"auto"},
+  {id:"s2",t:"문법진도",kind:"auto"},
+  {id:"s3",t:"V시그널",kind:"auto",sub:"오늘 N번 문장까지"},
+  {id:"s4",t:"개별독해책",kind:"auto",sub:"독해33 진도"},
+  {id:"s5",t:"클카 독해 TEST",kind:"self"},
+  {id:"s6",t:"M1 · M2 리딩",kind:"auto"},
+  {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"}
+];
+/* 반마다 다른 정규반 항목: 여기 있는 반은 REGULAR 대신 이 목록을 씀 */
+var CLASS_ITEMS = {
+  "M초6A":[
+    {id:"s1",t:"단어시험",kind:"auto"},
+    {id:"s2",t:"문법진도",kind:"auto"},
+    {id:"s3",t:"V시그널",kind:"auto",sub:"오늘 N번 문장까지"},
+    {id:"s4",t:"독해진도",kind:"teacher",sub:"선생님과 수업"},
+    {id:"s5",t:"클카 독해 TEST",kind:"self"},
+    {id:"s6",t:"M1 · M2 리딩",kind:"auto"},
+    {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"}
+  ],
+  "T중1A":[
+    {id:"s1",t:"단어시험",kind:"auto"},
+    {id:"s2",t:"V시그널",kind:"auto",sub:"Y단계"},
+    {id:"s3",t:"개별독해책",kind:"auto",sub:"독해33 진도"},
+    {id:"s4",t:"보카링크",kind:"score",sub:"점수 입력"},
+    {id:"s5",t:"클카 독해 TEST",kind:"self"},
+    {id:"s6",t:"비단챌 채점",kind:"auto"}
+  ]
+};
+/* 모두 끝낸 학생에게만 보이는 칸. 내용은 선생님이 정함 */
+var EXTRA = {t:"마지막 관문", items:[
+  {id:"sw",t:"SW 단어장",kind:"self",sub:"오늘 쓴 단어 · 지난 단어"}
+]};
+var CARDS = [
+  {id:"reg",label:"정규반",items:REGULAR},
+  {id:"fri",label:"금요일",items:[]},
+  {id:"nohw",label:"숙제 안 가져왔을 때",items:[]},
+  {id:"mk",label:"보충 왔을 때",items:[
+    {id:"m1",t:"교과서 필사노트",kind:"self",sub:"교과서 분석 내용 전부 쓰기"},
+    {id:"m2",t:"기출문제 1세트",kind:"self",sub:"자기 학교 먼저 · 다음은 전국"}
+  ]}
+];
+function itemsFor(cls,card){
+  if(card==="reg") return CLASS_ITEMS[cls]||REGULAR;
+  var c=CARDS.filter(function(x){return x.id===card})[0];return c?c.items:[];
+}
+var IDLE_MIN = 40;
+/* ---------- 상태 ---------- */
+var S = {view:"names", cls:null, card:null};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
+function who(){var n=ls("bd-name"),t=+ls("bd-t")||0;if(n&&Date.now()-t>IDLE_MIN*60000){leave();return null}return n}
+function touch(){ls("bd-t",String(Date.now()))}
+function leave(){ls("bd-name",null);ls("bd-cls",null);ls("bd-t",null);S.view="names"}
+function clsOf(n){var s=ls("bd-cls");if(s&&ROSTER[s]&&ROSTER[s].indexOf(n)>-1)return s;for(var c in ROSTER)if(ROSTER[c].indexOf(n)>-1)return c;return ""}
+function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d.getMonth()+1)+"/"+d.getDate()+"("+w+")"}
+function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
+function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
+function defCard(cls){var w=new Date().getDay();return w===5?"fri":"reg"}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+/* ---------- 화면 ---------- */
+function render(){
+  var app=document.getElementById("app"),h="",name=who();
+  if(!name){
+    var grp=S.cls||Object.keys(GROUPS)[0],list=[];
+    GROUPS[grp].forEach(function(c){ROSTER[c].forEach(function(n){list.push({n:n,c:c})})});
+    list.sort(function(a,b){return a.n.localeCompare(b.n,"ko")});
+    h+='<div class="top"><div class="who">이름을 눌러 주세요<small>'+dstr()+'</small></div></div>';
+    h+='<div class="chips">'+Object.keys(GROUPS).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
+    h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
+  } else if(S.view==="today"){
+    var c0=clsOf(name),card=S.card||defCard(c0),cdItems=itemsFor(c0,card),done=chk(name,card),cd={items:cdItems};
+    h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
+    h+='<div class="top"><div class="who">오늘 할 일<small>'+esc(name)+' · '+dstr()+'</small></div></div>';
+    h+='<div class="tabs">'+CARDS.map(function(x){return '<button class="tab'+(x.id===card?' on':'')+'" data-card="'+x.id+'">'+x.label+'</button>'}).join("")+'</div>';
+    h+='<div class="card">';
+    if(!cd.items.length) h+='<div class="empty">항목 준비 중</div>';
+    cd.items.forEach(function(it){
+      var d=!!done[it.id];
+      if(it.kind==="score"){
+        h+='<div class="item'+(d?' done':'')+'"><span class="box">'+(d?'O':'')+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span><input class="score" type="number" inputmode="numeric" min="0" max="100" data-score="'+it.id+'" data-card="'+card+'" value="'+(done[it.id]&&done[it.id]!==1?esc(done[it.id]):'')+'" placeholder="점수"></div>';
+        return;
+      }
+      var tg=it.kind==="auto"?'자동 기록':(it.kind==="teacher"?'선생님과':'직접 체크');
+      h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="'+card+'"><span class="box">'+(d?'O':'')+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span><span class="tag'+(it.kind==="auto"?' auto':'')+'">'+tg+'</span></button>';
+    });
+    h+='</div>';
+    if(card==="reg" && cd.items.length && cd.items.every(function(i){return done[i.id]})){
+      var ex=chk(name,"extra");
+      h+='<div class="h">'+EXTRA.t+'</div><div class="card">';
+      EXTRA.items.forEach(function(it){
+        var d=!!ex[it.id];
+        h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="extra"><span class="box">'+(d?'O':'')+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span><span class="tag">직접 체크</span></button>';
+      });
+      h+='</div>';
+    }
+  } else {
+    var c1=clsOf(name),dcard=defCard(c1),cdn=chk(name,dcard),reg=itemsFor(c1,dcard),dn=reg.filter(function(i){return cdn[i.id]}).length;
+    h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div><button class="ghost" data-go="switch">다른 학생</button></div>';
+    h+='<button class="today" data-go="today"><div><b>오늘 할 일</b><br><span>순서대로 진행</span></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
+    h+='<div class="h">학습</div><div class="grid">'+APPS.filter(function(a){return !(a.not&&a.not.indexOf(c1)>-1)}).map(function(a){return a.u?'<a class="tile" href="'+a.u+'">'+esc(a.n)+'</a>':'<span class="tile off">'+esc(a.n)+'</span>'}).join("")+'</div>';
+    h+='<div class="h">TEST</div><div class="grid">'+TESTS.map(function(a){return a.u?'<a class="tile test" href="'+a.u+'">'+esc(a.n)+'</a>':'<span class="tile test off">'+esc(a.n)+'</span>'}).join("")+'</div>';
+    h+='<button class="leave" data-go="leave">저장하고 나가기</button>';
+  }
+  app.innerHTML=h;
+}
+document.addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b)return;
+  if(b.dataset.cls){S.cls=b.dataset.cls;render()}
+  else if(b.dataset.name){ls("bd-name",b.dataset.name);ls("bd-cls",b.dataset.c);touch();S.view="hub";render()}
+  else if(b.dataset.it){var n=ls("bd-name"),c=b.dataset.card,m=chk(n,c);m[b.dataset.it]=m[b.dataset.it]?0:1;ls(key(n,c),JSON.stringify(m));touch();render()}
+  else if(b.dataset.card){S.card=b.dataset.card;render()}
+  else if(b.dataset.go==="today"){S.view="today";S.card=null;touch();render()}
+  else if(b.dataset.go==="hub"){S.view="hub";render()}
+  else if(b.dataset.go==="switch"||b.dataset.go==="leave"){leave();render()}
+});
+if(who())S.view="hub";
+render();
+document.addEventListener("change",function(e){
+  var i=e.target;if(!i.dataset||!i.dataset.score)return;
+  var n=ls("bd-name"),c=i.dataset.card,m=chk(n,c);
+  if(i.value==="")delete m[i.dataset.score];else m[i.dataset.score]=i.value;
+  ls(key(n,c),JSON.stringify(m));touch();render();
+});
+setInterval(function(){if(ls("bd-name")&&!who())render()},60000);
+</script>
+</body>
+</html>
