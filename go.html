@@ -39,12 +39,13 @@ if(A==="rd"){
   var all=wins(f.contentWindow,[],0);
   for(var i=0;i<all.length;i++){var w=all[i],k;try{k=w.KEY}catch(e){continue}
    if(!k)continue;
-   var d=JSON.parse(w.localStorage.getItem(k+"done")||"[]");
-   if(prev===null||prev.k!==k){prev={k:k,s:d.slice()};return}
-   var add=d.filter(function(x){return prev.s.indexOf(x)<0});
-   if(add.length){prev.s=d.slice();var id=add[add.length-1],lab=id;
+   var d=JSON.parse(w.localStorage.getItem(k+"done")||"{}");if(Array.isArray(d)){var oo={};d.forEach(function(x){oo[x]=1});d=oo}
+   var cnt={};Object.keys(d).forEach(function(x){if(!d[x]||x.indexOf("o-")===0)return;var mm=/^(.*)-[sgq]\d+$/.exec(x);if(mm)cnt[mm[1]]=(cnt[mm[1]]||0)+1});
+   if(prev===null||prev.k!==k){prev={k:k,c:cnt};return}
+   var id=null;Object.keys(cnt).forEach(function(p){if(cnt[p]>(prev.c[p]||0))id=p});
+   if(id){prev.c=cnt;var lab=id;
     try{var m=/^[a-z]*(\d+)-(\d+)-(\d+)$/.exec(id);if(m){var bk=/^(\d+)reading(\d+)$/.exec(k);lab=(bk?"리딩 "+bk[1]+" "+bk[2]+"권 ":k+" ")+"Unit"+(+m[2])+" Reading "+(+m[3])}}catch(e){}
-    rec("독해33권 "+lab+" 끝","")}
+    rec("독해33권 "+lab+" ("+cnt[id]+"단계 했음)","")}
    return}
  }catch(e){}},3000);
 }
