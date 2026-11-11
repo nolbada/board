@@ -286,7 +286,7 @@ function loadLast(n){
 function lastHtml(){
   var a=Object.keys(LAST).map(function(k){return LAST[k]}).filter(function(x){return x&&x.w}).sort(function(x,y){return (y.d+y.t)>(x.d+x.t)?1:-1}).slice(0,4);
   if(!a.length)return "";
-  return '<div class="gc" style="--ac:#555"><div class="gh">지난번 기록</div>'+a.map(function(x){return '<div style="padding:6px 2px;font-size:15px;line-height:1.5"><b>'+esc(x.w)+'</b>'+(x.nx?'<br><span style="color:#2f8f6b">다음 차례: '+esc(x.nx)+'</span>':'')+'</div>'}).join("")+'</div>';
+  return '<div class="gc" style="--ac:#2f8f6b"><div class="gh">이어서 할 차례</div>'+a.map(function(x){return '<div style="padding:8px 2px;border-top:1px solid #eee">'+(x.nx?'<div style="font-size:18px;font-weight:800;color:#1f6f50">'+esc(x.nx)+'</div>':'')+'<div style="font-size:13px;color:#777;margin-top:2px">지난번: '+esc(x.w)+'</div></div>'}).join("")+'</div>';
 }
 function hubHtml(c1){
   var o="";
