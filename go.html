@@ -44,7 +44,7 @@ if(A==="rd"){
    if(prev===null||prev.k!==k){prev={k:k,c:cnt};return}
    var id=null;Object.keys(cnt).forEach(function(p){if(cnt[p]>(prev.c[p]||0))id=p});
    if(id){prev.c=cnt;
-    var bk=/^(\d+)reading(\d+)$/.exec(k),bn=bk?"리딩 "+bk[1]+" "+bk[2]+"권":(w.document.title||k),list=[],U=w.U||{},M=w.META||{},ss=(M.secs||{}),ll=(M.labs||{});
+    var SN={tutorstarter:"리딩튜터 주니어 스타터",hackersstarter:"해커스 리딩스마트 스타터",tutorjunior:"리딩튜터 주니어",hackersmaster:"해커스 리딩스마트 마스터",hackers:"해커스 리딩스마트","1316reading":"능률 1316 Reading",bricks:"브릭스 중학독해",readinggraphy:"리딩그라피",tutorchallenger:"리딩튜터 챌린저"},bm=/^(.*?)(\d+)$/.exec(k),bn=(bm&&SN[bm[1]])?SN[bm[1]]+" "+bm[2]+"권":(w.document.title||k),list=[],U=w.U||{},M=w.META||{},ss=(M.secs||{}),ll=(M.labs||{});
     Object.keys(U).sort(function(x,y){return x-y}).forEach(function(s){(U[s]||[]).forEach(function(r){list.push({id:r.id,s:s,no:r.no})})});
     function lb(r){return (ss[r.s]||("Section "+r.s))+" · "+(ll[r.id]||(r.no+"번"))}
     var ix=-1;list.forEach(function(r,j){if(r.id===id)ix=j});
