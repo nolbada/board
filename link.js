@@ -36,12 +36,15 @@
       dirty=true;
     }).catch(function(){loading=false});
   }
-  var AN={vk:"V시그널 K",ve:"V시그널 E",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
+  var AN={vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
   function lastRec(o){
     var d=o.d,ok=o.ok,w,nx="",nn=(+d||0)+1,chk=null;
     if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":"");nx=ok?(nn<=64?AN[APP]+" Day "+nn:AN[APP]+" 끝"):AN[APP]+" Day "+d+" 다시"}
     else if(APP==="m1"||APP==="m2"){w=AN[APP]+" Reading "+d+(ok?" 통과":" 다시 도전");nx=ok?"":AN[APP]+" Reading "+d+" 다시";
       if(ok)chk=fetch("https://nolbada.github.io/via/"+(APP==="m1"?"m1-reading":"m2-reading")+"/reading_"+("0"+nn).slice(-2)+".html",{method:"HEAD"}).then(function(r){nx=r.ok?AN[APP]+" Reading "+nn:AN[APP]+" 끝"}).catch(function(){})}
+    else if(APP==="vy"){w="V시그널 Y Day "+d+" 7문장 완성";var nd=null;
+      try{var ds=DAYS.map(function(x){return x.d}).sort(function(a,b){return a-b}),dn=JSON.parse(ls.getItem("vsig-y-day-v1")||"{}");nd="";for(var i=0;i<ds.length;i++){if(ds[i]>d&&!dn["D"+ds[i]]){nd=ds[i];break}}}catch(e){}
+      nx=nd===null?"":(nd?"V시그널 Y Day "+nd:"V시그널 Y 끝")}
     else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"":d+" 다시"}
     else return;
     (chk||Promise.resolve()).then(function(){
@@ -108,6 +111,13 @@
     Object.keys(cur).forEach(function(k){var o=cur[k]||{};now[k]=[o.p,o.ok?1:0,o.t||0].join("|")});
     if(snap){Object.keys(now).forEach(function(k){if(snap[k]!==now[k]){var o=cur[k]||{};W.BoardLink.score(APP,{p:o.p,ok:o.ok,d:+k,secs:o.t})}})}
     try{ss.setItem(SK,JSON.stringify(now))}catch(e){}
+  }
+  if(APP==="vy"){
+    var YK="vsig-y-day-v1",SKY="bl-snap-vy";
+    var ydone=function(){var o={};try{o=JSON.parse(ls.getItem(YK)||"{}")}catch(e){}return Object.keys(o).filter(function(k){return /^D\d+$/.test(k)})};
+    var ys=null;try{ys=JSON.parse(ss.getItem(SKY)||"null")}catch(e){}
+    if(!ys){ys=ydone();try{ss.setItem(SKY,JSON.stringify(ys))}catch(e){}}
+    setInterval(function(){ydone().forEach(function(k){if(ys.indexOf(k)<0){ys.push(k);try{ss.setItem(SKY,JSON.stringify(ys))}catch(e){}W.BoardLink.score("vy",{d:+k.slice(1),ok:true})}})},2000);
   }
   load();
 }catch(e){}})();
