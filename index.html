@@ -51,6 +51,7 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .tag.auto{background:var(--os);color:var(--o)}
 .empty{padding:22px 4px;color:var(--soft);font-size:14px}
 .score{width:84px;border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:16px;font-weight:700;font-family:inherit;text-align:center}
+#sv{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#222;color:#fff;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
 .leave{border:0;background:var(--ink);color:#fff;border-radius:14px;padding:15px;font-size:15px;font-weight:700;width:100%}
 .back{border:0;background:none;font-size:14px;font-weight:700;color:var(--soft);padding:4px 0;text-align:left}
 .gc{background:var(--sf);border:1px solid var(--bd);border-top:4px solid var(--ac);border-radius:18px;padding:12px 12px 14px;box-shadow:var(--sh)}
@@ -152,11 +153,17 @@ var CARDS = [
     {id:"m2",t:"기출문제 1세트",kind:"self",sub:"자기 학교 먼저 · 다음은 전국"}
   ]}
 ];
-function itemsFor(cls,card){
-  if(card==="reg") return CLASS_ITEMS[cls]||REGULAR;
-  var c=CARDS.filter(function(x){return x.id===card})[0];return c?c.items:[];
+/* 학생별로 빼는 항목: 이름 -> 항목 id 목록 */
+var SKIP = {"윤여름":["s6"],"조서인":["s6"]};
+function itemsFor(cls,card,name){
+  var out;
+  if(card==="reg") out=CLASS_ITEMS[cls]||REGULAR;
+  else{var c=CARDS.filter(function(x){return x.id===card})[0];out=c?c.items:[]}
+  var ex=name&&SKIP[name];
+  return ex?out.filter(function(i){return ex.indexOf(i.id)<0}):out;
 }
-var IDLE_MIN = 40;
+var IDLE_MIN = 10;
+function toast(s){var e=document.getElementById("sv");if(!e){e=document.createElement("div");e.id="sv";document.body.appendChild(e)}e.textContent=s;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.opacity=0},1800)}
 var SRV = "https://script.google.com/macros/s/AKfycbyGjwU2UXP8hoRLn0VThkus7bj_ZnGc12ByvFXuFDVtPSz-GmyumnDd2CkLSBWJw81I/exec";
 var T = /[?&]t=1/.test(location.search);
 if(T){document.title="보드 확인";
@@ -171,7 +178,7 @@ function qkey(b){return b.date+"|"+b.name+"|"+b.card}
 function qadd(b){var a=qget().filter(function(x){return qkey(x)!==qkey(b)});a.push(b);ls("bd-q",JSON.stringify(a.slice(-60)))}
 function qdrop(b){ls("bd-q",JSON.stringify(qget().filter(function(x){return qkey(x)!==qkey(b)})))}
 function flush(){var a=qget();if(!a.length)return;ls("bd-q","[]");a.forEach(function(b){post(b).catch(function(){qadd(b)})})}
-function sync(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);post(b).then(flush).catch(function(){qadd(b)})}
+function sync(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);toast("저장 중");post(b).then(function(){toast("저장됨");flush()}).catch(function(){qadd(b);toast("연결 확인 중, 곧 다시 저장")})}
 function pull(n,c){
   fetch(SRV+"?a=get&date="+iso()+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
     if(!j||!j.ok)return;var ch=false;
@@ -197,7 +204,7 @@ function thist(name){
   fetch(SRV+"?a=hist&name="+encodeURIComponent(name)+"&pw="+encodeURIComponent(tpw())).then(function(r){return r.json()}).then(function(j){if(j.ok){TS.hist[name]=j.rows;render()}}).catch(function(){});
 }
 function trow(cls,name,card){
-  var items=itemsFor(cls,card),row=TS.rows&&TS.rows[name],ck=(row&&row.chk&&row.chk[card])||{};
+  var items=itemsFor(cls,card,name),row=TS.rows&&TS.rows[name],ck=(row&&row.chk&&row.chk[card])||{};
   var n=items.filter(function(i){return ck[i.id]}).length;
   return {name:name,items:items,ck:ck,n:n,t:items.length,seen:!!row};
 }
@@ -227,7 +234,7 @@ function renderT(){
       h+='<div class="card">';
       r.items.forEach(function(it,ix){var d=!!r.ck[it.id];h+='<div class="item'+(d?' done':'')+'"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.kind==="score"&&d&&r.ck[it.id]!==1?' <small>'+esc(r.ck[it.id])+'점</small>':'')+'</span></div>'});
       var hs=TS.hist[r.name];
-      if(hs){h+='<div style="margin-top:10px">'+hs.slice(0,10).map(function(x){var cd=tcard(x.date),it=itemsFor(TS.cls,cd),ck=(x.chk&&x.chk[cd])||{},n=it.filter(function(i){return ck[i.id]}).length;return '<span class="hc">'+dlabel(x.date)+' '+n+'/'+it.length+'</span>'}).join("")+'</div>'}
+      if(hs){h+='<div style="margin-top:10px">'+hs.slice(0,10).map(function(x){var cd=tcard(x.date),it=itemsFor(TS.cls,cd,r.name),ck=(x.chk&&x.chk[cd])||{},n=it.filter(function(i){return ck[i.id]}).length;return '<span class="hc">'+dlabel(x.date)+' '+n+'/'+it.length+'</span>'}).join("")+'</div>'}
       h+='</div>';
     }
   });
@@ -275,7 +282,7 @@ function render(){
     h+='<div class="chips">'+Object.keys(GROUPS).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
     h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
   } else if(S.view==="today"){
-    var c0=clsOf(name),card=S.card||defCard(c0),cdItems=itemsFor(c0,card),done=chk(name,card),cd={items:cdItems};
+    var c0=clsOf(name),card=S.card||defCard(c0),cdItems=itemsFor(c0,card,name),done=chk(name,card),cd={items:cdItems};
     h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
     h+='<div class="top"><div class="who">오늘 할 일<small>'+esc(name)+' · '+dstr()+'</small></div></div>';
     h+='<div class="tabs">'+CARDS.map(function(x){return '<button class="tab'+(x.id===card?' on':'')+'" data-card="'+x.id+'">'+x.label+'</button>'}).join("")+'</div>';
@@ -300,7 +307,7 @@ function render(){
       h+='</div>';
     }
   } else {
-    var c1=clsOf(name),dcard=defCard(c1),cdn=chk(name,dcard),reg=itemsFor(c1,dcard),dn=reg.filter(function(i){return cdn[i.id]}).length;
+    var c1=clsOf(name),dcard=defCard(c1),cdn=chk(name,dcard),reg=itemsFor(c1,dcard,name),dn=reg.filter(function(i){return cdn[i.id]}).length;
     h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div><button class="ghost" data-go="switch">다른 학생</button></div>';
     h+='<button class="today" data-go="today"><div><b>오늘 할 일</b></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
     h+=hubHtml(c1);
@@ -318,7 +325,7 @@ document.addEventListener("click",function(e){
   else if(b.dataset.go==="hub"){S.view="hub";render()}
   else if(b.dataset.go==="switch"||b.dataset.go==="leave"){leave();render()}
 });
-if(who())S.view="hub";
+if(!T)leave();
 render();
 if(T){tload();setInterval(tload,30000)}else{if(who())pull(ls("bd-name"),ls("bd-cls"));flush();setInterval(flush,60000)}
 document.addEventListener("change",function(e){
