@@ -58,6 +58,18 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .t2{display:flex;align-items:center;justify-content:center;text-align:center;min-height:56px;padding:8px 6px;border-radius:12px;background:var(--sf2);color:var(--ink);text-decoration:none;font-size:15px;font-weight:700;line-height:1.25}
 .t2:active{background:var(--ac);color:#fff}
 .t2.off{opacity:.45}
+.ts{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--bd);background:var(--sf);border-radius:14px;padding:13px 14px;margin:0}
+.ts .nm{font-weight:700;font-size:17px;flex:1}
+.ts small{color:var(--soft);font-weight:500;margin-left:6px}
+.ts.dn{background:var(--os);border-color:var(--o)}
+.ts.dn .pl{background:var(--o);color:#fff}
+.pl{font-size:13px;border-radius:999px;padding:3px 11px;background:#e8effb;color:#2b62c4;font-weight:700;white-space:nowrap}
+.pl.z{background:transparent;border:1px solid var(--bd);color:var(--soft);font-weight:500}
+.tlist{display:flex;flex-direction:column;gap:8px}
+.hc{display:inline-block;font-size:12.5px;border:1px solid var(--bd);border-radius:999px;padding:3px 9px;margin:4px 4px 0 0;color:var(--soft)}
+.dnav{display:flex;align-items:center;gap:8px}
+.dnav .lb{flex:1;text-align:center;font-weight:700;font-size:15px}
+.sum{font-size:13px;color:var(--soft);margin:2px 2px 0}
 </style>
 </head>
 <body>
@@ -144,6 +156,86 @@ function itemsFor(cls,card){
   var c=CARDS.filter(function(x){return x.id===card})[0];return c?c.items:[];
 }
 var IDLE_MIN = 40;
+var SRV = "https://script.google.com/macros/s/AKfycbyGjwU2UXP8hoRLn0VThkus7bj_ZnGc12ByvFXuFDVtPSz-GmyumnDd2CkLSBWJw81I/exec";
+var T = /[?&]t=1/.test(location.search);
+function iso(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+function post(b){return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(b),keepalive:true}).then(function(r){return r.json()}).then(function(j){if(!j||!j.ok)throw 0})}
+function qget(){var a=[];try{a=JSON.parse(ls("bd-q")||"[]")}catch(e){}return a}
+function qkey(b){return b.date+"|"+b.name+"|"+b.card}
+function qadd(b){var a=qget().filter(function(x){return qkey(x)!==qkey(b)});a.push(b);ls("bd-q",JSON.stringify(a.slice(-60)))}
+function qdrop(b){ls("bd-q",JSON.stringify(qget().filter(function(x){return qkey(x)!==qkey(b)})))}
+function flush(){var a=qget();if(!a.length)return;ls("bd-q","[]");a.forEach(function(b){post(b).catch(function(){qadd(b)})})}
+function sync(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);post(b).then(flush).catch(function(){qadd(b)})}
+function pull(n,c){
+  fetch(SRV+"?a=get&date="+iso()+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+    if(!j||!j.ok)return;var ch=false;
+    for(var card in j.chk){var loc=chk(n,card),srv=j.chk[card],mg={},k;for(k in loc)mg[k]=loc[k];for(k in srv){if(srv[k]&&!mg[k]){mg[k]=srv[k];ch=true}}ls(key(n,card),JSON.stringify(mg))}
+    if(ch&&ls("bd-name")===n)render();
+  }).catch(function(){});
+}
+/* ---------- 선생님 화면 (?t=1) ---------- */
+var TS = {cls:null, date:null, rows:null, open:null, hist:{}, err:""};
+function tpw(){return ls("bt-pw")||""}
+function dstep(s,n){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]+n);return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+function dlabel(s){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return (d.getMonth()+1)+"/"+d.getDate()+"("+"일월화수목금토"[d.getDay()]+")"}
+function tcard(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]).getDay()===5?"fri":"reg"}
+function tload(){
+  if(!TS.date)TS.date=iso();if(!TS.cls)TS.cls=Object.keys(ROSTER)[0];
+  if(!tpw()){TS.rows=null;render();return}
+  fetch(SRV+"?a=day&date="+TS.date+"&pw="+encodeURIComponent(tpw())).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok){if(j.err==="pw"){ls("bt-pw",null);TS.err="비밀번호가 맞지 않음"}render();return}
+    TS.err="";TS.rows={};j.rows.forEach(function(x){TS.rows[x.name]=x});render();
+  }).catch(function(){TS.err="불러오지 못함";render()});
+}
+function thist(name){
+  fetch(SRV+"?a=hist&name="+encodeURIComponent(name)+"&pw="+encodeURIComponent(tpw())).then(function(r){return r.json()}).then(function(j){if(j.ok){TS.hist[name]=j.rows;render()}}).catch(function(){});
+}
+function trow(cls,name,card){
+  var items=itemsFor(cls,card),row=TS.rows&&TS.rows[name],ck=(row&&row.chk&&row.chk[card])||{};
+  var n=items.filter(function(i){return ck[i.id]}).length;
+  return {name:name,items:items,ck:ck,n:n,t:items.length,seen:!!row};
+}
+function isdone(r){return r.t>0&&r.n>=r.t}
+function renderT(){
+  var app=document.getElementById("app"),h="";
+  document.title="보드 교사용";
+  if(!tpw()){
+    h+='<div class="top"><div class="who">보드 기록<small>선생님용</small></div></div>';
+    h+='<div class="card"><input class="score" id="tpw" type="password" inputmode="numeric" placeholder="비밀번호" style="width:100%;text-align:left"><button class="leave" data-tl="1" style="margin-top:10px">열기</button>'+(TS.err?'<div class="empty">'+esc(TS.err)+'</div>':'')+'</div>';
+    app.innerHTML=h;return;
+  }
+  var card=tcard(TS.date),list=ROSTER[TS.cls].map(function(nm){return trow(TS.cls,nm,card)});
+  var dn=list.filter(isdone).length,no=list.filter(function(r){return !r.seen}).length,go=list.length-dn-no;
+  list.sort(function(a,b){var fa=isdone(a)?1:0,fb=isdone(b)?1:0;if(fa!==fb)return fa-fb;var ra=a.t?a.n/a.t:0,rb=b.t?b.n/b.t:0;if(ra!==rb)return ra-rb;return a.name.localeCompare(b.name,"ko")});
+  h+='<div class="top"><div class="who">보드 기록<small>'+dlabel(TS.date)+'</small></div><button class="ghost" data-tout="1">잠금</button></div>';
+  h+='<div class="dnav"><button class="ghost" data-td="-1">‹</button><div class="lb">'+dlabel(TS.date)+'</div><button class="ghost" data-td="1">›</button><button class="ghost" data-td="0">오늘</button></div>';
+  h+='<div class="tabs">'+Object.keys(ROSTER).map(function(c){return '<button class="tab'+(c===TS.cls?' on':'')+'" data-tt="'+c+'">'+c+'</button>'}).join("")+'</div>';
+  h+='<div class="sum">완료 '+dn+' · 진행 '+go+' · 미접속 '+no+'</div>';
+  if(TS.err)h+='<div class="empty">'+esc(TS.err)+'</div>';
+  if(card==="fri"&&!list[0].t)h+='<div class="empty">금요일 항목 준비 중</div>';
+  h+='<div class="tlist">';
+  list.forEach(function(r){
+    var open=TS.open===r.name;
+    h+='<button class="ts'+(isdone(r)?' dn':'')+'" data-st="'+esc(r.name)+'"><span class="nm">'+esc(r.name)+'</span><span class="pl'+(r.seen?'':' z')+'">'+(r.seen?r.n+' / '+r.t:'미접속')+'</span></button>';
+    if(open){
+      h+='<div class="card">';
+      r.items.forEach(function(it,ix){var d=!!r.ck[it.id];h+='<div class="item'+(d?' done':'')+'"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.kind==="score"&&d&&r.ck[it.id]!==1?' <small>'+esc(r.ck[it.id])+'점</small>':'')+'</span></div>'});
+      var hs=TS.hist[r.name];
+      if(hs){h+='<div style="margin-top:10px">'+hs.slice(0,10).map(function(x){var cd=tcard(x.date),it=itemsFor(TS.cls,cd),ck=(x.chk&&x.chk[cd])||{},n=it.filter(function(i){return ck[i.id]}).length;return '<span class="hc">'+dlabel(x.date)+' '+n+'/'+it.length+'</span>'}).join("")+'</div>'}
+      h+='</div>';
+    }
+  });
+  h+='</div>';
+  app.innerHTML=h;
+}
+document.addEventListener("click",function(e){
+  if(!T)return;var b=e.target.closest("button");if(!b)return;var D=b.dataset;
+  if(D.tl){var v=document.getElementById("tpw").value.trim();if(v){ls("bt-pw",v);TS.err="";tload()}}
+  else if(D.tout){ls("bt-pw",null);TS.rows=null;render()}
+  else if(D.tt){TS.cls=D.tt;TS.open=null;render()}
+  else if(D.td!==undefined){TS.date=D.td==="0"?iso():dstep(TS.date,+D.td);TS.open=null;TS.rows=null;tload()}
+  else if(D.st){TS.open=TS.open===D.st?null:D.st;if(TS.open&&!TS.hist[TS.open])thist(TS.open);render()}
+});
 /* ---------- 상태 ---------- */
 var S = {view:"names", cls:null, card:null};
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
@@ -167,6 +259,7 @@ function hubHtml(c1){
 }
 /* ---------- 화면 ---------- */
 function render(){
+  if(T){renderT();return}
   var app=document.getElementById("app"),h="",name=who();
   if(!name){
     var grp=S.cls||Object.keys(GROUPS)[0],list=[];
@@ -212,8 +305,8 @@ function render(){
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
   if(b.dataset.cls){S.cls=b.dataset.cls;render()}
-  else if(b.dataset.name){ls("bd-name",b.dataset.name);ls("bd-cls",b.dataset.c);touch();S.view="hub";render()}
-  else if(b.dataset.it){var n=ls("bd-name"),c=b.dataset.card,m=chk(n,c);m[b.dataset.it]=m[b.dataset.it]?0:1;ls(key(n,c),JSON.stringify(m));touch();render()}
+  else if(b.dataset.name){ls("bd-name",b.dataset.name);ls("bd-cls",b.dataset.c);touch();S.view="hub";render();pull(b.dataset.name,b.dataset.c)}
+  else if(b.dataset.it){var n=ls("bd-name"),c=b.dataset.card,m=chk(n,c);m[b.dataset.it]=m[b.dataset.it]?0:1;ls(key(n,c),JSON.stringify(m));touch();render();sync(n,clsOf(n),c,m)}
   else if(b.dataset.card){S.card=b.dataset.card;render()}
   else if(b.dataset.go==="today"){S.view="today";S.card=null;touch();render()}
   else if(b.dataset.go==="hub"){S.view="hub";render()}
@@ -221,11 +314,12 @@ document.addEventListener("click",function(e){
 });
 if(who())S.view="hub";
 render();
+if(T){tload();setInterval(tload,30000)}else{if(who())pull(ls("bd-name"),ls("bd-cls"));flush();setInterval(flush,60000)}
 document.addEventListener("change",function(e){
   var i=e.target;if(!i.dataset||!i.dataset.score)return;
   var n=ls("bd-name"),c=i.dataset.card,m=chk(n,c);
   if(i.value==="")delete m[i.dataset.score];else m[i.dataset.score]=i.value;
-  ls(key(n,c),JSON.stringify(m));touch();render();
+  ls(key(n,c),JSON.stringify(m));touch();render();sync(n,clsOf(n),c,m);
 });
 setInterval(function(){if(ls("bd-name")&&!who())render()},60000);
 </script>
