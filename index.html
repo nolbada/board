@@ -158,10 +158,22 @@ var SKIP = {"윤여름":["s6"],"조서인":["s6"]};
 function itemsFor(cls,card,name){
   var out;
   if(card==="reg") out=CLASS_ITEMS[cls]||REGULAR;
+  else if(card==="fri"&&name&&FRI_BY[name]) out=FRI_BY[name];
   else{var c=CARDS.filter(function(x){return x.id===card})[0];out=c?c.items:[]}
   var ex=name&&SKIP[name];
   return ex?out.filter(function(i){return ex.indexOf(i.id)<0}):out;
 }
+/* 금요일 목록: 학생 이름 -> 목록. 여기 없는 학생은 금요일 칸이 비어 있음 */
+var FRI_A = [
+  {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"},
+  {id:"s3",t:"V시그널",kind:"auto"},
+  {id:"f3",t:"문법 워크북 풀기",kind:"self"},
+  {id:"f4",t:"클카 문법 오답노트",kind:"self"},
+  {id:"f5",t:"클카 단어 누적복습",kind:"self"},
+  {id:"f6",t:"클카 독해 TEST",kind:"self"}
+];
+var FRI_BY = {};
+["신도건","김동권","김이한","박윤수","민윤찬","이상윤","김은찬","이연서","이재인","조은유","김예슬","류이안","노예린","김지율","노지훈","이재빈","연휘건"].forEach(function(n){FRI_BY[n]=FRI_A});
 var IDLE_MIN = 10;
 function toast(s){var e=document.getElementById("sv");if(!e){e=document.createElement("div");e.id="sv";document.body.appendChild(e)}e.textContent=s;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.opacity=0},1800)}
 var SRV = "https://script.google.com/macros/s/AKfycbyGjwU2UXP8hoRLn0VThkus7bj_ZnGc12ByvFXuFDVtPSz-GmyumnDd2CkLSBWJw81I/exec";
