@@ -13,6 +13,7 @@
     try{q.delete("bn");q.delete("bc");var qs=q.toString();history.replaceState(null,"",location.pathname+(qs?"?"+qs:"")+location.hash)}catch(e){}
   }
   var who=null;try{who=JSON.parse(ss.getItem("bl-who")||"null")}catch(e){}
+  if(!who||!who.n){var bn2=ls.getItem("bd-name"),bc2=ls.getItem("bd-cls")||"";if(bn2){who={n:bn2,c:bc2};try{ss.setItem("bl-who",JSON.stringify(who))}catch(e){}}}
   if(!who||!who.n)return;
   /* 지금 보드에 들어와 있는 학생과 같을 때만 기록한다. 다른 학생이 이어 쓰거나 10분 넘게 손을 안 댔으면 멈춘다 */
   function valid(){
