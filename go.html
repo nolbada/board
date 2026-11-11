@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>보드</title>
+<style>html,body{margin:0;height:100%;background:#fff}#bar{position:fixed;top:0;left:0;right:0;height:46px;background:#1d2b36;color:#fff;display:flex;align-items:center;gap:10px;padding:0 10px;font:700 15px sans-serif;z-index:5;box-sizing:border-box}#bar a{color:#fff;text-decoration:none;background:#2f8f6b;padding:9px 16px;border-radius:20px;white-space:nowrap}#bar span{opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}#f{position:fixed;top:46px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 46px);border:0}</style></head><body>
+<div id="bar"><a id="home" href="/board/?back=1">‹ 메인으로</a><span id="ttl"></span></div>
+<iframe id="f" allow="microphone; autoplay; clipboard-write; fullscreen" allowfullscreen></iframe>
+<script>
+(function(){
+var SRV="https://script.google.com/macros/s/AKfycbyGjwU2UXP8hoRLn0VThkus7bj_ZnGc12ByvFXuFDVtPSz-GmyumnDd2CkLSBWJw81I/exec";
+var Q=new URLSearchParams(location.search),A=Q.get("a")||"",T=Q.get("t")||"",U=Q.get("u")||"";
+var ls=localStorage,ss=sessionStorage;
+function home(){location.replace("/board/?back=1")}
+if(!/^\/via\/[A-Za-z0-9_\-\/.]*$/.test(U)||U.indexOf("..")>=0){home();return}
+var n=ls.getItem("bd-name")||"",c=ls.getItem("bd-cls")||"",t=+ls.getItem("bd-t")||0;
+if(!n||Date.now()-t>600000){home();return}
+try{ss.setItem("bl-who",JSON.stringify({n:n,c:c}))}catch(e){}
+document.getElementById("ttl").textContent=T;document.title=T||"보드";
+document.getElementById("home").addEventListener("click",function(){try{ls.setItem("bd-t",String(Date.now()))}catch(e){}});
+var f=document.getElementById("f");f.src=U;
+setInterval(function(){if(document.visibilityState==="visible")try{ls.setItem("bd-t",String(Date.now()))}catch(e){}},30000);
+function pad(x){return("0"+x).slice(-2)}
+function iso(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function hm(){var d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes())}
+function put(date,fn){
+ fetch(SRV+"?a=get&date="+date+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+  var cd=(j&&j.chk&&j.chk.app)||{};fn(cd);
+  return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({a:"put",date:date,cls:c,name:n,card:"app",chk:cd})});
+ }).catch(function(){});
+}
+function rec(w,nx){
+ var o=JSON.stringify({w:w,nx:nx||"",t:hm(),d:iso()});
+ put(iso(),function(cd){cd["l_"+A]=o});
+ put("2000-01-01",function(cd){cd["l_"+A]=o});
+}
+window.__rec=rec;
+if(A==="rd"){
+ var prev=null;
+ function wins(w,out,d){out.push(w);if(d>3)return out;for(var i=0;i<w.frames.length;i++){try{wins(w.frames[i],out,d+1)}catch(e){}}return out}
+ setInterval(function(){try{
+  var all=wins(f.contentWindow,[],0);
+  for(var i=0;i<all.length;i++){var w=all[i],k;try{k=w.KEY}catch(e){continue}
+   if(!k)continue;
+   var d=JSON.parse(w.localStorage.getItem(k+"done")||"[]");
+   if(prev===null||prev.k!==k){prev={k:k,s:d.slice()};return}
+   var add=d.filter(function(x){return prev.s.indexOf(x)<0});
+   if(add.length){prev.s=d.slice();var id=add[add.length-1],lab=id;
+    try{var m=/^[a-z]*(\d+)-(\d+)-(\d+)$/.exec(id);if(m)lab=k+" "+(+m[2])+"과 "+(+m[3])+"번"}catch(e){}
+    rec("독해33권 "+lab+" 끝","")}
+   return}
+ }catch(e){}},3000);
+}
+})();
+</script></body></html>
