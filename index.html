@@ -198,7 +198,7 @@ function trow(cls,name,card){
 function isdone(r){return r.t>0&&r.n>=r.t}
 function renderT(){
   var app=document.getElementById("app"),h="";
-  document.title="보드 교사용";
+  document.title="보드 교사용";if(!TS.date)TS.date=iso();if(!TS.cls)TS.cls=Object.keys(ROSTER)[0];
   if(!tpw()){
     h+='<div class="top"><div class="who">보드 기록<small>선생님용</small></div></div>';
     h+='<div class="card"><input class="score" id="tpw" type="password" inputmode="numeric" placeholder="비밀번호" style="width:100%;text-align:left"><button class="leave" data-tl="1" style="margin-top:10px">열기</button>'+(TS.err?'<div class="empty">'+esc(TS.err)+'</div>':'')+'</div>';
