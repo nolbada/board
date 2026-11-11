@@ -158,6 +158,11 @@ function itemsFor(cls,card){
 var IDLE_MIN = 40;
 var SRV = "https://script.google.com/macros/s/AKfycbyGjwU2UXP8hoRLn0VThkus7bj_ZnGc12ByvFXuFDVtPSz-GmyumnDd2CkLSBWJw81I/exec";
 var T = /[?&]t=1/.test(location.search);
+if(T){document.title="보드 확인";
+  ["application-name","apple-mobile-web-app-title"].forEach(function(n){var m=document.querySelector('meta[name="'+n+'"]');if(m)m.content="보드 확인"});
+  var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content="#00A1A7";
+  var im=new Image();im.onload=function(){var c=document.createElement("canvas");c.width=c.height=512;var x=c.getContext("2d");x.filter="hue-rotate(-155deg) brightness(1.3) saturate(1.1)";x.drawImage(im,0,0,512,512);var u=c.toDataURL("image/png");document.querySelectorAll('link[rel="icon"],link[rel="apple-touch-icon"]').forEach(function(l){l.href=u})};
+  im.src=document.querySelector('link[rel="icon"]').href}
 function iso(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
 function post(b){return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(b),keepalive:true}).then(function(r){return r.json()}).then(function(j){if(!j||!j.ok)throw 0})}
 function qget(){var a=[];try{a=JSON.parse(ls("bd-q")||"[]")}catch(e){}return a}
@@ -198,7 +203,7 @@ function trow(cls,name,card){
 function isdone(r){return r.t>0&&r.n>=r.t}
 function renderT(){
   var app=document.getElementById("app"),h="";
-  document.title="보드 교사용";if(!TS.date)TS.date=iso();if(!TS.cls)TS.cls=Object.keys(ROSTER)[0];
+  document.title="보드 확인";if(!TS.date)TS.date=iso();if(!TS.cls)TS.cls=Object.keys(ROSTER)[0];
   if(!tpw()){
     h+='<div class="top"><div class="who">보드 기록<small>선생님용</small></div></div>';
     h+='<div class="card"><input class="score" id="tpw" type="password" inputmode="numeric" placeholder="비밀번호" style="width:100%;text-align:left"><button class="leave" data-tl="1" style="margin-top:10px">열기</button>'+(TS.err?'<div class="empty">'+esc(TS.err)+'</div>':'')+'</div>';
