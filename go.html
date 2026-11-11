@@ -43,7 +43,7 @@ if(A==="rd"){
    if(prev===null||prev.k!==k){prev={k:k,s:d.slice()};return}
    var add=d.filter(function(x){return prev.s.indexOf(x)<0});
    if(add.length){prev.s=d.slice();var id=add[add.length-1],lab=id;
-    try{var m=/^[a-z]*(\d+)-(\d+)-(\d+)$/.exec(id);if(m)lab=k+" "+(+m[2])+"과 "+(+m[3])+"번"}catch(e){}
+    try{var m=/^[a-z]*(\d+)-(\d+)-(\d+)$/.exec(id);if(m){var bk=/^(\d+)reading(\d+)$/.exec(k);lab=(bk?"리딩 "+bk[1]+" "+bk[2]+"권 ":k+" ")+"Unit"+(+m[2])+" Reading "+(+m[3])}}catch(e){}
     rec("독해33권 "+lab+" 끝","")}
    return}
  }catch(e){}},3000);
