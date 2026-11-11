@@ -40,7 +40,7 @@
     st.n=(st.n||0)+1;
     if(o.p!=null)st.p=o.p;
     if(o.ok!=null)st.ok=o.ok?1:0;
-    if(o.d!=null)st.d=o.d;
+    if(o.d!=null)st.d=o.d;if(o.m!=null)st.m=o.m;if(o.secs)st.s=(+st.s||0)+(+o.secs||0);
     st.t=hm();dirty=true;
   }
   function stop(){stopped=true;try{ss.removeItem("bl-who")}catch(e){}var b=D.getElementById("bl-back");if(b)b.remove()}
@@ -80,5 +80,15 @@
     D.body.appendChild(b);
   }
   if(D.body)mk();else D.addEventListener("DOMContentLoaded",mk);
+  /* 독해 M1·M2: 앱이 자기 localStorage의 <앱>-res 에 {번호:{p,ok,t}} 로 남기는 결과를, 목록 화면이 열릴 때 지난번과 비교해 새로 끝난 것만 보낸다 */
+  var RESK={m1:"m1-res",m2:"m2-res"}[APP];
+  if(RESK){
+    var SK="bl-snap-"+APP,cur={},snap=null,now={};
+    try{cur=JSON.parse(ls.getItem(RESK)||"{}")}catch(e){}
+    try{snap=JSON.parse(ss.getItem(SK)||"null")}catch(e){}
+    Object.keys(cur).forEach(function(k){var o=cur[k]||{};now[k]=[o.p,o.ok?1:0,o.t||0].join("|")});
+    if(snap){Object.keys(now).forEach(function(k){if(snap[k]!==now[k]){var o=cur[k]||{};W.BoardLink.score(APP,{p:o.p,ok:o.ok,d:+k,secs:o.t})}})}
+    try{ss.setItem(SK,JSON.stringify(now))}catch(e){}
+  }
   load();
 }catch(e){}})();
