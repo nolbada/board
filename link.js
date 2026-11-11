@@ -36,12 +36,27 @@
       dirty=true;
     }).catch(function(){loading=false});
   }
+  var AN={vk:"V시그널 K",ve:"V시그널 E",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
+  function lastRec(o){
+    var d=o.d,ok=o.ok,w,nx;
+    if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":"");nx=ok?AN[APP]+" Day "+((+d||0)+1):AN[APP]+" Day "+d+" 다시"}
+    else if(APP==="m1"||APP==="m2"){w=AN[APP]+" Reading "+d+(ok?" 통과":" 다시 도전");nx=ok?AN[APP]+" Reading "+((+d||0)+1):AN[APP]+" Reading "+d+" 다시"}
+    else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"다음 문장 분석":d+" 다시"}
+    else return;
+    lr=JSON.stringify({w:w,nx:nx,t:hm(),d:date});
+    fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(who.n)).then(function(r){return r.json()}).then(function(j){
+      var cd=(j&&j.chk&&j.chk.app)||{};cd["l_"+APP]=lr;
+      return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({a:"put",date:"2000-01-01",cls:who.c,name:who.n,card:"app",chk:cd})});
+    }).catch(function(){});
+  }
+  var lr=null;
   function applyScore(o){
     st.n=(st.n||0)+1;
     if(o.p!=null)st.p=o.p;
     if(o.ok!=null)st.ok=o.ok?1:0;
     if(o.d!=null)st.d=o.d;if(o.m!=null)st.m=o.m;if(o.secs)st.s=(+st.s||0)+(+o.secs||0);
     st.t=hm();dirty=true;
+    lastRec(o);
   }
   function stop(){stopped=true;try{ss.removeItem("bl-who")}catch(e){}var b=D.getElementById("bl-back");if(b)b.remove()}
   function report(keep){
@@ -51,7 +66,7 @@
     if(!got){load();return}
     if(!acc&&!dirty)return;
     st.s+=acc;acc=0;st.t=hm();dirty=false;
-    card["a_"+APP]=JSON.stringify(st);
+    card["a_"+APP]=JSON.stringify(st);if(lr)card["l_"+APP]=lr;
     var body={a:"put",date:date,cls:who.c,name:who.n,card:"app",chk:card};
     fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(body),keepalive:!!keep}).catch(function(){dirty=true});
   }
@@ -73,6 +88,7 @@
   D.addEventListener("visibilitychange",function(){if(D.visibilityState==="hidden")report(true)});
   W.addEventListener("pagehide",function(){report(true)});
   function mk(){
+    if(W.top!==W)return;
     if(!D.body||D.getElementById("bl-back"))return;
     var b=D.createElement("a");b.id="bl-back";b.textContent="‹ 보드";b.href=BOARD;
     b.style.cssText="position:fixed;left:8px;bottom:12px;z-index:2147483000;background:#1d2b36;color:#fff;font:700 14px/1 sans-serif;padding:11px 15px;border-radius:22px;text-decoration:none;opacity:.92;box-shadow:0 2px 8px rgba(0,0,0,.25)";
