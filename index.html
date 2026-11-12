@@ -380,7 +380,7 @@ function render(){
   } else if(S.view==="today"){
     var c0=clsOf(name),card=S.card||defCard(c0),cdItems=itemsFor(c0,card,name),done=chk(name,card),cd={items:cdItems};
     h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
-    h+='<div class="top"><div class="who">오늘 할 일<small>'+esc(name)+' · '+dstr()+'</small></div></div>';
+    h+='<div class="top"><div class="who">오늘의 학습<small>'+esc(name)+' · '+dstr()+'</small></div></div>';
     h+='<div class="tabs">'+CARDS.map(function(x){return '<button class="tab'+(x.id===card?' on':'')+'" data-card="'+x.id+'">'+x.label+'</button>'}).join("")+'</div>';
     h+='<div class="card">';
     if(!cd.items.length) h+='<div class="empty">항목 준비 중</div>';
@@ -405,7 +405,7 @@ function render(){
   } else {
     var c1=clsOf(name),dcard=defCard(c1),cdn=chk(name,dcard),reg=itemsFor(c1,dcard,name),dn=reg.filter(function(i){return cdn[i.id]}).length;
     h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div><button class="ghost" data-go="switch">다른 학생</button></div>';
-    h+='<button class="today" data-go="today"><div><b>오늘 할 일</b></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
+    h+='<button class="today" data-go="today"><div><b>오늘의 학습</b></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
     h+=carryHtml(name,c1);
     h+=lastHtml();
     h+=hubHtml(c1);
