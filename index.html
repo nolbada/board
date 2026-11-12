@@ -108,6 +108,8 @@ var HUB = [
     {n:"기본", u:BASE+"bidanchael/gibon/"}, {n:"발전", u:BASE+"bidanchael/baljeon/"}, {n:"심화", u:BASE+"bidanchael/simhwa/"}, {n:"고교", u:BASE+"bidanchael/gogyo/"}]},
   {h:"어휘", ac:"#C77A00", cols:2, items:[
     {n:"보카스위치 고교", u:BASE+"switch-mission-h.html"}, {n:"보카스위치 수능", u:BASE+"switch-mission-s.html"}, {n:"워마", u:BASE+"wama2000/"}, {n:"보카링크", u:BASE+"vocalink/"}]}
+  ,{h:"데일리보카", ac:"#7A45D1", cols:3, items:[
+    {n:"M", tt:"데일리보카 M", u:BASE+"daily/m/"}, {n:"B", tt:"데일리보카 B", u:BASE+"daily/b/"}, {n:"H", tt:"데일리보카 H", u:BASE+"daily/h/"}]}
   ,{h:"대화문 기출", ac:"#1F7A5C", cols:2, items:[
     {n:"중1", tt:"대화문 기출 중1", ic:"data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20rx=%2222%22%20fill=%22%23FFE3A6%22/%3E%3Ctext%20x=%2242%22%20y=%2276%22%20font-size=%2260%22%20text-anchor=%22middle%22%3E%F0%9F%91%A8%3C/text%3E%3Ctext%20x=%2276%22%20y=%2238%22%20font-size=%2226%22%20text-anchor=%22middle%22%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E", u:BASE+"gichul/m1/"}, {n:"중2", tt:"대화문 기출 중2", ic:"data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20rx=%2222%22%20fill=%22%23CFE1FF%22/%3E%3Ctext%20x=%2242%22%20y=%2276%22%20font-size=%2260%22%20text-anchor=%22middle%22%3E%F0%9F%91%A9%3C/text%3E%3Ctext%20x=%2276%22%20y=%2238%22%20font-size=%2226%22%20text-anchor=%22middle%22%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E", u:BASE+"gichul/m2/"}]}
 ];
@@ -304,7 +306,7 @@ function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+
 function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
 function defCard(cls){var w=new Date().getDay();return w===5?"fri":"reg"}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-var AID={"K":"vk","E":"ve","Y":"vy","문장 엑스레이":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2"};
+var AID={"K":"vk","E":"ve","Y":"vy","문장 엑스레이":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
 function hubHref(g,a,q){
   if(g.h==="말하기 시험")return a.u+(q?(a.u.indexOf("?")<0?"?":"&")+q:"");
   var p=a.u.replace("https://nolbada.github.io","");
