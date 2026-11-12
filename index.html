@@ -101,7 +101,7 @@ var TESTS = [
 /* 메인 화면 묶음: 이름, 강조색, 한 줄 칸 수, 항목 */
 var HUB = [
   {h:"V시그널", ac:"#1F7A5C", cols:4, items:[
-    {n:"K", u:BASE+"vsignal-k/"}, {n:"E", u:BASE+"vsignal-e/"}, {n:"Y", u:BASE+"vsignal-y/"}, {n:"문장 엑스레이", u:BASE+"xray/"}]},
+    {n:"K", u:BASE+"vsignal-k/"}, {n:"E", u:BASE+"vsignal-e/"}, {n:"Y", u:BASE+"vsignal-y/"}, {n:"X-ray", tt:"V시그널 X-ray", u:BASE+"xray/"}]},
   {h:"독해", ac:"#2F6FD6", cols:3, items:[
     {n:"독해33권", u:BASE+"reading/tablet/", not:["M초6A"]}, {n:"M1 리딩", u:BASE+"m1-reading/"}, {n:"M2 리딩", u:BASE+"m2-reading/"}]},
   {h:"비단챌", ac:"#D6336C", cols:4, items:[
@@ -299,14 +299,14 @@ var S = {view:"names", cls:null, card:null};
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
 function who(){var n=ls("bd-name"),t=+ls("bd-t")||0;if(n&&Date.now()-t>IDLE_MIN*60000){leave();return null}return n}
 function touch(){ls("bd-t",String(Date.now()))}
-function leave(){ls("bd-name",null);ls("bd-cls",null);ls("bd-t",null);S.view="names"}
-function clsOf(n){var s=ls("bd-cls");if(s&&ROSTER[s]&&ROSTER[s].indexOf(n)>-1)return s;for(var c in ROSTER)if(ROSTER[c].indexOf(n)>-1)return c;return ""}
+function leave(){S.pin=false;ls("bd-name",null);ls("bd-cls",null);ls("bd-t",null);S.view="names"}
+function clsOf(n){if(n==="열람")return "열람";var s=ls("bd-cls");if(s&&ROSTER[s]&&ROSTER[s].indexOf(n)>-1)return s;for(var c in ROSTER)if(ROSTER[c].indexOf(n)>-1)return c;return ""}
 function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d.getMonth()+1)+"/"+d.getDate()+"("+w+")"}
 function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
 function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
 function defCard(cls){var w=new Date().getDay();return w===5?"fri":"reg"}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-var AID={"K":"vk","E":"ve","Y":"vy","문장 엑스레이":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
+var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
 function hubHref(g,a,q){
   if(g.h==="말하기 시험")return a.u+(q?(a.u.indexOf("?")<0?"?":"&")+q:"");
   var p=a.u.replace("https://nolbada.github.io","");
@@ -346,6 +346,8 @@ function render(){
     h+='<div class="top"><div class="who">이름을 눌러 주세요<small>'+dstr()+'</small></div></div>';
     h+='<div class="chips">'+Object.keys(GROUPS).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
     h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
+    if(S.pin)h+='<div class="card" style="margin-top:14px;display:flex;gap:8px;align-items:center"><input id="pinin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="flex:1;font-size:20px;padding:10px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-pinok="1" style="padding:12px 18px;font-size:16px">확인</button></div>';
+    else h+='<button data-view="1" style="display:block;margin:18px auto 0;border:0;background:none;color:#aaa;font-size:13px;padding:8px 16px">열람</button>';
   } else if(S.view==="today"){
     var c0=clsOf(name),card=S.card||defCard(c0),cdItems=itemsFor(c0,card,name),done=chk(name,card),cd={items:cdItems};
     h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
@@ -381,9 +383,22 @@ function render(){
   }
   app.innerHTML=h;
 }
+var PINH="a11a5024dd6b9d04a47dae300a1f86f8a126a396432d0ae312a91611bd7e4b6f";
+function tryPin(){
+  var pi=document.getElementById("pinin"),v=pi?pi.value:"";
+  if(!v||!window.crypto||!crypto.subtle)return;
+  crypto.subtle.digest("SHA-256",new TextEncoder().encode("vit|"+v)).then(function(d){
+    var x=Array.prototype.map.call(new Uint8Array(d),function(n){return("0"+n.toString(16)).slice(-2)}).join("");
+    if(x===PINH){S.pin=false;ls("bd-name","열람");ls("bd-cls","열람");touch();S.view="hub";render();pull("열람","열람")}
+    else{if(pi){pi.value="";pi.focus()}}
+  });
+}
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="pinin")tryPin()});
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
-  if(b.dataset.cls){S.cls=b.dataset.cls;render()}
+  if(b.dataset.view){S.pin=true;render();var pi=document.getElementById("pinin");if(pi)pi.focus()}
+  else if(b.dataset.pinok){tryPin()}
+  else if(b.dataset.cls){S.pin=false;S.cls=b.dataset.cls;render()}
   else if(b.dataset.name){ls("bd-name",b.dataset.name);ls("bd-cls",b.dataset.c);touch();S.view="hub";render();pull(b.dataset.name,b.dataset.c)}
   else if(b.dataset.it){var n=ls("bd-name"),c=b.dataset.card,m=chk(n,c);m[b.dataset.it]=m[b.dataset.it]?0:1;stampT(m,b.dataset.it);ls(key(n,c),JSON.stringify(m));touch();render();sync(n,clsOf(n),c,m)}
   else if(b.dataset.card){S.card=b.dataset.card;render()}
