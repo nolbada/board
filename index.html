@@ -189,7 +189,7 @@ function iso(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)
 function hm(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
 function stampT(m,id){var v=hm();if(m[id])m["t_"+id]=v;else delete m["t_"+id];m.tlt=v;if(!m.tin)m.tin=v}
 function syncQ(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);post(b).catch(function(){qadd(b)})}
-var AL={vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",rd:"독해33권",m1:"M1 리딩",m2:"M2 리딩"};
+var AL={vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",rd:"독해33권",m1:"M1 리딩",m2:"M2 리딩",gk1:"대화문 기출 중1",gk2:"대화문 기출 중2"};
 function appLine(k,v){var o={};try{o=JSON.parse(v)}catch(e){}var p=[];if(o.d)p.push(((k==="a_m1"||k==="a_m2")?"Reading ":k==="a_xr"?"분석 ":"Day ")+o.d);if(o.m!=null)p.push("실수 "+o.m+"개");if(o.p!=null)p.push(o.p+"%");if(o.ok!=null)p.push(o.ok?"통과":"한번 더");if(o.n)p.push(o.n+"회");if(o.s)p.push(Math.max(1,Math.round(o.s/60))+"분");if(o.t)p.push(o.t);return '<div style="padding:6px 0;border-top:1px solid #eee;font-size:14px">'+esc(AL[k.slice(2)]||k.slice(2))+' <span style="color:#555">'+p.join(" · ")+'</span></div>'}
 function post(b){return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(b),keepalive:true}).then(function(r){return r.json()}).then(function(j){if(!j||!j.ok)throw 0})}
 function qget(){var a=[];try{a=JSON.parse(ls("bd-q")||"[]")}catch(e){}return a}
