@@ -15,7 +15,75 @@ if(!n||Date.now()-t>600000){home();return}
 try{ss.setItem("bl-who",JSON.stringify({n:n,c:c}))}catch(e){}
 document.getElementById("ttl").textContent=T;document.title=T||"보드";
 document.getElementById("home").addEventListener("click",function(){try{ls.setItem("bd-t",String(Date.now()))}catch(e){}});
-var f=document.getElementById("f");f.src=U;
+var f=document.getElementById("f");
+/* 학생 전환 시 앱 기록 비우기 + 같은 학생이 돌아오면 서버에서 복원 (앱 파일은 건드리지 않음) */
+var APPS=[
+ {g:"vk",p:/^\/via\/vsignal-k\//,k:/^vsig-k-/},
+ {g:"ve",p:/^\/via\/vsignal-e\//,k:/^vsig-e-/},
+ {g:"vy",p:/^\/via\/vsignal-y\//,k:/^vsig-y-/},
+ {g:"xr",p:/^\/via\/xray\//,k:/^xray-/},
+ {g:"bd",p:/^\/via\/bidanchael\//,k:/^bdc_/},
+ {g:"vs",p:/^\/via\/switch-mission-/,k:/^vs_(unl|recs)_/},
+ {g:"wm",p:/^\/via\/wama2000\//,k:/^wama2000_/},
+ {g:"vl",p:/^\/via\/vocalink\//,k:/^vl_/},
+ {g:"rd",p:/^\/via\/reading\//,k:/^(tutorstarter|hackersstarter|tutorjunior|hackersmaster|hackers|1316reading|bricks|readinggraphy|tutorchallenger)\d+/}
+];
+var SD="2000-01-02",CAP=16000,AP=null,CARD={},lastSnap="";
+APPS.forEach(function(a){if(a.p.test(U))AP=a});
+function allKeys(){return Object.keys(ls).filter(function(k){return APPS.some(function(a){return a.k.test(k)})})}
+function myKeys(){return AP?Object.keys(ls).filter(function(k){return AP.k.test(k)}):[]}
+try{var ow=ls.getItem("bd-owner");
+ if(ow===null)ls.setItem("bd-owner",n);
+ else if(ow!==n){allKeys().forEach(function(k){ls.removeItem(k)});ls.setItem("bd-owner",n)}}catch(e){}
+function pack(s){
+ if(typeof CompressionStream==="undefined")return Promise.resolve("r:"+s);
+ var cs=new CompressionStream("gzip"),w=cs.writable.getWriter();w.write(new TextEncoder().encode(s));w.close();
+ return new Response(cs.readable).arrayBuffer().then(function(b){var u=new Uint8Array(b),x="";for(var i=0;i<u.length;i+=8192)x+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return "z:"+btoa(x)});
+}
+function unpack(z){
+ if(z.slice(0,2)==="r:")return Promise.resolve(z.slice(2));
+ var bin=atob(z.slice(2)),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+ var ds=new DecompressionStream("gzip"),w=ds.writable.getWriter();w.write(u);w.close();
+ return new Response(ds.readable).text();
+}
+var packed=null,lastFlush=0;
+function refresh(){
+ if(!AP||!snapReady)return Promise.resolve();
+ var m={},any=false;myKeys().forEach(function(k){m[k]=ls.getItem(k);any=true});
+ if(!any)return Promise.resolve();
+ var js=JSON.stringify(m);if(js===lastSnap||(packed&&packed.js===js))return Promise.resolve();
+ return pack(js).then(function(z){packed={js:js,z:z}}).catch(function(){});
+}
+function flushSnap(keep){
+ if(!AP||!snapReady||!packed||packed.js===lastSnap||packed.z.length>CAP)return;
+ lastSnap=packed.js;lastFlush=Date.now();CARD["s_"+AP.g]=packed.z;
+ fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({a:"put",date:SD,cls:c,name:n,card:"app",chk:CARD}),keepalive:!!keep}).catch(function(){lastSnap=""});
+}
+function snap(keep){flushSnap(keep);refresh().then(function(){flushSnap(keep)})}
+var snapReady=false,started=false;
+function start(){
+ if(started)return;started=true;
+ document.getElementById("f").src=U;
+}
+function restoreThenStart(){
+ var z=AP&&CARD["s_"+AP.g];
+ if(!z||myKeys().length){snapReady=true;if(AP&&myKeys().length)lastSnap="";start();return}
+ unpack(z).then(function(js){
+  var m={};try{m=JSON.parse(js)||{}}catch(e){}
+  Object.keys(m).forEach(function(k){if(AP.k.test(k)&&typeof m[k]==="string")try{ls.setItem(k,m[k])}catch(e){}});
+  var s={};myKeys().forEach(function(k){s[k]=ls.getItem(k)});lastSnap=JSON.stringify(s);
+ }).catch(function(){}).then(function(){snapReady=true;start()});
+}
+if(AP){
+ setTimeout(function(){start()},2500);
+ fetch(SRV+"?a=get&date="+SD+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+  if(!j||!j.ok)throw 0;CARD=(j.chk&&j.chk.app)||{};if(!started)restoreThenStart();else snapReady=true;
+ }).catch(function(){start()});
+}else{snapReady=true;start()}
+setInterval(function(){if(document.visibilityState!=="visible")return;refresh().then(function(){if(Date.now()-lastFlush>=12000)flushSnap(false)})},3000);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")snap(true)});
+window.addEventListener("pagehide",function(){snap(true)});
+document.getElementById("home").addEventListener("click",function(){snap(true)});
 setInterval(function(){if(document.visibilityState==="visible")try{ls.setItem("bd-t",String(Date.now()))}catch(e){}},30000);
 function pad(x){return("0"+x).slice(-2)}
 function iso(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
