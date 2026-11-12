@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#00A1A7">
+<title>관리 본부</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6f7;color:#1c2b2d;font-family:"Malgun Gothic","Noto Sans KR",system-ui,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:22px 16px 60px}
+h1{font-size:22px;margin:0 0 20px}
+h2{font-size:14px;color:#5b6b6e;margin:26px 0 10px;letter-spacing:.02em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+a.c{display:block;background:#fff;border:1px solid #dde3e5;border-left:5px solid var(--ac,#00A1A7);border-radius:12px;padding:15px 16px;color:inherit;text-decoration:none}
+a.c:active,a.c:hover{background:#eef7f7}
+a.c b{display:block;font-size:17px}
+a.c span{display:block;font-size:13px;color:#6a7a7d;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>관리 본부</h1>
+
+<h2>보드</h2>
+<div class="grid">
+<a class="c" href="/board/?t=1" style="--ac:#00A1A7"><b>보드 기록 · 관리</b><span>학생 기록 보기, 명단 관리</span></a>
+<a class="c" href="/board/" style="--ac:#00A1A7"><b>학생 보드</b><span>학생이 보는 첫 화면</span></a>
+</div>
+
+<h2>출석 · 숙제</h2>
+<div class="grid">
+<a class="c" href="/via/attend/" style="--ac:#D6336C"><b>출석부</b><span>금요일 · 토요일</span></a>
+<a class="c" href="/via/hw/" style="--ac:#D6336C"><b>주간 숙제 확인</b><span>숙제 REC</span></a>
+<a class="c" href="/via/today/" style="--ac:#D6336C"><b>오늘 할 일</b><span>금요일 리스트</span></a>
+</div>
+
+<h2>고등</h2>
+<div class="grid">
+<a class="c" href="/via-high/" style="--ac:#2F6FD6"><b>고등 자료</b><span>학교별 앱 모음</span></a>
+<a class="c" href="/via-high/h/rec/" style="--ac:#2F6FD6"><b>REC 기록</b><span>고등 학생 기록</span></a>
+<a class="c" href="/via-high/h/teacher/" style="--ac:#2F6FD6"><b>동사형 선생님용</b><span>고등</span></a>
+</div>
+
+<h2>링크 모음</h2>
+<div class="grid">
+<a class="c" href="/via/links/" style="--ac:#C77A00"><b>via 링크 모음</b><span>앱 전체</span></a>
+<a class="c" href="/via/mid/" style="--ac:#C77A00"><b>내신 링크 모음</b><span>중등 내신</span></a>
+</div>
+</div>
+</body>
+</html>
