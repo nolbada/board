@@ -259,6 +259,7 @@ function putRec(k,obj){
 function normCfg(c){
   var r={},k;
   for(k in SEED.ROSTER){var a=c&&c.r&&c.r[k];r[k]=Array.isArray(a)?a.filter(function(x){return typeof x==="string"&&x&&x!=="열람"}):[]}
+  if(c&&c.r&&typeof c.r==="object")for(k in c.r)if(!(k in r)&&Array.isArray(c.r[k]))r[k]=c.r[k].filter(function(x){return typeof x==="string"&&x&&x!=="열람"});
   return {r:r,s:(c&&c.s&&typeof c.s==="object"&&!Array.isArray(c.s))?c.s:{},f:(c&&Array.isArray(c.f))?c.f:null,rs:(c&&c.rs&&typeof c.rs==="object")?c.rs:{},u:+(c&&c.u)||0};
 }
 function seedCfg(){return normCfg({r:SEED.ROSTER,s:SEED.SKIP,f:Object.keys(SEED.FRI_BY),rs:{},u:0})}
@@ -412,6 +413,7 @@ function viewWiz(){
   else h+='<div class="lbl">끝나는 날 없이 계속 이 카드를 써요</div>';
   h+='</div>';
   h+='<div class="card"><h3><span class="stp">2</span>누구에게 <span class="tag">'+sel.length+'명 선택</span>'+(sel.length?' <button class="btn sm" data-wclr="1">선택 해제</button>':'')+'</h3>';
+  h+='<details'+(W.pop?' open':'')+' data-wdet="1" style="margin:6px 0 8px"><summary style="font-size:13px;font-weight:700;color:#00A1A7;padding:6px 0">이름 붙여넣기로 선택 (명단에 없는 이름은 새로 추가)</summary><textarea id="wpaste" rows="6" placeholder="이름을 한 줄에 하나씩 붙여넣기" style="width:100%;border:1px solid #cfd8da;border-radius:10px;padding:10px;font:inherit">'+esc(W.paste||"")+'</textarea><div class="row" style="margin-top:6px"><input class="q" id="wpc" list="wpcl" placeholder="새로 추가할 반 이름 (예: 중2)" value="'+esc(W.pc||"")+'" style="margin:0;flex:1;font-size:13px"><datalist id="wpcl">'+cls.map(function(c){return '<option value="'+esc(c)+'">'}).join("")+'</datalist><button class="btn pri sm" data-wpaste="1">선택하기</button></div></details>';
   cls.forEach(function(c){
     var ns=CFG.r[c].slice().sort(function(a,b){return a.localeCompare(b,"ko")}),all=ns.length&&ns.every(function(n){return W.names[n]});
     h+='<div class="gh">'+esc(c)+' · '+ns.length+'명 <button class="btn sm" data-wcls="'+esc(c)+'">'+(all?'반 선택 해제':'반 전체 선택')+'</button></div><div class="pg">';
@@ -453,6 +455,9 @@ document.addEventListener("click",function(e){
   if(D.tab){S.tab=D.tab;S.cf=null;render()}
   else if(D.sladd){var nid="x"+Date.now().toString(36);CC.sl=CC.sl||[];CC.sl.push({id:nid,name:"새 용도"});W.slot=nid;markC();render()}
   else if(D.sldel){if(S.cf==="sl"){var sid=W.slot,k5,s5;CC.sl=(CC.sl||[]).filter(function(s){return s.id!==sid});for(k5 in CC.cls)delete CC.cls[k5][sid];for(k5 in CC.st)delete CC.st[k5][sid];CC.rg=(CC.rg||[]).filter(function(r){return r.slot!==sid});for(k5 in (CC.day||{}))for(s5 in CC.day[k5]){delete CC.day[k5][s5][sid]}W.slot="fri";S.cf=null;markC();render()}else{S.cf="sl";render()}}
+  else if(D.wpaste){var pr=(document.getElementById("wpaste").value||""),pcn=(document.getElementById("wpc").value||"").trim(),pn=[];pr.split(/[\n,\t]+/).forEach(function(x){x=x.trim();if(x&&pn.indexOf(x)<0)pn.push(x)});var padd=pn.filter(function(n){return !clsOf(n)});
+    if(!pn.length){toast("이름을 붙여넣어 주세요")}else if(padd.length&&!pcn){toast("새로 추가할 반 이름을 적어 주세요")}else{pn.forEach(function(n){W.names[n]=true});W.paste="";W.pop=false;
+      if(padd.length){rosterEdit(function(cf){cf.r[pcn]=cf.r[pcn]||[];padd.forEach(function(n){var ex=false;for(var k in cf.r)if(cf.r[k].indexOf(n)>-1)ex=true;if(!ex)cf.r[pcn].push(n)})}).then(function(){toast(padd.length+"명 추가, "+pn.length+"명 선택")})}else{render();toast(pn.length+"명 선택")}}}
   else if(D.wsc){W.scope=D.wsc;render()}
   else if(D.wn){W.names[D.wn]=!W.names[D.wn];render()}
   else if(D.wcls){var ns=CFG.r[D.wcls],all=ns.every(function(n){return W.names[n]});ns.forEach(function(n){W.names[n]=!all});render()}
@@ -499,6 +504,8 @@ document.addEventListener("change",function(e){
     markC();render()}
   else if(t.dataset.cc){var p=t.dataset.cc.split("|");CC.cls[p[0]]=CC.cls[p[0]]||{};if(t.value)CC.cls[p[0]][p[1]]=t.value;else delete CC.cls[p[0]][p[1]];markC()}
   else if(t.id==="sd"){S.sdate=t.value||iso();render()}
+  else if(t.id==="wpaste"){W.paste=t.value;W.pop=true}
+  else if(t.id==="wpc"){W.pc=t.value}
   else if(t.id==="wnm"){W.nm=t.value.trim()}
   else if(t.id==="wslot"){W.slot=t.value;S.cf=null;render()}
   else if(t.id==="sname"){var nv=t.value.trim();if(nv){var ex=(CC.sl||[]).filter(function(s){return s.id===W.slot})[0];if(ex)ex.name=nv;else{CC.sn=CC.sn||{};CC.sn[W.slot]=nv}markC()}render()}
