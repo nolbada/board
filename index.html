@@ -531,7 +531,7 @@ function render(){
     h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
   } else {
     var c1=clsOf(name),dcard=defCard(c1),cdn=chk(name,dcard),reg=itemsFor(c1,dcard,name),dn=reg.filter(function(i){return cdn[i.id]}).length;
-    h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div><button class="ghost" data-go="switch">다른 학생</button></div>';
+    h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div>'+(PH?'':'<button class="ghost" data-go="switch">다른 학생</button>')+'</div>';
     h+='<button class="today" data-go="today"><div><b>오늘의 학습</b></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
     h+=carryHtml(name,c1);
     h+=lastHtml();
