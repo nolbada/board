@@ -169,6 +169,7 @@ var CARDS = [
 var SKIP = {"윤여름":["s6"],"조서인":["s6"]};
 function cardPick(cls,slot,name,date){
   var d=date||iso(),v=CC.day&&CC.day[d]&&CC.day[d][name]&&CC.day[d][name][slot];if(v)return v;
+  var rg=CC.rg||[];for(var i=rg.length-1;i>=0;i--){var r=rg[i];if(r.slot===slot&&d>=r.from&&d<=r.to&&r.names.indexOf(name)>-1)return r.card}
   v=CC.st&&CC.st[name]&&CC.st[name][slot];if(v)return v;
   v=CC.cls&&CC.cls[cls]&&CC.cls[cls][slot];return v||"";
 }
