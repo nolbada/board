@@ -231,7 +231,7 @@ function slotUsed(id){var k,s;for(k in CC.st)if(CC.st[k]&&CC.st[k][id])return tr
 function slotsRefresh(){var L=[];BASE.forEach(function(b){if(b[0]==="reg"||b[0]==="fri"||slotUsed(b[0]))L.push([b[0],(CC.sn&&CC.sn[b[0]])||b[1]])});(CC.sl||[]).forEach(function(s){L.push([s.id,s.name])});SLOTS=L;if(!SLOTS.some(function(x){return x[0]===W.slot}))W.slot="fri"}
 function isExtra(id){return (CC.sl||[]).some(function(s){return s.id===id})}
 var CFG=null, CC=null, loaded=false, dirtyC=false, saveT=null;
-var W={slot:"fri",scope:"keep",from:iso(),to:iso(),names:{}};
+var W={slot:"fri",scope:"keep",from:iso(),to:iso(),names:{},nm:""};
 var S={tab:"wiz", sel:null, cls:"", q:"", csel:null, scope:"keep", sdate:iso(), cf:null};
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
@@ -395,6 +395,7 @@ function pvHtml(c){
   if(!c.items.length)return '<div class="empty" style="padding:16px">항목 없음</div>';
   return c.items.map(function(it,i){return '<div class="pi"><span class="pb">'+(i+1)+'</span><span class="pt">'+esc(it.t||" ")+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></div>'}).join("");
 }
+function pnames(){var a=[];(CC.rg||[]).forEach(function(r){if(r.nm&&a.indexOf(r.nm)<0)a.push(r.nm)});return a}
 function wdate(){return W.scope==="range"?W.from:iso()}
 function viewWiz(){
   var cls=Object.keys(CFG.r),sel=Object.keys(W.names).filter(function(k){return W.names[k]}),d=wdate(),h="";
@@ -403,7 +404,7 @@ function viewWiz(){
   var cs0=SLOTS.filter(function(x){return x[0]===W.slot})[0];
   h+='<div class="row" style="margin-top:8px"><input class="q" id="sname" value="'+esc(cs0?cs0[1]:"")+'" style="margin:0;flex:1;font-size:13px"><button class="btn sm" data-sladd="1">+ 용도 추가</button>'+(isExtra(W.slot)?'<button class="btn sm red'+(S.cf==="sl"?' on':'')+'" data-sldel="1">'+(S.cf==="sl"?'한 번 더 누르면 지워요':'이 용도 지우기')+'</button>':'')+'</div><div class="lbl">위 칸에서 고른 용도의 이름을 바꿀 수 있어요</div>';
   h+='<div class="seg"><button class="'+(W.scope==="keep"?'on':'')+'" data-wsc="keep">계속</button><button class="'+(W.scope==="range"?'on':'')+'" data-wsc="range">기간</button></div></div>';
-  if(W.scope==="range")h+='<div class="row" style="margin-top:10px"><input type="date" id="wf" value="'+esc(W.from)+'" style="margin:0"><span>~</span><input type="date" id="wt" value="'+esc(W.to)+'" style="margin:0"><span class="tag">'+dlabel(W.from)+' ~ '+dlabel(W.to)+'</span></div><div class="lbl">기간이 끝나면 자동으로 원래 카드로 돌아가요 (내신기간, 방학 특강 등)</div>';
+  if(W.scope==="range")h+='<div class="row" style="margin-top:10px"><input type="date" id="wf" value="'+esc(W.from)+'" style="margin:0"><span>~</span><input type="date" id="wt" value="'+esc(W.to)+'" style="margin:0"><span class="tag">'+dlabel(W.from)+' ~ '+dlabel(W.to)+'</span></div><div class="row" style="margin-top:8px"><input class="q" id="wnm" list="pnames" placeholder="기간 이름 (예: 기말 내신기간, 겨울방학 특강)" value="'+esc(W.nm||"")+'" style="margin:0;flex:1;font-size:13px"><datalist id="pnames">'+pnames().map(function(t){return '<option value="'+esc(t)+'">'}).join("")+'</datalist></div><div class="lbl">기간이 끝나면 자동으로 원래 카드로 돌아가요 (내신기간, 방학 특강 등)</div>';
   else h+='<div class="lbl">끝나는 날 없이 계속 이 카드를 써요</div>';
   h+='</div>';
   h+='<div class="card"><h3><span class="stp">2</span>누구에게 <span class="tag">'+sel.length+'명 선택</span>'+(sel.length?' <button class="btn sm" data-wclr="1">선택 해제</button>':'')+'</h3>';
@@ -418,7 +419,7 @@ function viewWiz(){
   h+='<button class="btn pri go" data-wgo="1"'+(ok?'':' disabled')+'>'+(ok?esc(sel.length+'명에게 "'+(cd?cd.name:'카드 없음')+'" 지정'):'학생과 카드를 고르면 지정할 수 있어요')+'</button>';
   var d0=iso(),rgs=(CC.rg||[]).filter(function(r){return r.to>=d0});
   if(rgs.length){
-    h+='<div class="card" style="margin-top:14px"><h3>기간으로 지정된 것</h3>'+rgs.map(function(r){var sl=SLOTS.filter(function(x){return x[0]===r.slot})[0];return '<div class="ov"><div style="flex:1"><b>'+dlabel(r.from)+' ~ '+dlabel(r.to)+'</b> '+esc(sl?sl[1]:r.slot)+' → '+esc(cname(r.card))+'<div style="font-size:12.5px;color:#6a7a7d">'+esc(r.names.join(", "))+'</div></div><button class="btn sm" data-rgx="'+esc(r.id)+'">취소</button></div>'}).join("")+'</div>';
+    h+='<div class="card" style="margin-top:14px"><h3>기간으로 지정된 것</h3>'+rgs.map(function(r){var sl=SLOTS.filter(function(x){return x[0]===r.slot})[0];return '<div class="ov"><div style="flex:1">'+(r.nm?'<b>'+esc(r.nm)+'</b> · ':'')+'<b>'+dlabel(r.from)+' ~ '+dlabel(r.to)+'</b> '+esc(sl?sl[1]:r.slot)+' → '+esc(cname(r.card))+'<div style="font-size:12.5px;color:#6a7a7d">'+esc(r.names.join(", "))+'</div></div><button class="btn sm" data-rgx="'+esc(r.id)+'">취소</button></div>'}).join("")+'</div>';
   }
   return h;
 }
@@ -426,9 +427,9 @@ function wizApply(){
   var names=Object.keys(W.names).filter(function(k){return W.names[k]});if(!names.length||!W.card)return;
   if(W.scope==="range"){
     if(!W.from||!W.to||W.to<W.from){toast("날짜를 확인해 주세요");return}
-    CC.rg=CC.rg||[];CC.rg.push({id:uid(),from:W.from,to:W.to,slot:W.slot,card:W.card,names:names});
+    CC.rg=CC.rg||[];CC.rg.push({id:uid(),from:W.from,to:W.to,slot:W.slot,card:W.card,names:names,nm:W.nm||""});
   }else names.forEach(function(n){var st=ensureSt(n);st[W.slot]=W.card});
-  W.names={};markC();render();toast(names.length+"명에게 지정했어요");
+  W.names={};W.nm="";markC();render();toast(names.length+"명에게 지정했어요");
 }
 function viewCls(){
   var cls=Object.keys(CFG.r);
@@ -491,6 +492,7 @@ document.addEventListener("change",function(e){
     markC();render()}
   else if(t.dataset.cc){var p=t.dataset.cc.split("|");CC.cls[p[0]]=CC.cls[p[0]]||{};if(t.value)CC.cls[p[0]][p[1]]=t.value;else delete CC.cls[p[0]][p[1]];markC()}
   else if(t.id==="sd"){S.sdate=t.value||iso();render()}
+  else if(t.id==="wnm"){W.nm=t.value.trim()}
   else if(t.id==="wslot"){W.slot=t.value;S.cf=null;render()}
   else if(t.id==="sname"){var nv=t.value.trim();if(nv){var ex=(CC.sl||[]).filter(function(s){return s.id===W.slot})[0];if(ex)ex.name=nv;else{CC.sn=CC.sn||{};CC.sn[W.slot]=nv}markC()}render()}
   else if(t.id==="wf"){W.from=t.value||iso();if(W.to<W.from)W.to=W.from;render()}
