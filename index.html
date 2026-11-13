@@ -425,7 +425,7 @@ function clsOf(n){if(n==="열람")return "열람";var s=ls("bd-cls");if(s&&ROSTE
 function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d.getMonth()+1)+"/"+d.getDate()+"("+w+")"}
 function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
 function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
-function tabList(){var L=CARDS.map(function(x){return {id:x.id,label:(CC&&CC.sn&&CC.sn[x.id])||x.label}});((CC&&CC.sl)||[]).forEach(function(s){L.push({id:s.id,label:s.name})});return L}
+function tabList(){var L=CARDS.map(function(x){return {id:x.id,label:(CC&&CC.sn&&CC.sn[x.id])||x.label}});((CC&&CC.sl)||[]).forEach(function(s){L.push({id:s.id,label:s.name})});var so=(CC&&CC.so)||[];return L.map(function(x,i){return [x,i]}).sort(function(a,b){var p=so.indexOf(a[0].id),q=so.indexOf(b[0].id);p=p<0?999:p;q=q<0?999:q;return p-q||a[1]-b[1]}).map(function(x){return x[0]})}
 function defCard(cls){var w=new Date().getDay();return w===5?"fri":w===6?"sat":"reg"}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
