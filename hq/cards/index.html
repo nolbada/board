@@ -60,6 +60,10 @@ details summary{cursor:pointer;color:#00828a;font-size:13px;font-weight:700}
 .cl{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .cb{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #dde3e5;background:#fff;border-radius:12px;padding:11px 12px;width:100%;font-weight:700}
 .cb.on{border-color:#00A1A7;background:#e3f4f5}
+.cr{display:flex;gap:4px;align-items:stretch}
+.cr .cb{flex:1;width:auto;min-width:0}
+.cr .mv{display:flex;flex-direction:column;gap:3px}
+.cr .mv button{flex:1;width:32px;border:1px solid #dde3e5;background:#fff;border-radius:8px;font-size:13px;padding:0}
 .cb small{margin-left:auto;font-weight:500;color:#7a8a8d;font-size:12px}
 .edit{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
 .it{display:grid;grid-template-columns:26px 1fr auto;gap:6px 8px;align-items:center;padding:9px 0;border-top:1px solid #eef1f1}
@@ -322,7 +326,7 @@ function cardList(attr,sel){
   tg.concat([""]).forEach(function(t){
     var cs=CC.cards.filter(function(c){return (c.tag||"")===t});if(!cs.length)return;
     if(tg.length)h+='<div class="gh">'+esc(t||"분류 없음")+'</div>';
-    h+=cs.map(function(c){return '<button class="cb'+(sel===c.id?' on':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>'}).join("");
+    h+=cs.map(function(c){var bt='<button class="cb'+(sel===c.id?' on':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}).join("");
   });
   return h;
 }
@@ -476,6 +480,7 @@ document.addEventListener("click",function(e){
   else if(D.del!==undefined){c=cardBy(S.csel);c.items.splice(+D.del,1);markC();render()}
   else if(D.up!==undefined){c=cardBy(S.csel);var i=+D.up;if(i>0){var t=c.items[i];c.items[i]=c.items[i-1];c.items[i-1]=t;markC();render()}}
   else if(D.dn!==undefined){c=cardBy(S.csel);var j=+D.dn;if(j<c.items.length-1){var t2=c.items[j];c.items[j]=c.items[j+1];c.items[j+1]=t2;markC();render()}}
+  else if(D.cmv){var mp=D.cmv.split("|"),mi=CC.cards.map(function(x){return x.id}).indexOf(mp[0]),ms=+mp[1],mt=CC.cards[mi].tag||"",mj=mi+ms;while(mj>=0&&mj<CC.cards.length&&(CC.cards[mj].tag||"")!==mt)mj+=ms;if(mj>=0&&mj<CC.cards.length){var mx=CC.cards[mi];CC.cards[mi]=CC.cards[mj];CC.cards[mj]=mx;markC()}render()}
   else if(D.cup||D.cdn){var ci=CC.cards.map(function(x){return x.id}).indexOf(S.csel),tg0=CC.cards[ci].tag||"",st0=D.cup?-1:1,cj=ci+st0;while(cj>=0&&cj<CC.cards.length&&(CC.cards[cj].tag||"")!==tg0)cj+=st0;if(cj>=0&&cj<CC.cards.length){var tmp=CC.cards[ci];CC.cards[ci]=CC.cards[cj];CC.cards[cj]=tmp;markC()}render()}
   else if(D.sup||D.sdn){var ids=SLOTS.map(function(x){return x[0]}),si=ids.indexOf(W.slot),sj=si+(D.sup?-1:1);if(si>-1&&sj>=0&&sj<ids.length){var t5=ids[si];ids[si]=ids[sj];ids[sj]=t5;CC.so=ids;markC()}render()}
   else if(D.dup){c=cardBy(S.csel);var d2={id:uid(),name:c.name+" 복사",items:cl(c.items)};CC.cards.push(d2);S.csel=d2.id;markC();render()}
