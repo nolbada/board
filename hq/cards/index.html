@@ -88,6 +88,19 @@ details summary{cursor:pointer;color:#00828a;font-size:13px;font-weight:700}
 .add select{border:1px solid #dde3e5;border-radius:10px;padding:9px 6px;background:#fff}
 #sv{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#222;color:#fff;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
 .mbk{display:none}
+.nm .nmt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
+.nm .sb{font-size:11.5px;font-weight:500;color:#6a7a7d;text-align:left}
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:6px;margin-top:8px}
+.pk{border:1px solid #dde3e5;background:#fff;border-radius:10px;padding:8px 10px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.pk b{font-size:15px}
+.pk small{font-size:11.5px;color:#6a7a7d;font-weight:500}
+.pk.on{background:#00A1A7;border-color:#00A1A7}
+.pk.on b,.pk.on small{color:#fff}
+.stp{display:inline-flex;width:22px;height:22px;border-radius:50%;background:#1c2b2d;color:#fff;align-items:center;justify-content:center;font-size:12px;margin-right:8px}
+.gh{font-size:12px;font-weight:700;color:#6a7a7d;margin:10px 0 4px}
+.go{width:100%;padding:15px;font-size:16px;border-radius:14px}
+.go:disabled{background:#cfd8da;border-color:#cfd8da;cursor:default}
+select.w{border:1px solid #cfd8da;border-radius:10px;padding:9px 10px;background:#fff}
 @media(max-width:760px){
   .two,.edit{grid-template-columns:1fr}
   .side{position:static;max-height:none}
@@ -214,7 +227,8 @@ return {ROSTER:ROSTER,REGULAR:REGULAR,CLASS_ITEMS:CLASS_ITEMS,CARDS:CARDS,SKIP:S
 })();
 var SLOTS=[["reg","정규반"],["fri","금요일"],["sat","토요일"],["nohw","숙제 안 가져왔을 때"],["mk","보충 왔을 때"]];
 var CFG=null, CC=null, loaded=false, dirtyC=false, saveT=null;
-var S={tab:"stu", sel:null, cls:"", q:"", csel:null, scope:"keep", sdate:iso(), cf:null};
+var W={slot:"fri",scope:"keep",from:iso(),to:iso(),names:{}};
+var S={tab:"wiz", sel:null, cls:"", q:"", csel:null, scope:"keep", sdate:iso(), cf:null};
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function iso(d){d=d||new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
@@ -261,6 +275,7 @@ function flushC(){
   if(!dirtyC)return;
   var d0=iso(new Date(Date.now()-14*86400000));
   Object.keys(CC.day||{}).forEach(function(d){if(d<d0)delete CC.day[d]});
+  if(CC.rg)CC.rg=CC.rg.filter(function(r){return r.to>=d0});
   var sent=CC.u;
   putRec(CCK,CC).then(function(){if(CC.u===sent){dirtyC=false}toast("저장됨")}).catch(function(){toast("저장 실패, 다시 시도합니다");setTimeout(flushC,3000)});
 }
@@ -279,6 +294,7 @@ function allNames(){var a=[];for(var c in CFG.r)CFG.r[c].forEach(function(n){a.p
 function cardBy(id){return CC.cards.filter(function(x){return x.id===id})[0]}
 function pickSrc(cls,slot,name,date){
   var v=CC.day&&CC.day[date]&&CC.day[date][name]&&CC.day[date][name][slot];if(v)return {id:v,src:"이 날만"};
+  var rg=CC.rg||[];for(var i=rg.length-1;i>=0;i--){var r=rg[i];if(r.slot===slot&&date>=r.from&&date<=r.to&&r.names.indexOf(name)>-1)return {id:r.card,src:"기간 지정"}}
   v=CC.st[name]&&CC.st[name][slot];if(v)return {id:v,src:"개별 지정"};
   v=CC.cls[cls]&&CC.cls[cls][slot];if(v)return {id:v,src:"반 기본"};
   return {id:"",src:""};
@@ -292,22 +308,34 @@ function usage(id){
   var n=0,k,s;
   for(k in CC.cls)for(s in CC.cls[k])if(CC.cls[k][s]===id)n++;
   for(k in CC.st)for(s in CC.st[k])if(s!=="skip"&&CC.st[k][s]===id)n++;
+  (CC.rg||[]).forEach(function(r){if(r.card===id)n++});
   return n;
+}
+function brief(n){var c=clsOf(n),a=[],d=iso();[["reg","정규"],["fri","금"],["sat","토"]].forEach(function(x){var e=pickSrc(c,x[0],n,d);if(e.id&&e.id!=="-"&&cardBy(e.id))a.push(x[1]+" "+cardBy(e.id).name)});return a.join(" · ")}
+function tagsOf(){var t=[];CC.cards.forEach(function(c){if(c.tag&&t.indexOf(c.tag)<0)t.push(c.tag)});return t.sort(function(a,b){return a.localeCompare(b,"ko")})}
+function cardList(attr,sel){
+  var tg=tagsOf(),h="";
+  tg.concat([""]).forEach(function(t){
+    var cs=CC.cards.filter(function(c){return (c.tag||"")===t});if(!cs.length)return;
+    if(tg.length)h+='<div class="gh">'+esc(t||"분류 없음")+'</div>';
+    h+=cs.map(function(c){return '<button class="cb'+(sel===c.id?' on':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>'}).join("");
+  });
+  return h;
 }
 
 /* ---------- 화면 ---------- */
 function render(){
   var app=document.getElementById("app");
   if(!loaded)return;
-  var h='<div class="tabs"><button class="tab'+(S.tab==="stu"?' on':'')+'" data-tab="stu">학생</button><button class="tab'+(S.tab==="card"?' on':'')+'" data-tab="card">카드</button><button class="tab'+(S.tab==="cls"?' on':'')+'" data-tab="cls">반 기본</button></div>';
-  h+=S.tab==="stu"?viewStu():S.tab==="card"?viewCard():viewCls();
+  var h='<div class="tabs"><button class="tab'+(S.tab==="wiz"?' on':'')+'" data-tab="wiz">지정하기</button><button class="tab'+(S.tab==="stu"?' on':'')+'" data-tab="stu">학생</button><button class="tab'+(S.tab==="card"?' on':'')+'" data-tab="card">카드</button><button class="tab'+(S.tab==="cls"?' on':'')+'" data-tab="cls">반 기본</button></div>';
+  h+=S.tab==="wiz"?viewWiz():S.tab==="stu"?viewStu():S.tab==="card"?viewCard():viewCls();
   app.innerHTML=h;
 }
 function viewStu(){
   var cls=Object.keys(CFG.r),list=allNames().filter(function(x){return (!S.cls||x.c===S.cls)&&(!S.q||x.n.indexOf(S.q)>-1)});
   var h='<div class="two'+(S.sel?' sel':'')+'"><div class="side"><input class="q" id="q" placeholder="이름 찾기" value="'+esc(S.q)+'">';
   h+='<div class="chips"><button class="chip'+(!S.cls?' on':'')+'" data-fc="">전체</button>'+cls.map(function(c){return '<button class="chip'+(S.cls===c?' on':'')+'" data-fc="'+esc(c)+'">'+esc(c)+'</button>'}).join("")+'</div>';
-  h+='<div class="nl">'+list.map(function(x){return '<button class="nm'+(S.sel===x.n?' on':'')+'" data-sel="'+esc(x.n)+'">'+esc(x.n)+(hasOverride(x.n)?'<span class="dot"></span>':'')+'<small>'+esc(x.c)+'</small></button>'}).join("")+'</div>';
+  h+='<div class="nl">'+list.map(function(x){return '<button class="nm'+(S.sel===x.n?' on':'')+'" data-sel="'+esc(x.n)+'">'+'<span class="nmt"><span>'+esc(x.n)+'</span><span class="sb">'+esc(brief(x.n)||"카드 없음")+'</span></span>'+(hasOverride(x.n)?'<span class="dot"></span>':'')+'<small>'+esc(x.c)+'</small></button>'}).join("")+'</div>';
   h+='<div class="add"><input id="addn" maxlength="8" placeholder="새 학생 이름"><select id="addc">'+cls.map(function(c){return '<option'+((S.cls||cls[0])===c?' selected':'')+'>'+esc(c)+'</option>'}).join("")+'</select><button class="btn pri sm" data-add="1">추가</button></div>';
   h+='</div><div class="main">';
   h+=S.sel&&clsOf(S.sel)?detail(S.sel):'<div class="empty">왼쪽에서 학생을 눌러 주세요</div>';
@@ -343,23 +371,57 @@ function detail(n){
 }
 function viewCard(){
   var h='<div class="two'+(S.csel?' sel':'')+'"><div class="side"><div class="cl">';
-  h+=CC.cards.map(function(c){return '<button class="cb'+(S.csel===c.id?' on':'')+'" id="cl-'+esc(c.id)+'" data-cs="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>'}).join("");
+  h+=cardList("cs",S.csel);
   h+='</div><button class="btn pri" data-newc="1" style="width:100%">+ 새 카드</button></div><div class="main">';
   var c=S.csel&&cardBy(S.csel);
   if(!c)return h+'<div class="empty">왼쪽에서 카드를 고르거나 새 카드를 만드세요</div></div></div>';
   h+='<button class="btn mbk" data-cback="1">‹ 목록</button><div class="edit"><div class="card"><div class="row"><input class="q" id="cn" value="'+esc(c.name)+'" style="margin:0;flex:1;font-weight:700"></div>';
+  h+='<div class="row" style="margin-top:6px"><input class="q" id="ct" list="tags" placeholder="분류 (예: 금요일 중등, 내신, 방학 특강)" value="'+esc(c.tag||"")+'" style="margin:0;flex:1;font-size:13px"><datalist id="tags">'+tagsOf().map(function(t){return '<option value="'+esc(t)+'">'}).join("")+'</datalist></div>';
   h+='<div style="margin-top:8px">';
   c.items.forEach(function(it,i){
     h+='<div class="it" data-i="'+i+'"><span class="no">'+(i+1)+'</span><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
     h+='<div class="sub"><input type="text" data-si="'+i+'" value="'+esc(it.sub||"")+'" placeholder="작은 설명 (없어도 됨)"><label><input type="checkbox" data-sc2="'+i+'"'+(it.kind==="score"?' checked':'')+'>점수 칸</label></div></div>';
   });
-  h+='</div><div class="row" style="margin-top:10px"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-dup="1">복제</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
+  h+='</div><div class="row" style="margin-top:10px"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-dup="1">복제</button><button class="btn pri" data-togo="1">이 카드를 쓸 학생 정하기 ›</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
   h+='<div class="pv"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px">학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
   return h;
 }
 function pvHtml(c){
   if(!c.items.length)return '<div class="empty" style="padding:16px">항목 없음</div>';
   return c.items.map(function(it,i){return '<div class="pi"><span class="pb">'+(i+1)+'</span><span class="pt">'+esc(it.t||" ")+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></div>'}).join("");
+}
+function wdate(){return W.scope==="range"?W.from:iso()}
+function viewWiz(){
+  var cls=Object.keys(CFG.r),sel=Object.keys(W.names).filter(function(k){return W.names[k]}),d=wdate(),h="";
+  var sn={reg:"",fri:"",sat:"",nohw:"",mk:""};
+  h+='<div class="card"><h3><span class="stp">1</span>언제, 어떤 용도로</h3><div class="row"><select class="w" id="wslot">'+SLOTS.map(function(x){return '<option value="'+x[0]+'"'+(W.slot===x[0]?' selected':'')+'>'+x[1]+sn[x[0]]+'</option>'}).join("")+'</select>';
+  h+='<div class="seg"><button class="'+(W.scope==="keep"?'on':'')+'" data-wsc="keep">계속</button><button class="'+(W.scope==="range"?'on':'')+'" data-wsc="range">기간</button></div></div>';
+  if(W.scope==="range")h+='<div class="row" style="margin-top:10px"><input type="date" id="wf" value="'+esc(W.from)+'" style="margin:0"><span>~</span><input type="date" id="wt" value="'+esc(W.to)+'" style="margin:0"><span class="tag">'+dlabel(W.from)+' ~ '+dlabel(W.to)+'</span></div><div class="lbl">기간이 끝나면 자동으로 원래 카드로 돌아가요 (내신기간, 방학 특강 등)</div>';
+  else h+='<div class="lbl">끝나는 날 없이 계속 이 카드를 써요</div>';
+  h+='</div>';
+  h+='<div class="card"><h3><span class="stp">2</span>누구에게 <span class="tag">'+sel.length+'명 선택</span>'+(sel.length?' <button class="btn sm" data-wclr="1">선택 해제</button>':'')+'</h3>';
+  cls.forEach(function(c){
+    var ns=CFG.r[c].slice().sort(function(a,b){return a.localeCompare(b,"ko")}),all=ns.length&&ns.every(function(n){return W.names[n]});
+    h+='<div class="gh">'+esc(c)+' · '+ns.length+'명 <button class="btn sm" data-wcls="'+esc(c)+'">'+(all?'반 선택 해제':'반 전체 선택')+'</button></div><div class="pg">';
+    h+=ns.map(function(n){var e=pickSrc(c,W.slot,n,d);return '<button class="pk'+(W.names[n]?' on':'')+'" data-wn="'+esc(n)+'"><b>'+esc(n)+'</b><small>'+esc(e.id?cname(e.id):"카드 없음")+'</small></button>'}).join("")+'</div>';
+  });
+  h+='</div>';
+  var cd=W.card&&W.card!=="-"?cardBy(W.card):null,ok=sel.length&&(cd||W.card==="-");
+  h+='<div class="card"><h3><span class="stp">3</span>어떤 카드</h3>'+cardList("wcard",W.card)+'<button class="cb'+(W.card==="-"?' on':'')+'" data-wcard="-" style="margin-top:6px"><b>카드 없음 (이 용도는 비움)</b></button><div style="margin-top:8px"><button class="btn sm" data-tab="card">+ 새 카드 만들기 / 고치기</button></div></div>';
+  h+='<button class="btn pri go" data-wgo="1"'+(ok?'':' disabled')+'>'+(ok?esc(sel.length+'명에게 "'+(cd?cd.name:'카드 없음')+'" 지정'):'학생과 카드를 고르면 지정할 수 있어요')+'</button>';
+  var d0=iso(),rgs=(CC.rg||[]).filter(function(r){return r.to>=d0});
+  if(rgs.length){
+    h+='<div class="card" style="margin-top:14px"><h3>기간으로 지정된 것</h3>'+rgs.map(function(r){var sl=SLOTS.filter(function(x){return x[0]===r.slot})[0];return '<div class="ov"><div style="flex:1"><b>'+dlabel(r.from)+' ~ '+dlabel(r.to)+'</b> '+esc(sl?sl[1]:r.slot)+' → '+esc(cname(r.card))+'<div style="font-size:12.5px;color:#6a7a7d">'+esc(r.names.join(", "))+'</div></div><button class="btn sm" data-rgx="'+esc(r.id)+'">취소</button></div>'}).join("")+'</div>';
+  }
+  return h;
+}
+function wizApply(){
+  var names=Object.keys(W.names).filter(function(k){return W.names[k]});if(!names.length||!W.card)return;
+  if(W.scope==="range"){
+    if(!W.from||!W.to||W.to<W.from){toast("날짜를 확인해 주세요");return}
+    CC.rg=CC.rg||[];CC.rg.push({id:uid(),from:W.from,to:W.to,slot:W.slot,card:W.card,names:names});
+  }else names.forEach(function(n){var st=ensureSt(n);st[W.slot]=W.card});
+  W.names={};markC();render();toast(names.length+"명에게 지정했어요");
 }
 function viewCls(){
   var cls=Object.keys(CFG.r);
@@ -377,12 +439,20 @@ function tidyDay(d,n){var o=CC.day[d];if(!o)return;if(o[n]&&!Object.keys(o[n]).l
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b||!loaded)return;var D=b.dataset,c;
   if(D.tab){S.tab=D.tab;S.cf=null;render()}
+  else if(D.wsc){W.scope=D.wsc;render()}
+  else if(D.wn){W.names[D.wn]=!W.names[D.wn];render()}
+  else if(D.wcls){var ns=CFG.r[D.wcls],all=ns.every(function(n){return W.names[n]});ns.forEach(function(n){W.names[n]=!all});render()}
+  else if(D.wclr){W.names={};render()}
+  else if(D.wcard){W.card=D.wcard;render()}
+  else if(D.wgo){wizApply()}
+  else if(D.rgx){CC.rg=(CC.rg||[]).filter(function(r){return r.id!==D.rgx});markC();render()}
+  else if(D.togo){W.card=S.csel;S.tab="wiz";render();window.scrollTo(0,0)}
   else if(D.fc!==undefined){S.cls=D.fc;render()}
   else if(D.sel){S.sel=D.sel;S.cf=null;render();window.scrollTo(0,0)}
   else if(D.back){S.sel=null;render()}
   else if(D.sc){S.scope=D.sc;if(D.sc==="day"&&!S.sdate)S.sdate=iso();render()}
   else if(D.mv){var n1=S.sel;rosterEdit(function(cf){for(var k in cf.r){var i=cf.r[k].indexOf(n1);if(i>-1)cf.r[k].splice(i,1)}cf.r[D.mv].push(n1)})}
-  else if(D.rm){if(S.cf==="rm"){var n2=S.sel;S.cf=null;S.sel=null;rosterEdit(function(cf){for(var k in cf.r){var i=cf.r[k].indexOf(n2);if(i>-1)cf.r[k].splice(i,1)}delete cf.s[n2];if(cf.f)cf.f=cf.f.filter(function(x){return x!==n2})}).then(function(){if(CC.st[n2]){delete CC.st[n2];markC()}})}else{S.cf="rm";render()}}
+  else if(D.rm){if(S.cf==="rm"){var n2=S.sel;S.cf=null;S.sel=null;rosterEdit(function(cf){for(var k in cf.r){var i=cf.r[k].indexOf(n2);if(i>-1)cf.r[k].splice(i,1)}delete cf.s[n2];if(cf.f)cf.f=cf.f.filter(function(x){return x!==n2})}).then(function(){delete CC.st[n2];(CC.rg||[]).forEach(function(r){r.names=r.names.filter(function(x){return x!==n2})});markC()})}else{S.cf="rm";render()}}
   else if(D.add){var nm=(document.getElementById("addn").value||"").trim(),cc=document.getElementById("addc").value;
     if(!nm)return;if(nm==="열람"||nm.length>8){toast("쓸 수 없는 이름");return}
     if(clsOf(nm)){toast("이미 있는 이름 ("+clsOf(nm)+")");return}
@@ -401,6 +471,7 @@ document.addEventListener("click",function(e){
       for(k2 in CC.cls)for(s2 in CC.cls[k2])if(CC.cls[k2][s2]===id)delete CC.cls[k2][s2];
       for(k2 in CC.st){for(s2 in CC.st[k2])if(s2!=="skip"&&CC.st[k2][s2]===id)delete CC.st[k2][s2];tidySt(k2)}
       for(var d3 in CC.day){for(k2 in CC.day[d3]){for(s2 in CC.day[d3][k2])if(CC.day[d3][k2][s2]===id)delete CC.day[d3][k2][s2];tidyDay(d3,k2)}}
+      CC.rg=(CC.rg||[]).filter(function(r){return r.card!==id});if(W.card===id)W.card="";
       S.csel=null;S.cf=null;markC();render()}else{S.cf="dc";render()}}
 });
 document.addEventListener("change",function(e){
@@ -411,6 +482,10 @@ document.addEventListener("change",function(e){
     markC();render()}
   else if(t.dataset.cc){var p=t.dataset.cc.split("|");CC.cls[p[0]]=CC.cls[p[0]]||{};if(t.value)CC.cls[p[0]][p[1]]=t.value;else delete CC.cls[p[0]][p[1]];markC()}
   else if(t.id==="sd"){S.sdate=t.value||iso();render()}
+  else if(t.id==="wslot"){W.slot=t.value;render()}
+  else if(t.id==="wf"){W.from=t.value||iso();if(W.to<W.from)W.to=W.from;render()}
+  else if(t.id==="wt"){W.to=t.value||W.from;render()}
+  else if(t.id==="ct"){var cc2=cardBy(S.csel);if(t.value.trim())cc2.tag=t.value.trim();else delete cc2.tag;markC();render()}
   else if(t.dataset.sc2!==undefined){var c=cardBy(S.csel),it=c.items[+t.dataset.sc2];if(t.checked)it.kind="score";else delete it.kind;markC()}
 });
 document.addEventListener("input",function(e){
