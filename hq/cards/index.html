@@ -388,7 +388,7 @@ function viewCard(){
     h+='<div class="sub"><input type="text" data-si="'+i+'" value="'+esc(it.sub||"")+'" placeholder="작은 설명 (없어도 됨)"><label><input type="checkbox" data-sc2="'+i+'"'+(it.kind==="score"?' checked':'')+'>점수 칸</label></div></div>';
   });
   h+='</div><div class="row" style="margin-top:10px"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-cup="1">목록에서 ↑</button><button class="btn" data-cdn="1">목록에서 ↓</button><button class="btn" data-dup="1">복제</button><button class="btn pri" data-togo="1">이 카드를 쓸 학생 정하기 ›</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
-  h+='<div class="pv"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px">학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
+  h+='<div class="pv"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px"><span id="pvt">'+esc(c.name)+'</span> 카드의 학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
   return h;
 }
 function pvHtml(c){
@@ -505,7 +505,7 @@ document.addEventListener("change",function(e){
 document.addEventListener("input",function(e){
   var t=e.target;if(!loaded||!t)return;
   if(t.id==="q"){S.q=t.value.trim();var pos=t.selectionStart;render();var q=document.getElementById("q");q.focus();q.setSelectionRange(pos,pos)}
-  else if(t.id==="cn"){var c=cardBy(S.csel);c.name=t.value;var el=document.getElementById("cl-"+S.csel);if(el)el.querySelector("b").textContent=t.value;markC()}
+  else if(t.id==="cn"){var c=cardBy(S.csel);c.name=t.value;var el=document.getElementById("cl-"+S.csel);if(el)el.querySelector("b").textContent=t.value;var pt=document.getElementById("pvt");if(pt)pt.textContent=t.value;markC()}
   else if(t.dataset.ti!==undefined){var c1=cardBy(S.csel);c1.items[+t.dataset.ti].t=t.value;document.getElementById("pv").innerHTML=pvHtml(c1);markC()}
   else if(t.dataset.si!==undefined){var c2=cardBy(S.csel),it=c2.items[+t.dataset.si];if(t.value)it.sub=t.value;else delete it.sub;document.getElementById("pv").innerHTML=pvHtml(c2);markC()}
 });
