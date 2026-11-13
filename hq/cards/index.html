@@ -60,6 +60,7 @@ details summary{cursor:pointer;color:#00828a;font-size:13px;font-weight:700}
 .cl{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .cb{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #dde3e5;background:#fff;border-radius:12px;padding:11px 12px;width:100%;font-weight:700}
 .cb.on{border-color:#00A1A7;background:#e3f4f5}
+.cb.td{border-color:#e8a317;background:#fff4d9}.cb.td.on{border-color:#00A1A7;background:#fff4d9;box-shadow:inset 4px 0 0 #00A1A7}.cb small em{font-style:normal;font-weight:800;color:#b36b00}
 .cr{display:flex;gap:4px;align-items:stretch}
 .cr .cb{flex:1;width:auto;min-width:0}
 .cr .mv{display:flex;flex-direction:column;gap:3px}
@@ -321,13 +322,18 @@ function usage(id){
   return n;
 }
 function brief(n){var c=clsOf(n),a=[],d=iso();[["reg","정규"],["fri","금"],["sat","토"]].forEach(function(x){var e=pickSrc(c,x[0],n,d);if(e.id&&e.id!=="-"&&cardBy(e.id))a.push(x[1]+" "+cardBy(e.id).name)});return a.join(" · ")}
+function todayUse(){
+  var d=iso(),w=new Date().getDay(),sl=w===5?"fri":w===6?"sat":"reg",m={};
+  allNames().forEach(function(x){var e=pickSrc(x.c,sl,x.n,d);if(e.id&&e.id!=="-")m[e.id]=(m[e.id]||0)+1});
+  return m;
+}
 function tagsOf(){var t=[];CC.cards.forEach(function(c){if(c.tag&&t.indexOf(c.tag)<0)t.push(c.tag)});return t.sort(function(a,b){return a.localeCompare(b,"ko")})}
 function cardList(attr,sel){
-  var tg=tagsOf(),h="";
+  var tg=tagsOf(),h="",TU=todayUse();
   tg.concat([""]).forEach(function(t){
     var cs=CC.cards.filter(function(c){return (c.tag||"")===t});if(!cs.length)return;
     if(tg.length)h+='<div class="gh">'+esc(t||"분류 없음")+'</div>';
-    h+=cs.map(function(c){var bt='<button class="cb'+(sel===c.id?' on':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}).join("");
+    h+=cs.map(function(c){var tn=TU[c.id]||0,bt='<button class="cb'+(sel===c.id?' on':'')+(tn?' td':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>'+(tn?'<em>오늘 '+tn+'명</em> · ':'')+'항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}).join("");
   });
   return h;
 }
