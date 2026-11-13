@@ -228,7 +228,7 @@ return {ROSTER:ROSTER,REGULAR:REGULAR,CLASS_ITEMS:CLASS_ITEMS,CARDS:CARDS,SKIP:S
 var BASE=[["reg","정규반"],["fri","금요일"],["sat","토요일"],["nohw","숙제 안 가져왔을 때"],["mk","보충 왔을 때"]];
 var SLOTS=BASE.slice();
 function slotUsed(id){var k,s;for(k in CC.st)if(CC.st[k]&&CC.st[k][id])return true;if((CC.rg||[]).some(function(r){return r.slot===id}))return true;for(k in (CC.day||{}))for(s in CC.day[k])if(CC.day[k][s]&&CC.day[k][s][id])return true;return false}
-function slotsRefresh(){var L=[];BASE.forEach(function(b){if(b[0]==="reg"||b[0]==="fri"||slotUsed(b[0]))L.push([b[0],(CC.sn&&CC.sn[b[0]])||b[1]])});(CC.sl||[]).forEach(function(s){L.push([s.id,s.name])});SLOTS=L;if(!SLOTS.some(function(x){return x[0]===W.slot}))W.slot="fri"}
+function slotsRefresh(){var L=[];BASE.forEach(function(b){if(b[0]==="reg"||b[0]==="fri"||slotUsed(b[0]))L.push([b[0],(CC.sn&&CC.sn[b[0]])||b[1]])});(CC.sl||[]).forEach(function(s){L.push([s.id,s.name])});var so=CC.so||[];L=L.map(function(x,i){return [x,i]}).sort(function(a,b){var p=so.indexOf(a[0][0]),q=so.indexOf(b[0][0]);p=p<0?999:p;q=q<0?999:q;return p-q||a[1]-b[1]}).map(function(x){return x[0]});SLOTS=L;if(!SLOTS.some(function(x){return x[0]===W.slot}))W.slot="fri"}
 function isExtra(id){return (CC.sl||[]).some(function(s){return s.id===id})}
 var CFG=null, CC=null, loaded=false, dirtyC=false, saveT=null;
 var W={slot:"fri",scope:"keep",from:iso(),to:iso(),names:{},nm:""};
@@ -387,7 +387,7 @@ function viewCard(){
     h+='<div class="it" data-i="'+i+'"><span class="no">'+(i+1)+'</span><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
     h+='<div class="sub"><input type="text" data-si="'+i+'" value="'+esc(it.sub||"")+'" placeholder="작은 설명 (없어도 됨)"><label><input type="checkbox" data-sc2="'+i+'"'+(it.kind==="score"?' checked':'')+'>점수 칸</label></div></div>';
   });
-  h+='</div><div class="row" style="margin-top:10px"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-dup="1">복제</button><button class="btn pri" data-togo="1">이 카드를 쓸 학생 정하기 ›</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
+  h+='</div><div class="row" style="margin-top:10px"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-cup="1">목록에서 ↑</button><button class="btn" data-cdn="1">목록에서 ↓</button><button class="btn" data-dup="1">복제</button><button class="btn pri" data-togo="1">이 카드를 쓸 학생 정하기 ›</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
   h+='<div class="pv"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px">학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
   return h;
 }
@@ -402,7 +402,7 @@ function viewWiz(){
   var sn={reg:"",fri:"",sat:"",nohw:"",mk:""};
   h+='<div class="card"><h3><span class="stp">1</span>언제, 어떤 용도로</h3><div class="row"><select class="w" id="wslot">'+SLOTS.map(function(x){return '<option value="'+x[0]+'"'+(W.slot===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join("")+'</select>';
   var cs0=SLOTS.filter(function(x){return x[0]===W.slot})[0];
-  h+='<div class="row" style="margin-top:8px"><input class="q" id="sname" value="'+esc(cs0?cs0[1]:"")+'" style="margin:0;flex:1;font-size:13px"><button class="btn sm" data-sladd="1">+ 용도 추가</button>'+(isExtra(W.slot)?'<button class="btn sm red'+(S.cf==="sl"?' on':'')+'" data-sldel="1">'+(S.cf==="sl"?'한 번 더 누르면 지워요':'이 용도 지우기')+'</button>':'')+'</div><div class="lbl">위 칸에서 고른 용도의 이름을 바꿀 수 있어요</div>';
+  h+='<div class="row" style="margin-top:8px"><input class="q" id="sname" value="'+esc(cs0?cs0[1]:"")+'" style="margin:0;flex:1;font-size:13px"><button class="btn sm" data-sup="1">↑</button><button class="btn sm" data-sdn="1">↓</button><button class="btn sm" data-sladd="1">+ 용도 추가</button>'+(isExtra(W.slot)?'<button class="btn sm red'+(S.cf==="sl"?' on':'')+'" data-sldel="1">'+(S.cf==="sl"?'한 번 더 누르면 지워요':'이 용도 지우기')+'</button>':'')+'</div><div class="lbl">위 칸에서 고른 용도의 이름을 바꿀 수 있어요</div>';
   h+='<div class="seg"><button class="'+(W.scope==="keep"?'on':'')+'" data-wsc="keep">계속</button><button class="'+(W.scope==="range"?'on':'')+'" data-wsc="range">기간</button></div></div>';
   if(W.scope==="range")h+='<div class="row" style="margin-top:10px"><input type="date" id="wf" value="'+esc(W.from)+'" style="margin:0"><span>~</span><input type="date" id="wt" value="'+esc(W.to)+'" style="margin:0"><span class="tag">'+dlabel(W.from)+' ~ '+dlabel(W.to)+'</span></div><div class="row" style="margin-top:8px"><input class="q" id="wnm" list="pnames" placeholder="기간 이름 (예: 기말 내신기간, 겨울방학 특강)" value="'+esc(W.nm||"")+'" style="margin:0;flex:1;font-size:13px"><datalist id="pnames">'+pnames().map(function(t){return '<option value="'+esc(t)+'">'}).join("")+'</datalist></div><div class="lbl">기간이 끝나면 자동으로 원래 카드로 돌아가요 (내신기간, 방학 특강 등)</div>';
   else h+='<div class="lbl">끝나는 날 없이 계속 이 카드를 써요</div>';
@@ -476,6 +476,8 @@ document.addEventListener("click",function(e){
   else if(D.del!==undefined){c=cardBy(S.csel);c.items.splice(+D.del,1);markC();render()}
   else if(D.up!==undefined){c=cardBy(S.csel);var i=+D.up;if(i>0){var t=c.items[i];c.items[i]=c.items[i-1];c.items[i-1]=t;markC();render()}}
   else if(D.dn!==undefined){c=cardBy(S.csel);var j=+D.dn;if(j<c.items.length-1){var t2=c.items[j];c.items[j]=c.items[j+1];c.items[j+1]=t2;markC();render()}}
+  else if(D.cup||D.cdn){var ci=CC.cards.map(function(x){return x.id}).indexOf(S.csel),tg0=CC.cards[ci].tag||"",st0=D.cup?-1:1,cj=ci+st0;while(cj>=0&&cj<CC.cards.length&&(CC.cards[cj].tag||"")!==tg0)cj+=st0;if(cj>=0&&cj<CC.cards.length){var tmp=CC.cards[ci];CC.cards[ci]=CC.cards[cj];CC.cards[cj]=tmp;markC()}render()}
+  else if(D.sup||D.sdn){var ids=SLOTS.map(function(x){return x[0]}),si=ids.indexOf(W.slot),sj=si+(D.sup?-1:1);if(si>-1&&sj>=0&&sj<ids.length){var t5=ids[si];ids[si]=ids[sj];ids[sj]=t5;CC.so=ids;markC()}render()}
   else if(D.dup){c=cardBy(S.csel);var d2={id:uid(),name:c.name+" 복사",items:cl(c.items)};CC.cards.push(d2);S.csel=d2.id;markC();render()}
   else if(D.dc){if(S.cf==="dc"){var id=S.csel,k2,s2;CC.cards=CC.cards.filter(function(x){return x.id!==id});
       for(k2 in CC.cls)for(s2 in CC.cls[k2])if(CC.cls[k2][s2]===id)delete CC.cls[k2][s2];
