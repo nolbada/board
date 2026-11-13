@@ -425,6 +425,7 @@ function clsOf(n){if(n==="열람")return "열람";var s=ls("bd-cls");if(s&&ROSTE
 function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d.getMonth()+1)+"/"+d.getDate()+"("+w+")"}
 function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
 function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
+function tabList(){var L=CARDS.map(function(x){return {id:x.id,label:(CC&&CC.sn&&CC.sn[x.id])||x.label}});((CC&&CC.sl)||[]).forEach(function(s){L.push({id:s.id,label:s.name})});return L}
 function defCard(cls){var w=new Date().getDay();return w===5?"fri":w===6?"sat":"reg"}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
@@ -504,7 +505,7 @@ function render(){
     var c0=clsOf(name),card=S.card||defCard(c0),cdItems=itemsFor(c0,card,name),done=chk(name,card),cd={items:cdItems};
     h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
     h+='<div class="top"><div class="who">오늘의 학습<small>'+esc(name)+' · '+dstr()+'</small></div></div>';
-    h+='<div class="tabs">'+CARDS.filter(function(x){return x.id===card||itemsFor(c0,x.id,name).length}).map(function(x){return '<button class="tab'+(x.id===card?' on':'')+'" data-card="'+x.id+'">'+x.label+'</button>'}).join("")+'</div>';
+    h+='<div class="tabs">'+tabList().filter(function(x){return x.id===card||itemsFor(c0,x.id,name).length}).map(function(x){return '<button class="tab'+(x.id===card?' on':'')+'" data-card="'+x.id+'">'+x.label+'</button>'}).join("")+'</div>';
     h+='<div class="card">';
     if(!cd.items.length) h+='<div class="empty">항목 준비 중</div>';
     cd.items.forEach(function(it,ix){
