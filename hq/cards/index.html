@@ -225,7 +225,11 @@ var FRI_BY = {};
 ["신도건","김동권","김이한","박윤수","민윤찬","이상윤","김은찬","이연서","이재인","조은유","김예슬","류이안","노예린","김지율","노지훈","이재빈","연휘건"].forEach(function(n){FRI_BY[n]=FRI_A});
 return {ROSTER:ROSTER,REGULAR:REGULAR,CLASS_ITEMS:CLASS_ITEMS,CARDS:CARDS,SKIP:SKIP,FRI_BY:FRI_BY,FRI_A:FRI_A};
 })();
-var SLOTS=[["reg","정규반"],["fri","금요일"],["sat","토요일"],["nohw","숙제 안 가져왔을 때"],["mk","보충 왔을 때"]];
+var BASE=[["reg","정규반"],["fri","금요일"],["sat","토요일"],["nohw","숙제 안 가져왔을 때"],["mk","보충 왔을 때"]];
+var SLOTS=BASE.slice();
+function slotUsed(id){var k,s;for(k in CC.st)if(CC.st[k]&&CC.st[k][id])return true;if((CC.rg||[]).some(function(r){return r.slot===id}))return true;for(k in (CC.day||{}))for(s in CC.day[k])if(CC.day[k][s]&&CC.day[k][s][id])return true;return false}
+function slotsRefresh(){var L=[];BASE.forEach(function(b){if(b[0]==="reg"||b[0]==="fri"||slotUsed(b[0]))L.push([b[0],(CC.sn&&CC.sn[b[0]])||b[1]])});(CC.sl||[]).forEach(function(s){L.push([s.id,s.name])});SLOTS=L;if(!SLOTS.some(function(x){return x[0]===W.slot}))W.slot="fri"}
+function isExtra(id){return (CC.sl||[]).some(function(s){return s.id===id})}
 var CFG=null, CC=null, loaded=false, dirtyC=false, saveT=null;
 var W={slot:"fri",scope:"keep",from:iso(),to:iso(),names:{}};
 var S={tab:"wiz", sel:null, cls:"", q:"", csel:null, scope:"keep", sdate:iso(), cf:null};
@@ -327,6 +331,7 @@ function cardList(attr,sel){
 function render(){
   var app=document.getElementById("app");
   if(!loaded)return;
+  slotsRefresh();
   var h='<div class="tabs"><button class="tab'+(S.tab==="wiz"?' on':'')+'" data-tab="wiz">지정하기</button><button class="tab'+(S.tab==="stu"?' on':'')+'" data-tab="stu">학생</button><button class="tab'+(S.tab==="card"?' on':'')+'" data-tab="card">카드</button><button class="tab'+(S.tab==="cls"?' on':'')+'" data-tab="cls">반 기본</button></div>';
   h+=S.tab==="wiz"?viewWiz():S.tab==="stu"?viewStu():S.tab==="card"?viewCard():viewCls();
   app.innerHTML=h;
@@ -394,7 +399,9 @@ function wdate(){return W.scope==="range"?W.from:iso()}
 function viewWiz(){
   var cls=Object.keys(CFG.r),sel=Object.keys(W.names).filter(function(k){return W.names[k]}),d=wdate(),h="";
   var sn={reg:"",fri:"",sat:"",nohw:"",mk:""};
-  h+='<div class="card"><h3><span class="stp">1</span>언제, 어떤 용도로</h3><div class="row"><select class="w" id="wslot">'+SLOTS.map(function(x){return '<option value="'+x[0]+'"'+(W.slot===x[0]?' selected':'')+'>'+x[1]+sn[x[0]]+'</option>'}).join("")+'</select>';
+  h+='<div class="card"><h3><span class="stp">1</span>언제, 어떤 용도로</h3><div class="row"><select class="w" id="wslot">'+SLOTS.map(function(x){return '<option value="'+x[0]+'"'+(W.slot===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join("")+'</select>';
+  var cs0=SLOTS.filter(function(x){return x[0]===W.slot})[0];
+  h+='<div class="row" style="margin-top:8px"><input class="q" id="sname" value="'+esc(cs0?cs0[1]:"")+'" style="margin:0;flex:1;font-size:13px"><button class="btn sm" data-sladd="1">+ 용도 추가</button>'+(isExtra(W.slot)?'<button class="btn sm red'+(S.cf==="sl"?' on':'')+'" data-sldel="1">'+(S.cf==="sl"?'한 번 더 누르면 지워요':'이 용도 지우기')+'</button>':'')+'</div><div class="lbl">위 칸에서 고른 용도의 이름을 바꿀 수 있어요</div>';
   h+='<div class="seg"><button class="'+(W.scope==="keep"?'on':'')+'" data-wsc="keep">계속</button><button class="'+(W.scope==="range"?'on':'')+'" data-wsc="range">기간</button></div></div>';
   if(W.scope==="range")h+='<div class="row" style="margin-top:10px"><input type="date" id="wf" value="'+esc(W.from)+'" style="margin:0"><span>~</span><input type="date" id="wt" value="'+esc(W.to)+'" style="margin:0"><span class="tag">'+dlabel(W.from)+' ~ '+dlabel(W.to)+'</span></div><div class="lbl">기간이 끝나면 자동으로 원래 카드로 돌아가요 (내신기간, 방학 특강 등)</div>';
   else h+='<div class="lbl">끝나는 날 없이 계속 이 카드를 써요</div>';
@@ -439,6 +446,8 @@ function tidyDay(d,n){var o=CC.day[d];if(!o)return;if(o[n]&&!Object.keys(o[n]).l
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b||!loaded)return;var D=b.dataset,c;
   if(D.tab){S.tab=D.tab;S.cf=null;render()}
+  else if(D.sladd){var nid="x"+Date.now().toString(36);CC.sl=CC.sl||[];CC.sl.push({id:nid,name:"새 용도"});W.slot=nid;markC();render()}
+  else if(D.sldel){if(S.cf==="sl"){var sid=W.slot,k5,s5;CC.sl=(CC.sl||[]).filter(function(s){return s.id!==sid});for(k5 in CC.cls)delete CC.cls[k5][sid];for(k5 in CC.st)delete CC.st[k5][sid];CC.rg=(CC.rg||[]).filter(function(r){return r.slot!==sid});for(k5 in (CC.day||{}))for(s5 in CC.day[k5]){delete CC.day[k5][s5][sid]}W.slot="fri";S.cf=null;markC();render()}else{S.cf="sl";render()}}
   else if(D.wsc){W.scope=D.wsc;render()}
   else if(D.wn){W.names[D.wn]=!W.names[D.wn];render()}
   else if(D.wcls){var ns=CFG.r[D.wcls],all=ns.every(function(n){return W.names[n]});ns.forEach(function(n){W.names[n]=!all});render()}
@@ -482,7 +491,8 @@ document.addEventListener("change",function(e){
     markC();render()}
   else if(t.dataset.cc){var p=t.dataset.cc.split("|");CC.cls[p[0]]=CC.cls[p[0]]||{};if(t.value)CC.cls[p[0]][p[1]]=t.value;else delete CC.cls[p[0]][p[1]];markC()}
   else if(t.id==="sd"){S.sdate=t.value||iso();render()}
-  else if(t.id==="wslot"){W.slot=t.value;render()}
+  else if(t.id==="wslot"){W.slot=t.value;S.cf=null;render()}
+  else if(t.id==="sname"){var nv=t.value.trim();if(nv){var ex=(CC.sl||[]).filter(function(s){return s.id===W.slot})[0];if(ex)ex.name=nv;else{CC.sn=CC.sn||{};CC.sn[W.slot]=nv}markC()}render()}
   else if(t.id==="wf"){W.from=t.value||iso();if(W.to<W.from)W.to=W.from;render()}
   else if(t.id==="wt"){W.to=t.value||W.from;render()}
   else if(t.id==="ct"){var cc2=cardBy(S.csel);if(t.value.trim())cc2.tag=t.value.trim();else delete cc2.tag;markC();render()}
