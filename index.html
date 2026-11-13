@@ -202,6 +202,7 @@ function cfgApply(c){
   if(!c||typeof c!=="object"||!c.r||typeof c.r!=="object")return false;
   var r={},any=false,k;
   for(k in ROSTER0){var a=c.r[k];r[k]=Array.isArray(a)?a.filter(function(x){return typeof x==="string"&&x&&x!=="열람"}):[];if(r[k].length)any=true}
+  for(k in c.r)if(!(k in r)&&Array.isArray(c.r[k]))r[k]=c.r[k].filter(function(x){return typeof x==="string"&&x&&x!=="열람"});
   if(!any)return false;
   ROSTER=r;
   SKIP=(c.s&&typeof c.s==="object"&&!Array.isArray(c.s))?c.s:{};
@@ -426,6 +427,7 @@ function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d
 function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
 function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
 function tabList(){var L=CARDS.map(function(x){return {id:x.id,label:(CC&&CC.sn&&CC.sn[x.id])||x.label}});((CC&&CC.sl)||[]).forEach(function(s){L.push({id:s.id,label:s.name})});var so=(CC&&CC.so)||[];return L.map(function(x,i){return [x,i]}).sort(function(a,b){var p=so.indexOf(a[0].id),q=so.indexOf(b[0].id);p=p<0?999:p;q=q<0?999:q;return p-q||a[1]-b[1]}).map(function(x){return x[0]})}
+function groupsAll(){var G={},used={},g,c;for(g in GROUPS){G[g]=GROUPS[g].slice();GROUPS[g].forEach(function(x){used[x]=1})}for(c in ROSTER)if(!used[c])G[c]=[c];return G}
 function defCard(cls){var w=new Date().getDay();return w===5?"fri":w===6?"sat":"reg"}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
@@ -493,11 +495,11 @@ function render(){
   var app=document.getElementById("app"),h="",name=who();
   if(!name&&S.conf){app.innerHTML='<div class="top"><div class="who">'+esc(S.conf.n)+' 맞나요?</div></div><div class="names"><button class="name" data-conf="ok">맞아요</button><button class="name" data-conf="no">다시 고를게요</button></div>';return}
   if(!name){
-    var grp=S.cls||Object.keys(GROUPS)[0],list=[];
-    GROUPS[grp].forEach(function(c){ROSTER[c].forEach(function(n){list.push({n:n,c:c})})});
+    var GA=groupsAll(),grp=(S.cls&&GA[S.cls])?S.cls:Object.keys(GA)[0],list=[];
+    GA[grp].forEach(function(c){ROSTER[c].forEach(function(n){list.push({n:n,c:c})})});
     list.sort(function(a,b){return a.n.localeCompare(b.n,"ko")});
     h+='<div class="top"><div class="who">이름을 눌러 주세요<small>'+dstr()+'</small></div></div>';
-    h+='<div class="chips">'+Object.keys(GROUPS).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
+    h+='<div class="chips">'+Object.keys(GA).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
     h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
     if(S.pin)h+='<div class="card" style="margin-top:14px;display:flex;gap:8px;align-items:center"><input id="pinin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="flex:1;font-size:20px;padding:10px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-pinok="1" style="padding:12px 18px;font-size:16px">확인</button></div>';
     else h+='<button data-view="1" style="display:block;margin:18px auto 0;border:0;background:none;color:#aaa;font-size:13px;padding:8px 16px">열람</button>';
