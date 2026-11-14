@@ -451,7 +451,7 @@ function wkGrid(){
 function mHome(){
   var h="",R=ttRows();
   h+='<input class="score" id="qs" type="text" placeholder="이름 검색 (가나다)" value="'+esc(TS.q||"")+'" style="width:100%;text-align:left;font-weight:500"><div id="qres">'+qHtml()+'</div>';
-  if(TS.mode!=="r")h+='<div class="chips"><button class="chip" data-tv="s">학교별</button><button class="chip" data-tv="o">퇴원생 '+nOut()+'</button><button class="chip" data-tv="i">숙제 보드에서 가져오기</button></div>';
+  if(TS.mode!=="r")h+='<div class="chips"><button class="chip" data-tv="s">학교별</button><button class="chip" data-tv="i">숙제 보드에서 가져오기</button></div>';
   h+=wkGrid();
   if(R.un.length)h+='<div class="h">시간 미정</div><div class="chips">'+R.un.map(function(x){return '<button class="chip" '+(TS.mode==="r"?'data-rc':'data-oc')+'="'+esc(x.c)+'" style="border-left-color:'+colOf(x.c)+'">'+esc(x.c)+' '+ROSTER[x.c].length+'</button>'}).join("")+'</div>';
   if(TS.mode==="r")return h;
@@ -569,7 +569,7 @@ function addNames(){
   a.forEach(function(v){
     if(v==="열람"||v.length>8){bad.push(v+"(쓸 수 없는 이름)");return}
     if(findCls(v)){bad.push(v+"(이미 있음)");return}
-    if(TT.o.some(function(x){return x.n===v})){bad.push(v+"(퇴원생에 있음)");return}
+    TT.o=TT.o.filter(function(x){return x.n!==v});
     ROSTER[c].push(v);ok++;setProf(v,sc,gv);
   });
   if(ok){cfgSave();ttSave()}
