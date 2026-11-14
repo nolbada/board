@@ -562,7 +562,7 @@ function ttClick(D){
   if(D.sc!==undefined){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.c=D.sc==="x"?"":D.sc;ttSave();render();return true}
   if(D.sl){TS.sel=TS.sel||{};TS.sel[D.sl]=!TS.sel[D.sl];TS.cf=null;render();return true}
   if(D.sa){var all=ROSTER[TS.cls]||[],sl=TS.sel||(TS.sel={}),on=all.length&&all.every(function(n){return sl[n]});all.forEach(function(n){sl[n]=!on});TS.cf=null;render();return true}
-  if(D.bm){var ns=selIn();ns.forEach(function(n){dropName(n);ROSTER[D.bm].push(n)});TS.sel={};TS.cf=null;if(ns.length)cfgSave();render();return true}
+  if(D.bm){var ns=selIn();ns.forEach(function(n){var k1=SKIP[n],f1=FRI_BY[n];dropName(n);ROSTER[D.bm].push(n);if(k1)SKIP[n]=k1;if(f1)FRI_BY[n]=f1});TS.sel={};TS.cf=null;if(ns.length)cfgSave();render();return true}
   if(D.bo){if(TS.cf==="bo"){var n2=selIn();n2.forEach(retire);TS.sel={};TS.cf=null;if(n2.length){ttSave();cfgSave()}render()}else{TS.cf="bo";render()}return true}
   if(D.rs){restore(D.rs);render();return true}
   if(D.ik){if(TS.ib&&TS.ib.sel){TS.ib.sel[D.ik]=!TS.ib.sel[D.ik];render()}return true}
@@ -611,7 +611,7 @@ document.addEventListener("click",function(e){
   if(ttClick(D)){}
   else if(D.tm){TS.mode=D.tm;TS.mo=null;TS.cf=null;if(D.tm==="r"){TS.rows=null;render();tload()}else render()}
   else if(D.mo!==undefined){TS.mo=TS.mo===D.mo?null:D.mo;TS.cf=null;render()}
-  else if(D.mv){var nm=TS.mo;dropName(nm);ROSTER[D.mv].push(nm);if(FRI0.indexOf(nm)>-1&&false){}TS.cls=D.mv;TS.cf=null;cfgSave();render()}
+  else if(D.mv){var nm=TS.mo,k0=SKIP[nm],f0=FRI_BY[nm];dropName(nm);ROSTER[D.mv].push(nm);if(k0)SKIP[nm]=k0;if(f0)FRI_BY[nm]=f0;if(FRI0.indexOf(nm)>-1&&false){}TS.cls=D.mv;TS.cf=null;cfgSave();render()}
   else if(D.fr){var nm2=TS.mo;if(FRI_BY[nm2])delete FRI_BY[nm2];else FRI_BY[nm2]=FRI_A;cfgSave();render()}
   else if(D.sk){var nm3=TS.mo,a=(SKIP[nm3]||[]).slice(),ix=a.indexOf(D.sk);if(ix>-1)a.splice(ix,1);else a.push(D.sk);if(a.length)SKIP[nm3]=a;else delete SKIP[nm3];cfgSave();render()}
   else if(D.rt){if(TS.cf===D.rt){TS.cf=null;clearRec(TS.mo,D.rt);render()}else{TS.cf=D.rt;render()}}
@@ -634,7 +634,7 @@ function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d
 function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
 function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
 function tabList(){var L=CARDS.map(function(x){return {id:x.id,label:(CC&&CC.sn&&CC.sn[x.id])||x.label}});((CC&&CC.sl)||[]).forEach(function(s){L.push({id:s.id,label:s.name})});var so=(CC&&CC.so)||[];return L.map(function(x,i){return [x,i]}).sort(function(a,b){var p=so.indexOf(a[0].id),q=so.indexOf(b[0].id);p=p<0?999:p;q=q<0?999:q;return p-q||a[1]-b[1]}).map(function(x){return x[0]})}
-function groupsAll(){var G={},used={},g,c;for(g in GROUPS){G[g]=GROUPS[g].slice();GROUPS[g].forEach(function(x){used[x]=1})}for(c in ROSTER)if(!used[c]){var dg=DG[dayOf(c)];if(dg){if(ROSTER[c].length){if(!G[dg])G[dg]=[];G[dg].push(c)}}else G[c]=[c]}return G}
+function groupsAll(){var G={},used={},g,c;for(g in GROUPS){G[g]=GROUPS[g].slice();GROUPS[g].forEach(function(x){used[x]=1})}for(c in ROSTER)if(!used[c]&&ROSTER[c].length)G[c]=[c];return G}
 function defCard(cls){var w=new Date().getDay();return w===5?"fri":w===6?"sat":"reg"}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
