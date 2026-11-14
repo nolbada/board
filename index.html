@@ -255,8 +255,8 @@ cfgApply(cfgCache());
 var TT={t:{},o:[],u:0}, TTK={date:"2000-01-05",name:"_시간표",card:"tt"}, TTP=false;
 var DG={"월수":"월·수·금","화목":"화·목·금"};
 var SLOTS={"월수":[["15:20","16:50"],["17:00","18:30"],["18:40","20:10"],["20:20","22:10"]],"화목":[["15:10","16:40"],["17:00","18:30"],["18:40","20:10"],["20:20","22:10"]]};
-var SWC=["#1F7A5C","#2F6FD6","#C77A00","#7A4FC4","#C22E1C","#D6336C","#0B8A9B","#5B6B62"];
-var GCOL={"초":"#1F7A5C","중1":"#2F6FD6","중2":"#C77A00","중3":"#7A4FC4","고":"#C22E1C"};
+var SWC=["#F6A98C","#E8B000","#2E9E5B","#E8751A","#2B3A8C","#D6336C","#0B8A9B","#5B6B62"];
+var GCOL={"초":"#F6A98C","중1":"#E8B000","중2":"#2E9E5B","중3":"#E8751A","고":"#2B3A8C"};
 var HWSRV="https://script.google.com/macros/s/AKfycbw1YQfKsgAXNk8NYoxOfz4bsCSy66fiim7HoFAUk162ksxrEbmspMs2UifNZ-93sdf05A/exec";
 function gradeOf(c){var m=String(c).match(/(초|중|고)\s*(\d)/);if(!m)return "";return m[1]==="초"?"초":m[1]==="중"?"중"+m[2]:"고"}
 function colOf(c){var t=TT.t[c];if(t&&t.c)return t.c;return GCOL[gradeOf(c)]||"#5B6B62"}
@@ -413,6 +413,7 @@ function qHtml(){
   if(!L.length)return '<div class="empty">없음</div>';
   return '<div class="tlist" style="margin-top:8px">'+L.slice(0,30).map(function(x){return '<div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:8px"><span class="nm" style="font-weight:700;font-size:16px;flex:1">'+esc(x.n)+'</span>'+(x.o?'<span class="pl z">퇴원</span><button class="ghost" data-rs="'+esc(x.n)+'">복귀</button>':'<span class="pl">'+esc(x.c)+'</span><button class="ghost" data-qo="'+esc(x.n)+'">열기</button>')+'</div>'}).join("")+'</div>';
 }
+function inkOf(h){var r=parseInt(h.substr(1,2),16),g=parseInt(h.substr(3,2),16),k=parseInt(h.substr(5,2),16);return (r*299+g*587+k*114)/1000>150?"#1b1b1b":"#fff"}
 function wkGrid(){
   var DAYS=[["월","월수"],["화","화목"],["수","월수"],["목","화목"]],cs=[],c,t,P=0.85,lo=900,hi=1380;
   for(c in ROSTER){t=TT.t[c]||{};var d=dayOf(c);if(d&&t.s){var s=tm(t.s),e=t.e?tm(t.e):s+90;if(e<=s)e=s+90;cs.push({c:c,d:d,s:s,e:e})}}
@@ -431,7 +432,7 @@ function wkGrid(){
     K.forEach(function(k){k.items.forEach(function(x){x.n=k.lanes.length})});
     h+='<div class="wkc" style="height:'+H+'px;background-image:linear-gradient(var(--bd) 1px,transparent 1px);background-size:100% '+(60*P)+'px">';
     list.forEach(function(x){
-      h+='<button class="wb" '+at+'="'+esc(x.c)+'" style="top:'+((x.s-lo)*P)+'px;height:'+((x.e-x.s)*P)+'px;left:'+(x.lane*100/x.n)+'%;width:'+(100/x.n)+'%;--bc:'+colOf(x.c)+'"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명</span></button>';
+      h+='<button class="wb" '+at+'="'+esc(x.c)+'" style="top:'+((x.s-lo)*P)+'px;height:'+((x.e-x.s)*P)+'px;left:'+(x.lane*100/Math.max(x.n,2))+'%;width:'+(100/Math.max(x.n,2))+'%;--bc:'+colOf(x.c)+';color:'+inkOf(colOf(x.c))+'"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명</span></button>';
     });
     h+='</div>';
   });
