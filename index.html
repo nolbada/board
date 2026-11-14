@@ -468,7 +468,7 @@ function carryLoad(n,c){
     if(ls("bd-name")===n)render();
   });
 }
-function carryHtml(name,c1){
+function carryHtml(name,c1){if(new Date().getDay()===6)return "";
   if(!CARRY||CARRY.n!==name||!CARRY.d||!CARRY.items.length)return "";
   var td=chk(name,defCard(c1)),a=CARRY.items.filter(function(it){return !td[it.id]});
   if(!a.length)return "";
