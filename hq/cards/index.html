@@ -408,6 +408,7 @@ function pvHtml(c){
 }
 function pnames(){var a=[];(CC.rg||[]).forEach(function(r){if(r.nm&&a.indexOf(r.nm)<0)a.push(r.nm)});return a}
 function wdate(){return W.scope==="range"?W.from:iso()}
+function wizSeed(){if(!W.card)return;var d=wdate();Object.keys(CFG.r).forEach(function(c){CFG.r[c].forEach(function(n){if(pickSrc(c,W.slot,n,d).id===W.card)W.names[n]=true})})}
 function viewWiz(){
   var cls=Object.keys(CFG.r),sel=Object.keys(W.names).filter(function(k){return W.names[k]}),d=wdate(),h="";
   var sn={reg:"",fri:"",sat:"",nohw:"",mk:""};
@@ -441,7 +442,7 @@ function wizApply(){
     if(!W.from||!W.to||W.to<W.from){toast("날짜를 확인해 주세요");return}
     CC.rg=CC.rg||[];CC.rg.push({id:uid(),from:W.from,to:W.to,slot:W.slot,card:W.card,names:names,nm:W.nm||""});
   }else names.forEach(function(n){var st=ensureSt(n);st[W.slot]=W.card});
-  W.names={};W.nm="";markC();render();toast(names.length+"명에게 지정했어요");
+  W.nm="";markC();render();toast(names.length+"명에게 지정했어요");
 }
 function viewCls(){
   var cls=Object.keys(CFG.r);
@@ -468,10 +469,10 @@ document.addEventListener("click",function(e){
   else if(D.wn){W.names[D.wn]=!W.names[D.wn];render()}
   else if(D.wcls){var ns=CFG.r[D.wcls],all=ns.every(function(n){return W.names[n]});ns.forEach(function(n){W.names[n]=!all});render()}
   else if(D.wclr){W.names={};render()}
-  else if(D.wcard){W.card=D.wcard;render()}
+  else if(D.wcard){W.card=D.wcard;wizSeed();render()}
   else if(D.wgo){wizApply()}
   else if(D.rgx){CC.rg=(CC.rg||[]).filter(function(r){return r.id!==D.rgx});markC();render()}
-  else if(D.togo){W.card=S.csel;S.tab="wiz";render();window.scrollTo(0,0)}
+  else if(D.togo){W.card=S.csel;wizSeed();S.tab="wiz";render();window.scrollTo(0,0)}
   else if(D.fc!==undefined){S.cls=D.fc;render()}
   else if(D.sel){S.sel=D.sel;S.cf=null;render();window.scrollTo(0,0)}
   else if(D.back){S.sel=null;render()}
@@ -513,7 +514,7 @@ document.addEventListener("change",function(e){
   else if(t.id==="wpaste"){W.paste=t.value;W.pop=true}
   else if(t.id==="wpc"){W.pc=t.value}
   else if(t.id==="wnm"){W.nm=t.value.trim()}
-  else if(t.id==="wslot"){W.slot=t.value;S.cf=null;render()}
+  else if(t.id==="wslot"){W.slot=t.value;S.cf=null;W.names={};wizSeed();render()}
   else if(t.id==="sname"){var nv=t.value.trim();if(nv){var ex=(CC.sl||[]).filter(function(s){return s.id===W.slot})[0];if(ex)ex.name=nv;else{CC.sn=CC.sn||{};CC.sn[W.slot]=nv}markC()}render()}
   else if(t.id==="wf"){W.from=t.value||iso();if(W.to<W.from)W.to=W.from;render()}
   else if(t.id==="wt"){W.to=t.value||W.from;render()}
