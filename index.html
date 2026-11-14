@@ -102,6 +102,7 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 <div id="app"></div>
 <script>
 /* ---------- 설정: 선생님이 고치는 부분 ---------- */
+var SMP=/[?&]s=1(&|$)/.test(location.search);
 var ROSTER = {
   "M초6A":["윤여름","조서인"],
   "M초6C":["김동권","김은찬","김이한","민윤찬","박윤수","신도건","이상윤"],
@@ -214,14 +215,17 @@ var FRI_BY = {};
 var CFGKEY={date:"2000-01-03",name:"_설정",card:"cfg"};
 var CFG={rs:{},u:0}, CFGP=false;
 var ROSTER0=JSON.parse(JSON.stringify(ROSTER)), SKIP0=JSON.parse(JSON.stringify(SKIP)), FRI0=Object.keys(FRI_BY);
-function cfgNow(){return {r:ROSTER,s:SKIP,f:Object.keys(FRI_BY),rs:CFG.rs||{},u:CFG.u||0}}
+function smpInject(){for(var k in ROSTER){if(!Array.isArray(ROSTER[k])||!ROSTER[k].length)continue;["샘플1","샘플2"].forEach(function(n){if(ROSTER[k].indexOf(n)<0)ROSTER[k].push(n)})}}
+function noS(r){var o={},k;for(k in r)o[k]=Array.isArray(r[k])?r[k].filter(function(x){return !/^샘플/.test(x)}):r[k];return o}
+if(SMP)smpInject();
+function cfgNow(){return {r:noS(ROSTER),s:SKIP,f:Object.keys(FRI_BY),rs:CFG.rs||{},u:CFG.u||0}}
 function cfgApply(c){
   if(!c||typeof c!=="object"||!c.r||typeof c.r!=="object")return false;
   var r={},any=false,k;
   for(k in ROSTER0){var a=c.r[k];r[k]=Array.isArray(a)?a.filter(function(x){return typeof x==="string"&&x&&x!=="열람"}):[];if(r[k].length)any=true}
   for(k in c.r)if(!(k in r)&&Array.isArray(c.r[k]))r[k]=c.r[k].filter(function(x){return typeof x==="string"&&x&&x!=="열람"});
   if(!any)return false;
-  ROSTER=r;
+  ROSTER=r;if(SMP)smpInject();
   SKIP=(c.s&&typeof c.s==="object"&&!Array.isArray(c.s))?c.s:{};
   FRI_BY={};(Array.isArray(c.f)?c.f:FRI0).forEach(function(n){FRI_BY[n]=FRI_A});
   CFG.rs=(c.rs&&typeof c.rs==="object")?c.rs:{};CFG.u=+c.u||0;
@@ -811,7 +815,7 @@ function render(){
     h+='<div class="chips">'+Object.keys(GA).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
     h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
     if(S.pin)h+='<div class="card" style="margin-top:14px;display:flex;gap:8px;align-items:center"><input id="pinin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="flex:1;font-size:20px;padding:10px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-pinok="1" style="padding:12px 18px;font-size:16px">확인</button></div>';
-    else h+='<button data-view="1" style="display:block;margin:18px auto 0;border:0;background:none;color:#aaa;font-size:13px;padding:8px 16px">열람</button>';
+    else if(!SMP)h+='<button data-view="1" style="display:block;margin:18px auto 0;border:0;background:none;color:#aaa;font-size:13px;padding:8px 16px">열람</button>';
   } else if(S.view==="today"){
     var c0=clsOf(name),card=S.card||defCard(c0),cdItems=itemsFor(c0,card,name),done=chk(name,card),cd={items:cdItems};
     h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
