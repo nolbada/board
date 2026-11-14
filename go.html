@@ -172,7 +172,7 @@ function rdPoll(){try{
    var dn=w.done||{};
    Object.keys(dn).forEach(function(pid){var d0=dn[pid];if(!d0)return;var sig=pid+":"+d0.s;if(st.ex[pid]===sig)return;st.ex[pid]=sig;
     var pass=d0.s*10>=70,nx0=exNext(w,pid);
-    recK("rd_"+k+"_exit","독해33권 "+bn+" "+exLab(w,pid)+" Exit test "+(d0.s*10)+"점 ("+d0.s+"/10) "+(pass?"통과":"다시 도전"),pass?(nx0?bn+" "+exLab(w,nx0)+" Exit test":"이 책 Exit test 끝"):bn+" "+exLab(w,pid)+" Exit test 다시",rdU(k,pid,1))});
+    recK("rd_"+k+"_exit","독해33권 "+bn+" "+exLab(w,pid)+" Exit test 응시",pass?(nx0?bn+" "+exLab(w,nx0)+" Exit test":"이 책 Exit test 끝"):bn+" "+exLab(w,pid)+" Exit test 다시",rdU(k,pid,1))});
    svRS(k,st);continue}
   var d={},bk={};
   try{d=JSON.parse(w.localStorage.getItem(k+"done")||"{}")||{}}catch(e){}
@@ -184,7 +184,7 @@ function rdPoll(){try{
   Object.keys(sub).forEach(function(pid){if(st.sub[pid])return;st.sub[pid]=1;
    var fp=rdFind(w,pid),ok=0,tot=0;
    if(fp&&w.bookInputs){try{var BI=w.bookInputs(fp.p);tot=BI.length;BI.forEach(function(it){if(w.bkOk(it,(bk[pid].a||{})[it.qi]))ok++})}catch(e){}}
-   recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 책 문제 제출"+(tot?" ("+ok+"/"+tot+" 정답)":""),bn+" "+rdLab(w,pid)+" 핵심 질문",rdU(k,pid))});
+   recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 책 문제 제출",bn+" "+rdLab(w,pid)+" 핵심 질문",rdU(k,pid))});
   Object.keys(cnt).forEach(function(pid){if(cnt[pid]>(st.c[pid]||0)){st.c[pid]=cnt[pid];
    recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 질문·활동 "+cnt[pid]+"개 정답 확인","",rdU(k,pid))}});
   svRS(k,st);
