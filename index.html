@@ -488,7 +488,7 @@ function mCls(){
     h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">'+ns.length+'명 선택 · 반 옮기기</div><div class="chips">'+cl.filter(function(x){return x!==c}).map(function(x){return '<button class="chip" data-bm="'+esc(x)+'">'+esc(x)+'</button>'}).join("")+'</div><div class="chips" style="margin-top:8px"><button class="chip" data-bo="1">'+(TS.cf==="bo"?'한 번 더 누르면 퇴원':'선택한 학생 퇴원')+'</button></div></div>';
   }
   h+='<div class="tlist">'+ROSTER[c].map(function(nm){return rowM(nm,cl)}).join("")+'</div>';
-  h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">'+esc(c)+'에 학생 추가 (한 줄에 한 명)</div><textarea class="score" id="addnm" rows="3" style="width:100%;text-align:left;font-weight:500"></textarea><input class="score" id="addsc" list="schl" maxlength="14" placeholder="학교 (선택)" style="width:100%;text-align:left;font-weight:500;margin-top:8px"><datalist id="schl">'+schools().map(function(x){return '<option value="'+esc(x)+'">'}).join("")+'</datalist><select class="score" id="addg" style="width:100%;text-align:left;font-weight:500;margin-top:8px"><option value="0">학년 (선택)</option>'+GN.slice(1).map(function(x,i){return '<option value="'+(i+1)+'"'+(gDef(c)===i+1?' selected':'')+'>'+x+'</option>'}).join("")+'</select><button class="leave" data-add="1" style="margin-top:8px">추가</button></div>';
+  h+='<a class="ghost" href="/board/hq/go.html?u=/via/hw/&t=%EC%A3%BC%EA%B0%84%20%EC%88%99%EC%A0%9C%20%ED%99%95%EC%9D%B8" style="display:block;text-align:center;text-decoration:none">숙제 검사 열기</a>';
   return h;
 }
 function mTabs(){
