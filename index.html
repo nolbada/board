@@ -451,7 +451,7 @@ function wkGrid(){
 function mHome(){
   var h="",R=ttRows();
   h+='<input class="score" id="qs" type="text" placeholder="이름 검색 (가나다)" value="'+esc(TS.q||"")+'" style="width:100%;text-align:left;font-weight:500"><div id="qres">'+qHtml()+'</div>';
-  if(TS.mode!=="r")h+='<div class="chips"><button class="chip" data-tv="s">학교별</button><button class="chip" data-tv="i">숙제 보드에서 가져오기</button></div>';
+  
   h+=wkGrid();
   if(R.un.length)h+='<div class="h">시간 미정</div><div class="chips">'+R.un.map(function(x){return '<button class="chip" '+(TS.mode==="r"?'data-rc':'data-oc')+'="'+esc(x.c)+'" style="border-left-color:'+colOf(x.c)+'">'+esc(x.c)+' '+ROSTER[x.c].length+'</button>'}).join("")+'</div>';
   if(TS.mode==="r")return h;
@@ -477,7 +477,7 @@ function rowM(nm,cl){
 function mCls(){
   var c=TS.cls,t=TT.t[c]||{},d=dayOf(c),cl=Object.keys(ROSTER),sel=TS.sel||(TS.sel={}),h="";
   var ns=Object.keys(sel).filter(function(n){return sel[n]&&ROSTER[c].indexOf(n)>-1});
-  h+='<button class="back" data-tv="t">‹ 시간표</button>';
+  h+='<button class="back" data-tv="n">‹ 명부</button>';
   h+='<div class="card" style="border-left:6px solid '+colOf(c)+';padding:12px 14px"><div style="font-size:20px;font-weight:700">'+esc(c)+' <span style="font-size:13px;color:#666">'+ROSTER[c].length+'명</span></div>';
   h+='<div class="chips" style="margin-top:10px"><button class="chip'+(d==="월수"?' on':'')+'" data-sd="월수">월·수</button><button class="chip'+(d==="화목"?' on':'')+'" data-sd="화목">화·목</button></div>';
   if(SLOTS[d])h+='<div class="chips" style="margin-top:10px">'+SLOTS[d].map(function(x,i){return '<button class="chip'+(t.s===x[0]&&t.e===x[1]?' on':'')+'" data-sp="'+i+'">'+x[0]+'-'+x[1]+'</button>'}).join("")+'</div>';
@@ -491,8 +491,56 @@ function mCls(){
   h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">'+esc(c)+'에 학생 추가 (한 줄에 한 명)</div><textarea class="score" id="addnm" rows="3" style="width:100%;text-align:left;font-weight:500"></textarea><input class="score" id="addsc" list="schl" maxlength="14" placeholder="학교 (선택)" style="width:100%;text-align:left;font-weight:500;margin-top:8px"><datalist id="schl">'+schools().map(function(x){return '<option value="'+esc(x)+'">'}).join("")+'</datalist><select class="score" id="addg" style="width:100%;text-align:left;font-weight:500;margin-top:8px"><option value="0">학년 (선택)</option>'+GN.slice(1).map(function(x,i){return '<option value="'+(i+1)+'"'+(gDef(c)===i+1?' selected':'')+'>'+x+'</option>'}).join("")+'</select><button class="leave" data-add="1" style="margin-top:8px">추가</button></div>';
   return h;
 }
+function mTabs(){
+  if(["n","t","s"].indexOf(TS.v)<0)return "";
+  return '<div class="chips" style="margin:0 0 12px">'+[["n","명부"],["t","시간표"],["s","학교별"],["i","숙제 보드에서 가져오기"]].map(function(x){return '<button class="chip'+(TS.v===x[0]?' on':'')+'" data-tv="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
+}
+function lvl(nm){
+  var g=gNow(nm);if(g)return g<=6?0:g<=9?1:2;
+  var m=String(findCls(nm)).match(/(초|중|고)/);return m?(m[1]==="초"?0:m[1]==="중"?1:2):3;
+}
+function clsLbl(c){var d=dayOf(c);return c.replace(/^[MT](?=[초중고])/,"")+(d?" ("+d+")":"")}
+function rList(){
+  var q=(TS.rq||"").trim(),cl=Object.keys(ROSTER),L=[[],[],[],[]],h="",NM=["초등","중등","고등","기타"];
+  cl.forEach(function(c){ROSTER[c].forEach(function(n){if(!q||n.indexOf(q)>-1)L[lvl(n)].push(n)})});
+  L.forEach(function(a,k){
+    if(!a.length)return;
+    a.sort(function(x,y){return x.localeCompare(y,"ko")});
+    h+='<div style="display:flex;align-items:baseline;gap:8px;margin:18px 2px 8px"><span style="font-size:20px;font-weight:800">'+NM[k]+'</span><span style="font-size:13px;color:#666">'+a.length+'명</span></div>';
+    a.forEach(function(n){
+      var c=findCls(n),arm=TS.cf==="rx:"+n;
+      h+='<div class="card" style="padding:10px 12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:700;font-size:17px;min-width:62px">'+esc(n)+'</span><span class="pl z">'+esc(pTxt(n)||"학교 미입력")+'</span><span class="pl" style="margin-left:auto;border-left:4px solid '+colOf(c)+'">'+esc(clsLbl(c))+'</span></div>';
+      h+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><select data-mvr="'+esc(n)+'" class="score" style="width:auto;text-align:left;padding:7px 8px;font-size:14px;font-weight:500"><option value="">반 이동</option>'+cl.filter(function(x){return x!==c}).map(function(x){return '<option value="'+esc(x)+'">'+esc(clsLbl(x))+' · '+ROSTER[x].length+'명</option>'}).join("")+'</select><button class="ghost" data-qo="'+esc(n)+'">열기</button><button class="ghost" data-rx="'+esc(n)+'" style="margin-left:auto'+(arm?';background:#D6336C;color:#fff':'')+'">'+(arm?'한 번 더 누르면 퇴원':'퇴원')+'</button></div></div>';
+    });
+  });
+  return h||'<div class="empty">없음</div>';
+}
+function mRoster(){
+  var cl=Object.keys(ROSTER),h='';
+  h+='<div style="display:flex;gap:8px;margin:0 0 10px"><input class="score" id="rq" type="text" placeholder="이름 검색" value="'+esc(TS.rq||"")+'" style="flex:1;text-align:left;font-weight:500"><button class="leave" data-nwo="1" style="margin:0;width:auto;padding:0 18px">'+(TS.nw?'닫기':'+ 신규')+'</button></div>';
+  if(TS.nw){
+    h+='<div class="card" style="padding:12px 14px"><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="score" id="nwn" type="text" maxlength="8" placeholder="이름" style="flex:1;min-width:110px;text-align:left"><input class="score" id="nws" list="schl" maxlength="14" placeholder="학교" style="flex:1;min-width:110px;text-align:left"><select id="nwg" class="score" style="width:auto">'+GN.map(function(x,i){return '<option value="'+i+'">'+(i?x:"학년")+'</option>'}).join("")+'</select></div><datalist id="schl">'+schools().map(function(x){return '<option value="'+esc(x)+'">'}).join("")+'</datalist><select id="nwc" class="score" style="width:100%;text-align:left;margin-top:8px"><option value="">반 선택</option>'+cl.map(function(c){return '<option value="'+esc(c)+'">'+esc(clsLbl(c))+' · '+ROSTER[c].length+'명'+(ROSTER[c].length>=CAP?' (가득)':'')+'</option>'}).join("")+'</select><button class="leave" data-nw="1" style="margin-top:8px">추가</button></div>';
+  }
+  return h+'<div id="rl">'+rList()+'</div>';
+}
+function addStudent(){
+  var g=function(i){return (document.getElementById(i)||{}).value||""};
+  var n=g("nwn").trim(),sc=g("nws").trim(),gv=+g("nwg")||0,c=g("nwc");
+  if(!n||!c||!ROSTER[c]){toast("이름과 반을 골라 주세요");return}
+  if(n==="열람"||n.length>8){toast("쓸 수 없는 이름");return}
+  if(findCls(n)){toast(n+" 이미 있음");return}
+  TT.o=TT.o.filter(function(x){return x.n!==n});
+  ROSTER[c].push(n);setProf(n,sc,gv);
+  cfgSave();ttSave();TS.nw=false;toast(n+" 추가");render();
+}
+function moveStudent(n,c){
+  if(!ROSTER[c]||!findCls(n)||findCls(n)===c)return;
+  var k1=SKIP[n],f1=FRI_BY[n];dropName(n);ROSTER[c].push(n);
+  if(k1)SKIP[n]=k1;if(f1)FRI_BY[n]=f1;
+  cfgSave();toast(n+" → "+clsLbl(c));render();
+}
 function mSch(){
-  var L=[["초등","초"],["중등","중"],["고등","고"]],G={},c,h='<button class="back" data-tv="t">‹ 시간표</button><div class="h">학교별</div>';
+  var L=[["초등","초"],["중등","중"],["고등","고"]],G={},c,h='<div class="h">학교별</div>';
   function lv(s){var k=s.slice(-1);return k==="초"?0:k==="중"?1:k==="고"?2:3}
   for(c in ROSTER)ROSTER[c].forEach(function(n){var s=(TT.p[n]||{}).s||"(학교 미입력)";(G[s]=G[s]||[]).push({n:n,c:c})});
   [0,1,2,3].forEach(function(k){
@@ -542,10 +590,10 @@ function mImp(){
 function renderM(){
   var app=document.getElementById("app"),h="";
   document.title="보드 관리";
-  if(!TS.v)TS.v="t";
+  if(!TS.v)TS.v="n";
   if(TS.v==="c"&&(!TS.cls||!ROSTER[TS.cls]))TS.v="t";
-  h+='<div class="top"><div class="who">보드 관리<small>바꾸면 바로 저장됨</small></div></div>'+modeBar();
-  h+=(TS.note?'<div class="card" style="padding:12px 14px;border-left:6px solid #D6336C"><div style="font-weight:700">'+esc(TS.note)+'</div><button class="ghost" data-nx="1" style="margin-top:8px">확인</button></div>':"")+(TS.v==="s"?mSch():TS.v==="o"?mOut():TS.v==="i"?mImp():TS.v==="c"?mCls():mHome());
+  h+='<div class="top"><div class="who">보드 관리<small>바꾸면 바로 저장됨</small></div></div>'+modeBar()+mTabs();
+  h+=(TS.note?'<div class="card" style="padding:12px 14px;border-left:6px solid #D6336C"><div style="font-weight:700">'+esc(TS.note)+'</div><button class="ghost" data-nx="1" style="margin-top:8px">확인</button></div>':"")+(TS.v==="n"?mRoster():TS.v==="s"?mSch():TS.v==="o"?mOut():TS.v==="i"?mImp():TS.v==="c"?mCls():mHome());
   app.innerHTML=h;
 }
 function retire(nm){
@@ -579,6 +627,12 @@ function addNames(){
 function selIn(){var c=TS.cls,s=TS.sel||{};return Object.keys(s).filter(function(n){return s[n]&&ROSTER[c]&&ROSTER[c].indexOf(n)>-1})}
 function ttClick(D){
   var t,k;
+  if(D.nwo){TS.nw=!TS.nw;TS.cf=null;render();return true}
+  if(D.nw){addStudent();return true}
+  if(D.rx){
+    if(TS.cf==="rx:"+D.rx){retire(D.rx);TS.note=(TS.note&&TS.note.indexOf("클래스카드에서 정리할 이름")===0?TS.note+", ":"클래스카드에서 정리할 이름 · ")+D.rx;TS.cf=null;ttSave();cfgSave();render()}
+    else{TS.cf="rx:"+D.rx;render();setTimeout(function(){if(TS.cf==="rx:"+D.rx){TS.cf=null;if(TS.v==="n")render()}},4500)}
+    return true}
   if(D.tv){TS.v=D.tv;TS.mo=null;TS.cf=null;if(D.tv!=="i")TS.ib=null;if(D.tv==="t")TS.sel={};render();return true}
   if(D.rb){TS.rv="t";render();return true}
   if(D.rc){TS.cls=D.rc;TS.rv="c";render();return true}
@@ -654,6 +708,8 @@ document.addEventListener("click",function(e){
   else if(D.st){TS.open=TS.open===D.st?null:D.st;render()}
 });
 document.addEventListener("change",function(e){var el=e.target;if(T&&el&&el.id==="pschool"&&TS.mo){setProf(TS.mo,el.value,null);ttSave()}});
+document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="rq")return;TS.rq=e.target.value;var el=document.getElementById("rl");if(el)el.innerHTML=rList()});
+document.addEventListener("change",function(e){var el=e.target;if(!T||!el||!el.dataset||!el.dataset.mvr||!el.value)return;moveStudent(el.dataset.mvr,el.value)});
 /* ---------- 상태 ---------- */
 var S = {view:"names", cls:null, card:null};
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
