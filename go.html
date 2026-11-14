@@ -100,26 +100,82 @@ function rec(w,nx,sfx){
  put("2000-01-01",function(cd){cd["l_"+A+(sfx?"_"+sfx:"")]=o});
 }
 window.__rec=rec;
-if(A==="rd"){
- var prev=null;
- function wins(w,out,d){out.push(w);if(d>3)return out;for(var i=0;i<w.frames.length;i++){try{wins(w.frames[i],out,d+1)}catch(e){}}return out}
- setInterval(function(){try{
-  var all=wins(f.contentWindow,[],0);
-  for(var i=0;i<all.length;i++){var w=all[i],k;try{k=w.KEY}catch(e){continue}
-   if(!k)continue;
-   var d=JSON.parse(w.localStorage.getItem(k+"done")||"{}");if(Array.isArray(d)){var oo={};d.forEach(function(x){oo[x]=1});d=oo}
-   var cnt={};Object.keys(d).forEach(function(x){if(!d[x]||x.indexOf("o-")===0)return;var mm=/^(.*)-[sgq]\d+$/.exec(x);if(mm)cnt[mm[1]]=(cnt[mm[1]]||0)+1});
-   if(prev===null||prev.k!==k){prev={k:k,c:cnt};return}
-   var id=null;Object.keys(cnt).forEach(function(p){if(cnt[p]>(prev.c[p]||0))id=p});
-   if(id){prev.c=cnt;
-    var SN={tutorstarter:"리딩튜터 주니어 스타터",hackersstarter:"해커스 리딩스마트 스타터",tutorjunior:"리딩튜터 주니어",hackersmaster:"해커스 리딩스마트 마스터",hackers:"해커스 리딩스마트","1316reading":"능률 1316 Reading",bricks:"브릭스 중학독해",readinggraphy:"리딩그라피",tutorchallenger:"리딩튜터 챌린저"},bm=/^(.*?)(\d+)$/.exec(k),bn=(bm&&SN[bm[1]])?SN[bm[1]]+" "+bm[2]+"권":(w.document.title||k),list=[],U=w.U||{},M=w.META||{},ss=(M.secs||{}),ll=(M.labs||{});
-    Object.keys(U).sort(function(x,y){return x-y}).forEach(function(s){(U[s]||[]).forEach(function(r){list.push({id:r.id,s:s,no:r.no})})});
-    function lb(r){return (ss[r.s]||("Section "+r.s))+" · "+(ll[r.id]||(r.no+"번"))}
-    var ix=-1;list.forEach(function(r,j){if(r.id===id)ix=j});
-    if(ix>=0){var nxt=list[ix+1];rec("독해33권 "+bn+" "+lb(list[ix])+" ("+cnt[id]+"단계 했음)",nxt?bn+" "+lb(nxt):"이 책 끝",k)}
-    else rec("독해33권 "+bn+" "+id+" ("+cnt[id]+"단계 했음)","",k)}
-   return}
- }catch(e){}},3000);
+/* ---- 보드 연동 확장: 독해33권 · M1/M2 · 그 외 앱 사용시간 (앱 파일은 건드리지 않고 이 화면에서 감지) ---- */
+var SN={tutorstarter:"리딩튜터 주니어 스타터",hackersstarter:"해커스 리딩스마트 스타터",tutorjunior:"리딩튜터 주니어",hackersmaster:"해커스 리딩스마트 마스터",hackers:"해커스 리딩스마트","1316reading":"능률 1316 Reading",bricks:"브릭스 중학독해",readinggraphy:"리딩그라피",tutorchallenger:"리딩튜터 챌린저"};
+function wins(w,out,d){out.push(w);if(d>3)return out;for(var i=0;i<w.frames.length;i++){try{wins(w.frames[i],out,d+1)}catch(e){}}return out}
+var RQ=Promise.resolve();
+function putP(date,fn){
+ return fetch(SRV+"?a=get&date="+date+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+  if(!j||!j.ok)throw 0;
+  var cd=(j.chk&&j.chk.app)||{};fn(cd);
+  return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({a:"put",date:date,cls:c,name:n,card:"app",chk:cd}),keepalive:true});
+ }).catch(function(){});
+}
+function recK(ks,w,nx){
+ var o=JSON.stringify({w:w,nx:nx||"",t:hm(),d:iso()});
+ RQ=RQ.then(function(){return putP(iso(),function(cd){cd["l_"+ks]=o})}).then(function(){return putP("2000-01-01",function(cd){cd["l_"+ks]=o})});
+}
+function bname(k){var bm=/^(.*?)(\d+)$/.exec(k);return (bm&&SN[bm[1]])?SN[bm[1]]+" "+bm[2]+"권":k}
+function rdFind(w,pid){var U=w.U||{},r=null;Object.keys(U).forEach(function(s){(U[s]||[]).forEach(function(x){if(x.id===pid)r={p:x,s:s}})});return r}
+function rdLab(w,pid){var M=w.META||{},ss=M.secs||{},ll=M.labs||{},q=rdFind(w,pid);return q?((ss[q.s]||("Section "+q.s))+" · "+(ll[pid]||(q.p.no+"번"))):pid}
+function rdNext(w,pid){var U=w.U||{},list=[];Object.keys(U).sort(function(x,y){return x-y}).forEach(function(s){(U[s]||[]).forEach(function(r){list.push(r.id)})});var i=list.indexOf(pid);return (i>=0&&list[i+1])?list[i+1]:null}
+function exLab(w,pid){try{var P=w.P||[],q=null;P.forEach(function(p){if(p.id===pid)q=p});return q?(w.secName(q.u)+" · "+w.readName(q)):pid}catch(e){return pid}}
+function exNext(w,pid){var P=w.P||[],i=-1;P.forEach(function(p,j){if(p.id===pid)i=j});return (i>=0&&P[i+1])?P[i+1].id:null}
+var RS={};
+function rdPoll(){try{
+ var all=wins(f.contentWindow,[],0);
+ for(var i=0;i<all.length;i++){var w=all[i],k;try{k=w.KEY}catch(e){continue}
+  if(!k)continue;
+  var bn=bname(k),st=RS[k]||(RS[k]={init:false,sub:{},c:{},ex:{}}),isx=(typeof w.showScore==="function"&&typeof w.bkAll!=="function");
+  if(!isx&&!w.U)continue;
+  if(isx){
+   var dn=w.done||{};
+   Object.keys(dn).forEach(function(pid){var d0=dn[pid];if(!d0)return;var sig=pid+":"+d0.s;if(st.ex[pid]===sig)return;st.ex[pid]=sig;
+    var pass=d0.s*10>=70,nx0=exNext(w,pid);
+    recK("rd_"+k+"_exit","독해33권 "+bn+" "+exLab(w,pid)+" Exit test "+(d0.s*10)+"점 ("+d0.s+"/10) "+(pass?"통과":"다시 도전"),pass?(nx0?bn+" "+exLab(w,nx0)+" Exit test":"이 책 Exit test 끝"):bn+" "+exLab(w,pid)+" Exit test 다시")});
+   continue}
+  var d={},bk={};
+  try{d=JSON.parse(w.localStorage.getItem(k+"done")||"{}")||{}}catch(e){}
+  if(Array.isArray(d)){var oo={};d.forEach(function(x){oo[x]=1});d=oo}
+  try{bk=JSON.parse(w.localStorage.getItem(k+"bk")||"{}")||{}}catch(e){}
+  var cnt={};Object.keys(d).forEach(function(x){if(!d[x]||x.indexOf("o-")===0)return;var mm=/^(.*)-[a-z]\d+$/.exec(x);if(mm)cnt[mm[1]]=(cnt[mm[1]]||0)+1});
+  var sub={};Object.keys(bk).forEach(function(pid){if(bk[pid]&&bk[pid].sub)sub[pid]=1});
+  if(!st.init){st.init=true;st.c=cnt;st.sub=sub;continue}
+  Object.keys(sub).forEach(function(pid){if(st.sub[pid])return;st.sub[pid]=1;
+   var fp=rdFind(w,pid),ok=0,tot=0;
+   if(fp&&w.bookInputs){try{var BI=w.bookInputs(fp.p);tot=BI.length;BI.forEach(function(it){if(w.bkOk(it,(bk[pid].a||{})[it.qi]))ok++})}catch(e){}}
+   recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 책 문제 제출"+(tot?" ("+ok+"/"+tot+" 정답)":""),bn+" "+rdLab(w,pid)+" 핵심 질문")});
+  Object.keys(cnt).forEach(function(pid){if(cnt[pid]>(st.c[pid]||0)){st.c[pid]=cnt[pid];
+   recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 질문·활동 "+cnt[pid]+"개 정답 확인","")}});
+ }
+}catch(e){}}
+var MS=null,AN2={m1:"M1 리딩",m2:"M2 리딩"};
+function resPoll(){try{
+ var cur={};try{cur=JSON.parse(ls.getItem(A+"-res")||"{}")||{}}catch(e){}
+ var now={};Object.keys(cur).forEach(function(k){var o=cur[k]||{};now[k]=[o.p,o.ok?1:0,o.t||0].join("|")});
+ if(MS===null){MS=now;return}
+ Object.keys(now).forEach(function(k){if(MS[k]===now[k])return;MS[k]=now[k];
+  var o=cur[k]||{},nn=(+k||0)+1,w0=AN2[A]+" Reading "+k+(o.ok?" 통과":" 다시 도전")+(o.p!=null?" "+o.p+"%":"");
+  if(!o.ok){recK(A,w0,AN2[A]+" Reading "+k+" 다시");return}
+  fetch("/via/"+(A==="m1"?"m1-reading":"m2-reading")+"/reading_"+("0"+nn).slice(-2)+".html",{method:"HEAD"}).then(function(r){recK(A,w0,r.ok?AN2[A]+" Reading "+nn:AN2[A]+" 끝")}).catch(function(){recK(A,w0,"")})});
+}catch(e){}}
+if(A==="rd")setInterval(rdPoll,2000);
+if(A==="m1"||A==="m2")setInterval(resPoll,2000);
+/* 그 외 앱(비단챌·어휘 등): 어디서 얼마나 썼는지 */
+var XM=[[/bidanchael\/gibon/,"비단챌 기본"],[/bidanchael\/baljeon/,"비단챌 발전"],[/bidanchael\/simhwa/,"비단챌 심화"],[/bidanchael\/gogyo/,"비단챌 고교"],[/bidanchael\/bochung/,"비단챌 보충"],[/switch-mission-h/,"보카스위치 고교"],[/switch-mission-s/,"보카스위치 수능"],[/wama2000/,"워마"],[/vocalink/,"보카링크"]];
+var XID=null,XN="";
+XM.forEach(function(x,i){if(x[0].test(U)){XID="x"+i;XN=x[1]}});
+if(!XID&&A==="x"&&U.indexOf("/via/gichul/")!==0){XID="xo";XN=T||"앱"}
+if(XID){
+ var UK="bd-use|"+n+"|"+iso()+"|"+XID,usec=+ls.getItem(UK)||0,lastAct=Date.now(),sentSec=-1;
+ function act(){lastAct=Date.now()}
+ function hook(){try{wins(f.contentWindow,[],0).forEach(function(w){if(w.__bdAct)return;w.__bdAct=1;["pointerdown","keydown","touchstart","scroll"].forEach(function(e){w.document.addEventListener(e,act,{passive:true,capture:true})})})}catch(e){}}
+ function sendUse(){if(usec===sentSec||usec<20)return;sentSec=usec;recK(XID,XN+" 오늘 "+Math.max(1,Math.round(usec/60))+"분 사용","")}
+ setInterval(function(){hook();if(document.visibilityState==="visible"&&Date.now()-lastAct<30000){usec++;if(usec%10===0)try{ls.setItem(UK,String(usec))}catch(e){}}},1000);
+ setInterval(sendUse,120000);
+ document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"){try{ls.setItem(UK,String(usec))}catch(e){}sendUse()}});
+ window.addEventListener("pagehide",sendUse);
+ document.getElementById("home").addEventListener("click",sendUse);
 }
 })();
 </script></body></html>
