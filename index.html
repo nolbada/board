@@ -315,11 +315,12 @@ function trow(cls,name,card){
 }
 function isdone(r){return r.t>0&&r.n>=r.t}
 function aLine(k,v){var o={};try{o=JSON.parse(v)}catch(e){}var p=[];if(o.d)p.push(((k==="a_m1"||k==="a_m2")?"Reading ":k==="a_xr"?"분석 ":"Day ")+o.d);else p.push("단계 기록 없음");if(o.m!=null)p.push("실수 "+o.m+"개");if(o.p!=null)p.push(o.p+"%");if(o.ok!=null)p.push(o.ok?"통과":"한번 더");return '<div style="margin:4px 0;font-size:14px">'+esc(AL[k.slice(2)]||k.slice(2))+' '+p.join(" · ")+'</div>'}
-function lLine(v){var o={};try{o=JSON.parse(v)}catch(e){}return o.w?'<div style="margin:4px 0;font-size:14px">'+esc(o.w)+(o.nx?' <span style="color:#2f8f6b">(다음: '+esc(o.nx)+')</span>':'')+'</div>':""}
+function oLink(o){return (o.u&&/^\/via\//.test(o.u))?' <a href="'+esc(o.u)+'" target="_blank" rel="noopener" style="color:#2F6FD6;font-weight:700;text-decoration:none;white-space:nowrap">열기 ›</a>':""}
+function lLine(v){var o={};try{o=JSON.parse(v)}catch(e){}return o.w?'<div style="margin:4px 0;font-size:14px">'+esc(o.w)+(o.nx?' <span style="color:#2f8f6b">(다음: '+esc(o.nx)+')</span>':'')+oLink(o)+'</div>':""}
 function lastH(nm){
   var lw=TS.wk&&TS.wk["2000-01-01"],row=lw&&lw[nm],ap=(row&&row.chk&&row.chk.app)||{};
   var ks=Object.keys(ap).filter(function(k){return k.indexOf("l_")===0});
-  var hs=ks.map(function(k){var o={};try{o=JSON.parse(ap[k])}catch(e){}return o.w?'<div style="font-size:14px;margin:2px 0"><span style="color:#888">지난번</span> '+esc(o.w)+(o.nx?'<br><span style="color:#2f8f6b;font-weight:700">다음 '+esc(o.nx)+'</span>':'')+'</div>':""}).join("");
+  var hs=ks.map(function(k){var o={};try{o=JSON.parse(ap[k])}catch(e){}return o.w?'<div style="font-size:14px;margin:2px 0"><span style="color:#888">지난번</span> '+esc(o.w)+oLink(o)+(o.nx?'<br><span style="color:#2f8f6b;font-weight:700">다음 '+esc(o.nx)+'</span>':'')+'</div>':""}).join("");
   return hs?'<div style="margin-top:8px;padding:8px 10px;background:#f3f8f5;border-radius:10px">'+hs+'</div>':"";
 }
 function weekH(nm,m,td){
