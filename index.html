@@ -88,6 +88,14 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .blk small{display:block;font-size:11.5px;color:var(--soft);margin-top:2px}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--bd);padding:0}
 .sw.on{box-shadow:0 0 0 3px var(--ink)}
+.wk{display:grid;grid-template-columns:26px repeat(4,1fr);background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.wkh{font-size:13px;font-weight:700;text-align:center;padding:7px 0;border-bottom:1px solid var(--bd);border-left:1px solid var(--bd);background:#fafaf8}
+.wkt{position:relative}
+.wkt i{position:absolute;right:4px;font-style:normal;font-size:11px;color:var(--soft);transform:translateY(-50%)}
+.wkc{position:relative;border-left:1px solid var(--bd)}
+.wb{position:absolute;box-sizing:border-box;background:var(--bc);color:#fff;border:2px solid #fff;border-radius:9px;padding:4px 5px;text-align:left;overflow:hidden;line-height:1.2;font-size:12px}
+.wb b{display:block;font-size:12px;overflow-wrap:anywhere}
+.wb span{font-size:11px;opacity:.9}
 </style>
 </head>
 <body>
@@ -405,12 +413,35 @@ function qHtml(){
   if(!L.length)return '<div class="empty">없음</div>';
   return '<div class="tlist" style="margin-top:8px">'+L.slice(0,30).map(function(x){return '<div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:8px"><span class="nm" style="font-weight:700;font-size:16px;flex:1">'+esc(x.n)+'</span>'+(x.o?'<span class="pl z">퇴원</span><button class="ghost" data-rs="'+esc(x.n)+'">복귀</button>':'<span class="pl">'+esc(x.c)+'</span><button class="ghost" data-qo="'+esc(x.n)+'">열기</button>')+'</div>'}).join("")+'</div>';
 }
+function wkGrid(){
+  var DAYS=[["월","월수"],["화","화목"],["수","월수"],["목","화목"]],cs=[],c,t,P=0.85,lo=900,hi=1380;
+  for(c in ROSTER){t=TT.t[c]||{};var d=dayOf(c);if(d&&t.s){var s=tm(t.s),e=t.e?tm(t.e):s+90;if(e<=s)e=s+90;cs.push({c:c,d:d,s:s,e:e})}}
+  cs.forEach(function(x){if(x.s<lo)lo=Math.floor(x.s/60)*60;if(x.e>hi)hi=Math.ceil(x.e/60)*60});
+  var H=(hi-lo)*P,at=TS.mode==="r"?"data-rc":"data-oc",h='<div class="wk"><div class="wkh" style="border-left:0"></div>'+DAYS.map(function(x){return '<div class="wkh">'+x[0]+'</div>'}).join("");
+  h+='<div class="wkt" style="height:'+H+'px">';
+  for(var m=lo;m<=hi;m+=60){var hh=m/60;h+='<i style="top:'+((m-lo)*P)+'px">'+(hh>12?hh-12:hh)+'</i>'}
+  h+='</div>';
+  DAYS.forEach(function(dd){
+    var list=cs.filter(function(x){return x.d===dd[1]}).sort(function(a,b){return a.s-b.s}),K=[],cur=null;
+    list.forEach(function(x){
+      if(!cur||x.s>=cur.end){cur={end:x.e,items:[],lanes:[]};K.push(cur)}
+      var li=0;while(cur.lanes[li]!==undefined&&cur.lanes[li]>x.s)li++;
+      cur.lanes[li]=x.e;x.lane=li;cur.items.push(x);if(x.e>cur.end)cur.end=x.e;
+    });
+    K.forEach(function(k){k.items.forEach(function(x){x.n=k.lanes.length})});
+    h+='<div class="wkc" style="height:'+H+'px;background-image:linear-gradient(var(--bd) 1px,transparent 1px);background-size:100% '+(60*P)+'px">';
+    list.forEach(function(x){
+      h+='<button class="wb" '+at+'="'+esc(x.c)+'" style="top:'+((x.s-lo)*P)+'px;height:'+((x.e-x.s)*P)+'px;left:'+(x.lane*100/x.n)+'%;width:'+(100/x.n)+'%;--bc:'+colOf(x.c)+'"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명</span></button>';
+    });
+    h+='</div>';
+  });
+  return h+'</div>';
+}
 function mHome(){
   var h="",R=ttRows();
   h+='<input class="score" id="qs" type="text" placeholder="이름 검색 (가나다)" value="'+esc(TS.q||"")+'" style="width:100%;text-align:left;font-weight:500"><div id="qres">'+qHtml()+'</div>';
   if(TS.mode!=="r")h+='<div class="chips"><button class="chip" data-tv="o">퇴원생 '+nOut()+'</button><button class="chip" data-tv="i">숙제 보드에서 가져오기</button></div>';
-  h+='<div class="tt"><div class="tth">월·수</div><div class="tth">화·목</div></div>';
-  R.rows.forEach(function(r){h+='<div class="tt">'+["월수","화목"].map(function(d){return '<div class="cell">'+r.l.filter(function(x){return x.d===d}).map(blk).join("")+'</div>'}).join("")+'</div>'});
+  h+=wkGrid();
   if(R.un.length)h+='<div class="h">시간 미정</div><div class="chips">'+R.un.map(function(x){return '<button class="chip" '+(TS.mode==="r"?'data-rc':'data-oc')+'="'+esc(x.c)+'" style="border-left-color:'+colOf(x.c)+'">'+esc(x.c)+' '+ROSTER[x.c].length+'</button>'}).join("")+'</div>';
   if(TS.mode==="r")return h;
   h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">반 추가</div><div style="display:flex;gap:8px"><input class="score" id="ncn" type="text" placeholder="반 이름 (예: M중2D)" maxlength="8" style="flex:1;text-align:left"><button class="leave" data-na="1" style="margin:0;width:auto;padding:0 18px">추가</button></div></div>';
