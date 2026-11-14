@@ -510,14 +510,27 @@ function rList(){
     a.forEach(function(n){
       var c=findCls(n),arm=TS.cf==="rx:"+n;
       h+='<div class="card" style="padding:10px 12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:700;font-size:17px;min-width:62px">'+esc(n)+'</span><span class="pl z">'+esc(pTxt(n)||"학교 미입력")+'</span><span class="pl" style="margin-left:auto;border-left:4px solid '+colOf(c)+'">'+esc(clsLbl(c))+'</span></div>';
-      h+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><select data-mvr="'+esc(n)+'" class="score" style="width:auto;text-align:left;padding:7px 8px;font-size:14px;font-weight:500"><option value="">반 이동</option>'+cl.filter(function(x){return x!==c}).map(function(x){return '<option value="'+esc(x)+'">'+esc(clsLbl(x))+' · '+ROSTER[x].length+'명</option>'}).join("")+'</select><button class="ghost" data-qo="'+esc(n)+'">열기</button><button class="ghost" data-rx="'+esc(n)+'" style="margin-left:auto'+(arm?';background:#D6336C;color:#fff':'')+'">'+(arm?'한 번 더 누르면 퇴원':'퇴원')+'</button></div></div>';
+      h+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><select data-mvr="'+esc(n)+'" class="score" style="width:auto;text-align:left;padding:7px 8px;font-size:14px;font-weight:500"><option value="">반 이동</option>'+cl.filter(function(x){return x!==c}).map(function(x){return '<option value="'+esc(x)+'">'+esc(clsLbl(x))+' · '+ROSTER[x].length+'명</option>'}).join("")+'</select><button class="ghost" data-qo="'+esc(n)+'">열기</button></div></div>';
     });
   });
   return h||'<div class="empty">없음</div>';
 }
+function exList(){
+  var q=(TS.exq||"").trim(),a=[],h="";
+  if(!q)return '<div class="empty" style="padding:10px 0">퇴원할 학생 이름 검색</div>';
+  Object.keys(ROSTER).forEach(function(c){ROSTER[c].forEach(function(n){if(n.indexOf(q)>-1)a.push(n)})});
+  a.sort(function(x,y){return x.localeCompare(y,"ko")});
+  if(!a.length)return '<div class="empty" style="padding:10px 0">없음</div>';
+  a.slice(0,8).forEach(function(n){
+    var c=findCls(n),arm=TS.cf==="rx:"+n;
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #eee;flex-wrap:wrap"><span style="font-weight:700;font-size:17px;min-width:62px">'+esc(n)+'</span><span class="pl z">'+esc(pTxt(n)||"학교 미입력")+'</span><span class="pl">'+esc(clsLbl(c))+'</span><button class="ghost" data-rx="'+esc(n)+'" style="margin-left:auto'+(arm?';background:#D6336C;color:#fff':'')+'">'+(arm?'한 번 더 누르면 퇴원':'퇴원')+'</button></div>';
+  });
+  return h;
+}
 function mRoster(){
   var cl=Object.keys(ROSTER),h='';
-  h+='<div style="display:flex;gap:8px;margin:0 0 10px"><input class="score" id="rq" type="text" placeholder="이름 검색" value="'+esc(TS.rq||"")+'" style="flex:1;text-align:left;font-weight:500"><button class="leave" data-nwo="1" style="margin:0;width:auto;padding:0 18px">'+(TS.nw?'닫기':'+ 신규')+'</button></div>';
+  h+='<div style="display:flex;gap:8px;margin:0 0 10px"><input class="score" id="rq" type="text" placeholder="이름 검색" value="'+esc(TS.rq||"")+'" style="flex:1;text-align:left;font-weight:500"><button class="leave" data-nwo="1" style="margin:0;width:auto;padding:0 18px">'+(TS.nw?'닫기':'+ 신규')+'</button><button class="leave" data-exo="1" style="margin:0;width:auto;padding:0 18px">'+(TS.ex?'닫기':'− 퇴원')+'</button></div>';
+  if(TS.ex){h+='<div class="card" style="padding:12px 14px"><input class="score" id="exq" type="text" placeholder="퇴원할 학생 이름" value="'+esc(TS.exq||"")+'" style="width:100%;text-align:left;font-weight:500"><div id="exr">'+exList()+'</div></div>'}
   if(TS.nw){
     h+='<div class="card" style="padding:12px 14px"><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="score" id="nwn" type="text" maxlength="8" placeholder="이름" style="flex:1;min-width:110px;text-align:left"><input class="score" id="nws" list="schl" maxlength="14" placeholder="학교" style="flex:1;min-width:110px;text-align:left"><select id="nwg" class="score" style="width:auto">'+GN.map(function(x,i){return '<option value="'+i+'">'+(i?x:"학년")+'</option>'}).join("")+'</select></div><datalist id="schl">'+schools().map(function(x){return '<option value="'+esc(x)+'">'}).join("")+'</datalist><select id="nwc" class="score" style="width:100%;text-align:left;margin-top:8px"><option value="">반 선택</option>'+cl.map(function(c){return '<option value="'+esc(c)+'">'+esc(clsLbl(c))+' · '+ROSTER[c].length+'명'+(ROSTER[c].length>=CAP?' (가득)':'')+'</option>'}).join("")+'</select><button class="leave" data-nw="1" style="margin-top:8px">추가</button></div>';
   }
@@ -627,10 +640,11 @@ function addNames(){
 function selIn(){var c=TS.cls,s=TS.sel||{};return Object.keys(s).filter(function(n){return s[n]&&ROSTER[c]&&ROSTER[c].indexOf(n)>-1})}
 function ttClick(D){
   var t,k;
-  if(D.nwo){TS.nw=!TS.nw;TS.cf=null;render();return true}
+  if(D.nwo){TS.nw=!TS.nw;TS.ex=false;TS.cf=null;render();return true}
+  if(D.exo){TS.ex=!TS.ex;TS.nw=false;TS.exq="";TS.cf=null;render();return true}
   if(D.nw){addStudent();return true}
   if(D.rx){
-    if(TS.cf==="rx:"+D.rx){retire(D.rx);TS.note=(TS.note&&TS.note.indexOf("클래스카드에서 정리할 이름")===0?TS.note+", ":"클래스카드에서 정리할 이름 · ")+D.rx;TS.cf=null;ttSave();cfgSave();render()}
+    if(TS.cf==="rx:"+D.rx){retire(D.rx);TS.note=(TS.note&&TS.note.indexOf("클래스카드에서 정리할 이름")===0?TS.note+", ":"클래스카드에서 정리할 이름 · ")+D.rx;TS.cf=null;TS.exq="";ttSave();cfgSave();render()}
     else{TS.cf="rx:"+D.rx;render();setTimeout(function(){if(TS.cf==="rx:"+D.rx){TS.cf=null;if(TS.v==="n")render()}},4500)}
     return true}
   if(D.tv){TS.v=D.tv;TS.mo=null;TS.cf=null;if(D.tv!=="i")TS.ib=null;if(D.tv==="t")TS.sel={};render();return true}
@@ -709,6 +723,7 @@ document.addEventListener("click",function(e){
 });
 document.addEventListener("change",function(e){var el=e.target;if(T&&el&&el.id==="pschool"&&TS.mo){setProf(TS.mo,el.value,null);ttSave()}});
 document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="rq")return;TS.rq=e.target.value;var el=document.getElementById("rl");if(el)el.innerHTML=rList()});
+document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="exq")return;TS.exq=e.target.value;var el=document.getElementById("exr");if(el)el.innerHTML=exList()});
 document.addEventListener("change",function(e){var el=e.target;if(!T||!el||!el.dataset||!el.dataset.mvr||!el.value)return;moveStudent(el.dataset.mvr,el.value)});
 /* ---------- 상태 ---------- */
 var S = {view:"names", cls:null, card:null};
