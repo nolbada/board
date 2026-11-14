@@ -493,7 +493,7 @@ function mCls(){
 }
 function mTabs(){
   if(["n","t","s"].indexOf(TS.v)<0)return "";
-  return '<div class="chips" style="margin:0 0 12px">'+[["n","명부"],["t","시간표"],["s","학교별"],["i","숙제 보드에서 가져오기"]].map(function(x){return '<button class="chip'+(TS.v===x[0]?' on':'')+'" data-tv="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
+  return '<div class="chips" style="margin:0 0 12px">'+[["n","명부"],["t","시간표"],["s","학교별"]].map(function(x){return '<button class="chip'+(TS.v===x[0]?' on':'')+'" data-tv="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
 }
 function lvl(nm){
   var g=gNow(nm);if(g)return g<=6?0:g<=9?1:2;
