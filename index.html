@@ -215,7 +215,7 @@ var FRI_BY = {};
 var CFGKEY={date:"2000-01-03",name:"_설정",card:"cfg"};
 var CFG={rs:{},u:0}, CFGP=false;
 var ROSTER0=JSON.parse(JSON.stringify(ROSTER)), SKIP0=JSON.parse(JSON.stringify(SKIP)), FRI0=Object.keys(FRI_BY);
-function smpInject(){for(var k in ROSTER){if(!Array.isArray(ROSTER[k])||!ROSTER[k].length)continue;["샘플1","샘플2"].forEach(function(n){if(ROSTER[k].indexOf(n)<0)ROSTER[k].push(n)})}}
+function smpInject(){ROSTER={"M중1B":["샘플1","샘플2"]};GROUPS={}}
 function noS(r){var o={},k;for(k in r)o[k]=Array.isArray(r[k])?r[k].filter(function(x){return !/^샘플/.test(x)}):r[k];return o}
 if(SMP)smpInject();
 function cfgNow(){return {r:noS(ROSTER),s:SKIP,f:Object.keys(FRI_BY),rs:CFG.rs||{},u:CFG.u||0}}
@@ -254,7 +254,7 @@ function cfgPush(){
   var s=localStorage.getItem("bd-cfg");if(!s)return;
   post({a:"put",date:CFGKEY.date,cls:"",name:CFGKEY.name,card:CFGKEY.card,chk:{j:s}}).then(function(){CFGP=false;toast("저장됨")}).catch(function(){CFGP=true;toast("저장 실패, 다시 시도합니다")});
 }
-function cfgSave(){CFG.u=Date.now();try{localStorage.setItem("bd-cfg",JSON.stringify(cfgNow()))}catch(e){}CFGP=true;toast("저장 중");cfgPush()}
+function cfgSave(){if(SMP)return;CFG.u=Date.now();try{localStorage.setItem("bd-cfg",JSON.stringify(cfgNow()))}catch(e){}CFGP=true;toast("저장 중");cfgPush()}
 cfgApply(cfgCache());
 var TT={t:{},o:[],u:0}, TTK={date:"2000-01-05",name:"_시간표",card:"tt"}, TTP=false;
 var DG={"월수":"월·수·금","화목":"화·목·금"};
