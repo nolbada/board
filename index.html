@@ -88,7 +88,7 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .blk small{display:block;font-size:11.5px;color:var(--soft);margin-top:2px}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--bd);padding:0}
 .sw.on{box-shadow:0 0 0 3px var(--ink)}
-.wk{display:grid;grid-template-columns:26px repeat(4,1fr);background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.wk{display:grid;grid-template-columns:26px repeat(2,1fr);background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
 .wkh{font-size:13px;font-weight:700;text-align:center;padding:7px 0;border-bottom:1px solid var(--bd);border-left:1px solid var(--bd);background:#fafaf8}
 .wkt{position:relative}
 .wkt i{position:absolute;right:4px;font-style:normal;font-size:11px;color:var(--soft);transform:translateY(-50%)}
@@ -414,8 +414,9 @@ function qHtml(){
   return '<div class="tlist" style="margin-top:8px">'+L.slice(0,30).map(function(x){return '<div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:8px"><span class="nm" style="font-weight:700;font-size:16px;flex:1">'+esc(x.n)+'</span>'+(x.o?'<span class="pl z">퇴원</span><button class="ghost" data-rs="'+esc(x.n)+'">복귀</button>':'<span class="pl">'+esc(x.c)+'</span><button class="ghost" data-qo="'+esc(x.n)+'">열기</button>')+'</div>'}).join("")+'</div>';
 }
 function inkOf(h){var r=parseInt(h.substr(1,2),16),g=parseInt(h.substr(3,2),16),k=parseInt(h.substr(5,2),16);return (r*299+g*587+k*114)/1000>150?"#1b1b1b":"#fff"}
+var CAP=9;
 function wkGrid(){
-  var DAYS=[["월","월수"],["화","화목"],["수","월수"],["목","화목"]],cs=[],c,t,P=0.85,lo=900,hi=1380;
+  var DAYS=[["월 · 수","월수"],["화 · 목","화목"]],cs=[],c,t,P=0.85,lo=900,hi=1380;
   for(c in ROSTER){t=TT.t[c]||{};var d=dayOf(c);if(d&&t.s){var s=tm(t.s),e=t.e?tm(t.e):s+90;if(e<=s)e=s+90;cs.push({c:c,d:d,s:s,e:e})}}
   cs.forEach(function(x){if(x.s<lo)lo=Math.floor(x.s/60)*60;if(x.e>hi)hi=Math.ceil(x.e/60)*60});
   var H=(hi-lo)*P,at=TS.mode==="r"?"data-rc":"data-oc",h='<div class="wk"><div class="wkh" style="border-left:0"></div>'+DAYS.map(function(x){return '<div class="wkh">'+x[0]+'</div>'}).join("");
@@ -432,7 +433,7 @@ function wkGrid(){
     K.forEach(function(k){k.items.forEach(function(x){x.n=k.lanes.length})});
     h+='<div class="wkc" style="height:'+H+'px;background-image:linear-gradient(var(--bd) 1px,transparent 1px);background-size:100% '+(60*P)+'px">';
     list.forEach(function(x){
-      h+='<button class="wb" '+at+'="'+esc(x.c)+'" style="top:'+((x.s-lo)*P)+'px;height:'+((x.e-x.s)*P)+'px;left:'+(x.lane*100/Math.max(x.n,2))+'%;width:'+(100/Math.max(x.n,2))+'%;--bc:'+colOf(x.c)+';color:'+inkOf(colOf(x.c))+'"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명</span></button>';
+      h+='<button class="wb" '+at+'="'+esc(x.c)+'" style="top:'+((x.s-lo)*P)+'px;height:'+((x.e-x.s)*P)+'px;left:'+(x.lane*100/Math.max(x.n,2))+'%;width:'+(100/Math.max(x.n,2))+'%;--bc:'+colOf(x.c)+';color:'+inkOf(colOf(x.c))+'"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명 ('+(CAP-ROSTER[x.c].length)+')</span></button>';
     });
     h+='</div>';
   });
