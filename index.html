@@ -246,6 +246,7 @@ function cfgSave(){CFG.u=Date.now();try{localStorage.setItem("bd-cfg",JSON.strin
 cfgApply(cfgCache());
 var TT={t:{},o:[],u:0}, TTK={date:"2000-01-05",name:"_시간표",card:"tt"}, TTP=false;
 var DG={"월수":"월·수·금","화목":"화·목·금"};
+var SLOTS={"월수":[["15:20","16:50"],["17:00","18:30"],["18:40","20:10"],["20:20","22:10"]],"화목":[["15:10","16:40"],["17:00","18:30"],["18:40","20:10"],["20:20","22:10"]]};
 var SWC=["#1F7A5C","#2F6FD6","#C77A00","#7A4FC4","#C22E1C","#D6336C","#0B8A9B","#5B6B62"];
 var GCOL={"초":"#1F7A5C","중1":"#2F6FD6","중2":"#C77A00","중3":"#7A4FC4","고":"#C22E1C"};
 var HWSRV="https://script.google.com/macros/s/AKfycbw1YQfKsgAXNk8NYoxOfz4bsCSy66fiim7HoFAUk162ksxrEbmspMs2UifNZ-93sdf05A/exec";
@@ -394,7 +395,7 @@ function ttRows(){
   return {rows:rows,un:A.filter(function(x){return !(x.d&&x.s)})};
 }
 function nOut(){return TT.o.filter(function(x){return !findCls(x.n)}).length}
-function blk(x){var c=colOf(x.c);return '<button class="blk" data-oc="'+esc(x.c)+'" style="--bc:'+c+';--bb:'+c+'1A"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명</span><small>'+x.s+(x.e?'-'+x.e:'')+'</small></button>'}
+function blk(x){var c=colOf(x.c);return '<button class="blk" '+(TS.mode==="r"?'data-rc':'data-oc')+'="'+esc(x.c)+'" style="--bc:'+c+';--bb:'+c+'1A"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명</span><small>'+x.s+(x.e?'-'+x.e:'')+'</small></button>'}
 function qHtml(){
   var q=(TS.q||"").trim();if(!q)return "";
   var L=[],c;
@@ -407,10 +408,11 @@ function qHtml(){
 function mHome(){
   var h="",R=ttRows();
   h+='<input class="score" id="qs" type="text" placeholder="이름 검색 (가나다)" value="'+esc(TS.q||"")+'" style="width:100%;text-align:left;font-weight:500"><div id="qres">'+qHtml()+'</div>';
-  h+='<div class="chips"><button class="chip" data-tv="o">퇴원생 '+nOut()+'</button><button class="chip" data-tv="i">숙제 보드에서 가져오기</button></div>';
+  if(TS.mode!=="r")h+='<div class="chips"><button class="chip" data-tv="o">퇴원생 '+nOut()+'</button><button class="chip" data-tv="i">숙제 보드에서 가져오기</button></div>';
   h+='<div class="tt"><div class="tth">월·수</div><div class="tth">화·목</div></div>';
   R.rows.forEach(function(r){h+='<div class="tt">'+["월수","화목"].map(function(d){return '<div class="cell">'+r.l.filter(function(x){return x.d===d}).map(blk).join("")+'</div>'}).join("")+'</div>'});
-  if(R.un.length)h+='<div class="h">시간 미정</div><div class="chips">'+R.un.map(function(x){return '<button class="chip" data-oc="'+esc(x.c)+'" style="border-left-color:'+colOf(x.c)+'">'+esc(x.c)+' '+ROSTER[x.c].length+'</button>'}).join("")+'</div>';
+  if(R.un.length)h+='<div class="h">시간 미정</div><div class="chips">'+R.un.map(function(x){return '<button class="chip" '+(TS.mode==="r"?'data-rc':'data-oc')+'="'+esc(x.c)+'" style="border-left-color:'+colOf(x.c)+'">'+esc(x.c)+' '+ROSTER[x.c].length+'</button>'}).join("")+'</div>';
+  if(TS.mode==="r")return h;
   h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">반 추가</div><div style="display:flex;gap:8px"><input class="score" id="ncn" type="text" placeholder="반 이름 (예: M중2D)" maxlength="8" style="flex:1;text-align:left"><button class="leave" data-na="1" style="margin:0;width:auto;padding:0 18px">추가</button></div></div>';
   h+='<a class="ghost" href="/board/hq/cards/" style="display:block;text-align:center;text-decoration:none">카드 · 학생 지정 열기</a>';
   return h;
@@ -435,6 +437,7 @@ function mCls(){
   h+='<button class="back" data-tv="t">‹ 시간표</button>';
   h+='<div class="card" style="border-left:6px solid '+colOf(c)+';padding:12px 14px"><div style="font-size:20px;font-weight:700">'+esc(c)+' <span style="font-size:13px;color:#666">'+ROSTER[c].length+'명</span></div>';
   h+='<div class="chips" style="margin-top:10px"><button class="chip'+(d==="월수"?' on':'')+'" data-sd="월수">월·수</button><button class="chip'+(d==="화목"?' on':'')+'" data-sd="화목">화·목</button></div>';
+  if(SLOTS[d])h+='<div class="chips" style="margin-top:10px">'+SLOTS[d].map(function(x,i){return '<button class="chip'+(t.s===x[0]&&t.e===x[1]?' on':'')+'" data-sp="'+i+'">'+x[0]+'-'+x[1]+'</button>'}).join("")+'</div>';
   h+='<div style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="time" id="ts" value="'+(t.s||"")+'" class="score" style="width:120px"> ~ <input type="time" id="te" value="'+(t.e||"")+'" class="score" style="width:120px"></div>';
   h+='<div class="chips" style="margin-top:10px">'+SWC.map(function(x){return '<button class="sw'+(colOf(c).toLowerCase()===x.toLowerCase()?' on':'')+'" data-sc="'+x+'" style="background:'+x+'"></button>'}).join("")+'<button class="ghost" data-sc="x">기본색</button></div></div>';
   h+='<div class="chips" style="margin:0"><button class="ghost" data-sa="1">'+(ROSTER[c].length&&ns.length===ROSTER[c].length?'전체 해제':'이 반 전체 선택')+'</button></div>';
@@ -518,7 +521,11 @@ function selIn(){var c=TS.cls,s=TS.sel||{};return Object.keys(s).filter(function
 function ttClick(D){
   var t,k;
   if(D.tv){TS.v=D.tv;TS.mo=null;TS.cf=null;if(D.tv!=="i")TS.ib=null;if(D.tv==="t")TS.sel={};render();return true}
+  if(D.rb){TS.rv="t";render();return true}
+  if(D.rc){TS.cls=D.rc;TS.rv="c";render();return true}
+  if(D.sp!==undefined){var sx=(SLOTS[dayOf(TS.cls)]||[])[+D.sp];if(sx){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.d=t.d||dayOf(TS.cls);t.s=sx[0];t.e=sx[1];ttSave();render()}return true}
   if(D.oc){TS.cls=D.oc;TS.v="c";TS.mo=null;TS.cf=null;TS.sel={};render();return true}
+  if(D.qo&&TS.mode==="r"){var q0=findCls(D.qo);if(q0){TS.cls=q0;TS.rv="c";render()}return true}
   if(D.qo){var q=findCls(D.qo);if(q){TS.cls=q;TS.v="c";TS.mo=D.qo;TS.cf=null;TS.sel={};render()}return true}
   if(D.sd){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.d=D.sd;ttSave();render();return true}
   if(D.sc!==undefined){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.c=D.sc==="x"?"":D.sc;ttSave();render();return true}
@@ -553,8 +560,9 @@ function renderT(){
   }
   var m=mon(TS.date),td=iso();
   h+='<div class="top"><div class="who">보드 기록<small>'+dlabel(m)+' ~ '+dlabel(dstep(m,6))+'</small></div></div>'+modeBar();
+  if(TS.rv!=="c"){h+=mHome();app.innerHTML=h;return}
   h+='<div class="dnav"><button class="ghost" data-td="-1">‹</button><div class="lb">'+(mon(td)===m?'이번 주':dlabel(m)+' 주')+'</div><button class="ghost" data-td="1">›</button><button class="ghost" data-td="0">이번 주</button></div>';
-  h+='<div class="tabs">'+Object.keys(ROSTER).map(function(c){return '<button class="tab'+(c===TS.cls?' on':'')+'" data-tt="'+c+'">'+c+'</button>'}).join("")+'</div>';
+  h+='<button class="back" data-rb="1">‹ 시간표</button><div style="font-weight:700;font-size:19px;margin:2px 2px 8px">'+esc(TS.cls)+'</div>';
   if(TS.err)h+='<div class="empty">'+esc(TS.err)+'</div>';
   if(!TS.rows){h+='<div class="empty">불러오는 중</div>';app.innerHTML=h;return}
   h+='<div class="tlist">';
