@@ -37,7 +37,7 @@
       dirty=true;
     }).catch(function(){loading=false});
   }
-  var AN={vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
+  var AN={rd:"독해33권",vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
   function lastRec(o){
     var d=o.d,ok=o.ok,w,nx="",nn=(+d||0)+1,chk=null;
     if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":"");nx=ok?(nn<=64?AN[APP]+" Day "+nn:AN[APP]+" 끝"):AN[APP]+" Day "+d+" 다시"}
@@ -47,6 +47,7 @@
       try{var ds=DAYS.map(function(x){return x.d}).sort(function(a,b){return a-b}),dn=JSON.parse(ls.getItem("vsig-y-day-v1")||"{}");nd="";for(var i=0;i<ds.length;i++){if(ds[i]>d&&!dn["D"+ds[i]]){nd=ds[i];break}}}catch(e){}
       nx=nd===null?"":(nd?"V시그널 Y Day "+nd:"V시그널 Y 끝")}
     else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"":d+" 다시"}
+    else if(APP==="rd"){w=o.w;nx=""}
     else return;
     (chk||Promise.resolve()).then(function(){
       lr=JSON.stringify({w:w,nx:nx,t:hm(),d:date});dirty=true;report(false);
@@ -61,7 +62,7 @@
     st.n=(st.n||0)+1;
     if(o.p!=null)st.p=o.p;
     if(o.ok!=null)st.ok=o.ok?1:0;
-    if(o.d!=null)st.d=o.d;if(o.m!=null)st.m=o.m;if(o.secs)st.s=(+st.s||0)+(+o.secs||0);
+    if(o.w)st.w=o.w;if(o.d!=null)st.d=o.d;if(o.m!=null)st.m=o.m;if(o.secs)st.s=(+st.s||0)+(+o.secs||0);
     st.t=hm();dirty=true;
     lastRec(o);
   }
@@ -119,6 +120,37 @@
     var ys=null;try{ys=JSON.parse(ss.getItem(SKY)||"null")}catch(e){}
     if(!ys){ys=ydone();try{ss.setItem(SKY,JSON.stringify(ys))}catch(e){}}
     setInterval(function(){ydone().forEach(function(k){if(ys.indexOf(k)<0){ys.push(k);try{ss.setItem(SKY,JSON.stringify(ys))}catch(e){}W.BoardLink.score("vy",{d:+k.slice(1),ok:true})}})},2000);
+  }
+  if(APP==="rd"){
+    var KV=W.KEY||"",EX=/\/exit\//.test(location.pathname);
+    var BN=(D.title||KV).replace(/\s*Exit Test\s*$/i,"").trim();
+    var MT=W.META||{};
+    var nm=function(u,pid,no){return((MT.secs&&MT.secs[u])||u||"")+" "+((MT.labs&&MT.labs[pid])||no||"")};
+    if(EX){
+      var seenX={};
+      setInterval(function(){
+        var dn=W.done||{},ps=W.P||[];
+        Object.keys(dn).forEach(function(pid){
+          var r=dn[pid];if(seenX[pid]||!r||typeof r.s!=="number")return;seenX[pid]=1;
+          var p=null;ps.forEach(function(x){if(x.id===pid)p=x});
+          W.BoardLink.score("rd",{w:BN+" "+(p?nm(p.u,pid,p.no):pid)+" Exit test "+(r.s*10)+"점"});
+        });
+      },1500);
+    }else{
+      var SKR="bl-snap-rd-"+KV;
+      var cmp=function(){
+        var dn={},U0=W.U||{},r=[];try{dn=JSON.parse(ls.getItem(KV+"done")||"{}")||{}}catch(e){}
+        Object.keys(U0).forEach(function(u){(U0[u]||[]).forEach(function(p){var c=p.core||[];if(!c.length)return;for(var i=0;i<c.length;i++)if(!dn[p.id+"-c"+i])return;r.push([p.id,nm(u,p.id,p.no)])})});
+        return r;
+      };
+      var sn=null;try{sn=JSON.parse(ss.getItem(SKR)||"null")}catch(e){}
+      if(!sn){sn=cmp().map(function(x){return x[0]});try{ss.setItem(SKR,JSON.stringify(sn))}catch(e){}}
+      setInterval(function(){
+        var cur=cmp(),ids=cur.map(function(x){return x[0]});
+        cur.forEach(function(x){if(sn.indexOf(x[0])<0)W.BoardLink.score("rd",{w:BN+" "+x[1]+" 지문 완료"})});
+        if(ids.join()!==sn.join()){sn=ids;try{ss.setItem(SKR,JSON.stringify(sn))}catch(e){}}
+      },2000);
+    }
   }
   load();
 }catch(e){}})();
