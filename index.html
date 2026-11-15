@@ -720,7 +720,7 @@ function renderT(){
   if(TS.err)h+='<div class="empty">'+esc(TS.err)+'</div>';
   if(!TS.rows){h+='<div class="empty">불러오는 중</div>';app.innerHTML=h;return}
   h+='<div class="tlist">';
-  ROSTER[TS.cls].forEach(function(nm){
+  (/중3/.test(TS.cls)?[]:ROSTER[TS.cls]).forEach(function(nm){
     var w=weekH(nm,m,td);
     h+='<div class="card" style="padding:12px 14px"><div style="display:flex;align-items:center;gap:10px"><span class="nm" style="font-weight:700;font-size:17px;flex:1">'+esc(nm)+'</span><span class="pl'+(w.n?'':' z')+'">'+(w.n?w.n+'일 기록':'기록 없음')+'</span></div>';
     h+=lastH(nm)+w.h;
