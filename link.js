@@ -40,7 +40,7 @@
   var AN={bd:"비단챌",rd:"독해33권",vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
   function lastRec(o){
     var d=o.d,ok=o.ok,w,nx="",nn=(+d||0)+1,chk=null;
-    if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":"");nx=ok?(nn<=64?AN[APP]+" Day "+nn:AN[APP]+" 끝"):AN[APP]+" Day "+d+" 다시"}
+    if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(APP==="ve"?" 7문장 완료":(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":""));nx=ok?(nn<=64?AN[APP]+" Day "+nn:AN[APP]+" 끝"):AN[APP]+" Day "+d+" 다시"}
     else if(APP==="m1"||APP==="m2"){w=AN[APP]+" Reading "+d+(ok?" 통과":" 다시 도전");nx=ok?"":AN[APP]+" Reading "+d+" 다시";
       if(ok)chk=fetch("https://nolbada.github.io/via/"+(APP==="m1"?"m1-reading":"m2-reading")+"/reading_"+("0"+nn).slice(-2)+".html",{method:"HEAD"}).then(function(r){nx=r.ok?AN[APP]+" Reading "+nn:AN[APP]+" 끝"}).catch(function(){})}
     else if(APP==="vy"){w="V시그널 Y Day "+d+" 7문장 완성";var nd=null;
