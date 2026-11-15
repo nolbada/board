@@ -60,7 +60,8 @@ details summary{cursor:pointer;color:#00828a;font-size:13px;font-weight:700}
 .cl{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .cb{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #dde3e5;background:#fff;border-radius:12px;padding:11px 12px;width:100%;font-weight:700}
 .cb.on{border-color:#00A1A7;background:#e3f4f5}
-.cb.td{border-color:#e8a317;background:#fff4d9}.cb.td.on{border-color:#00A1A7;background:#fff4d9;box-shadow:inset 4px 0 0 #00A1A7}.cb small em{font-style:normal;font-weight:800;color:#b36b00}
+.cb.td{border-color:#e8a317;background:#fff4d9}.cb.td.on{border-color:#00A1A7;background:#fff4d9;box-shadow:inset 4px 0 0 #00A1A7}
+.cb.pn{border-color:#e58aa6;background:#ffe3ec}.cb.pn.on{box-shadow:inset 4px 0 0 #d6336c}.pv.pn,.pv.pn .pbox{background:#ffe3ec}.pv.pn .pi{background:#fff1f5}.cb small em{font-style:normal;font-weight:800;color:#b36b00}
 .cr{display:flex;gap:4px;align-items:stretch}
 .cr .cb{flex:1;width:auto;min-width:0}
 .cr .mv{display:flex;flex-direction:column;gap:3px}
@@ -337,7 +338,7 @@ var DEFCAT=[{n:"정규반",s:["초등","중1","중2","중3","예비고","고등"
 function catsOf(){var base=(CC&&Array.isArray(CC.cat))?CC.cat:DEFCAT,out=base.map(function(x){return {n:x.n,s:(x.s||[]).slice()}});
   CC.cards.forEach(function(c){var t=c.tag;if(!t)return;var f=out.filter(function(x){return x.n===t})[0];if(!f){f={n:t,s:[]};out.push(f)}if(c.sub&&f.s.indexOf(c.sub)<0)f.s.push(c.sub)});return out}
 function catEdit(){if(!Array.isArray(CC.cat))CC.cat=catsOf();return CC.cat}
-function cardBtn(c,attr,sel,TU){var tn=TU[c.id]||0,bt='<button class="cb'+(sel===c.id?' on':'')+(tn?' td':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>'+(tn?'<em>오늘 '+tn+'명</em> · ':'')+'항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}
+function cardBtn(c,attr,sel,TU){var tn=TU[c.id]||0,bt='<button class="cb'+(sel===c.id?' on':'')+(tn?' td':'')+(c.tag==="페널티"?' pn':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>'+(tn?'<em>오늘 '+tn+'명</em> · ':'')+'항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}
 function cardList(attr,sel){
   var TU=todayUse(),cats=catsOf(),h="",cur=(sel&&sel!=="-")?cardBy(sel):null;S.oc=S.oc||{};
   if(cur&&S.ocFor!==sel){S.oc[cur.tag||"__"]=1;S.ocFor=sel}
@@ -366,7 +367,7 @@ function cardListOld(attr,sel){
   tg.concat([""]).forEach(function(t){
     var cs=CC.cards.filter(function(c){return (c.tag||"")===t});if(!cs.length)return;
     if(tg.length)h+='<div class="gh">'+esc(t||"분류 없음")+'</div>';
-    h+=cs.map(function(c){var tn=TU[c.id]||0,bt='<button class="cb'+(sel===c.id?' on':'')+(tn?' td':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>'+(tn?'<em>오늘 '+tn+'명</em> · ':'')+'항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}).join("");
+    h+=cs.map(function(c){var tn=TU[c.id]||0,bt='<button class="cb'+(sel===c.id?' on':'')+(tn?' td':'')+(c.tag==="페널티"?' pn':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>'+(tn?'<em>오늘 '+tn+'명</em> · ':'')+'항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}).join("");
   });
   return h;
 }
@@ -418,6 +419,8 @@ function detail(n){
   }
   return h+'</div>';
 }
+var PTRG=[["","조건 없음"],["w:X","단어 X"],["w:T","단어 △"],["g:X","문법 X"],["g:T","문법 △"],["b:X","비단챌 X"],["b:T","비단챌 △"],["l:X","듣기 X"],["l:T","듣기 △"],["v:X","보카링크 X"],["v:T","보카링크 △"],["r:X","독해책 X"],["r:T","독해책 △"],["m:X","문법책 X"],["m:T","문법책 △"]];
+function ptSel(c,it,i){if(c.tag!=="페널티")return "";return '<select data-tg="'+i+'" style="border:1px solid #e58aa6;border-radius:8px;padding:5px;font-size:12px;background:#fff">'+PTRG.map(function(x){return '<option value="'+x[0]+'"'+((it.trg||"")===x[0]?' selected':'')+'>'+(x[0]?'숙제 ':'')+x[1]+'</option>'}).join("")+'</select>'}
 function viewCard(){
   var h='<div class="two'+(S.csel?' sel':'')+'"><div class="side"><div class="cl">';
   h+=cardList("cs",S.csel);
@@ -431,10 +434,10 @@ function viewCard(){
   h+='<div style="margin-top:8px">';
   c.items.forEach(function(it,i){
     h+='<div class="it" data-i="'+i+'"><input class="no" type="number" min="1" inputmode="numeric" data-pos="'+i+'" value="'+(i+1)+'"><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
-    h+='<div class="sub"><input type="text" data-si="'+i+'" value="'+esc(it.sub||"")+'" placeholder="작은 설명 (없어도 됨)"><label><input type="checkbox" data-sc2="'+i+'"'+(it.kind==="score"?' checked':'')+'>점수 칸</label><label><input type="checkbox" data-pl="'+i+'"'+(it.plus?' checked':'')+'>플러스</label></div></div>';
+    h+='<div class="sub"><input type="text" data-si="'+i+'" value="'+esc(it.sub||"")+'" placeholder="작은 설명 (없어도 됨)"><label><input type="checkbox" data-sc2="'+i+'"'+(it.kind==="score"?' checked':'')+'>점수 칸</label><label><input type="checkbox" data-pl="'+i+'"'+(it.plus?' checked':'')+'>플러스</label>'+ptSel(c,it,i)+'</div></div>';
   });
   h+='</div><div class="row" style="margin-top:10px"><input id="addpos" type="number" min="1" inputmode="numeric" placeholder="번호" style="width:66px;border:1px solid #cfd8da;border-radius:9px;padding:9px 6px;text-align:center"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-cup="1">목록에서 ↑</button><button class="btn" data-cdn="1">목록에서 ↓</button><button class="btn" data-dup="1">복제</button><button class="btn pri" data-togo="1">이 카드를 쓸 학생 정하기 ›</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
-  h+='<div class="pv"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px"><span id="pvt">'+esc(c.name)+'</span> 카드의 학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
+  h+='<div class="pv'+(c.tag==="페널티"?' pn':'')+'"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px"><span id="pvt">'+esc(c.name)+'</span> 카드의 학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
   return h;
 }
 function autoName(c){var b=[c.tag,c.sub].filter(Boolean).join(" · ")||"새 카드";if(c.memo)b+=" · "+c.memo;var n=b,k=2;while(CC.cards.some(function(x){return x.id!==c.id&&x.name===n}))n=b+" "+(k++);return n}
@@ -565,6 +568,7 @@ document.addEventListener("change",function(e){
   else if(t.dataset.cats!==undefined){var si2=+t.dataset.cats,sa=[];t.value.split(/[,，]/).forEach(function(z){z=z.trim();if(z&&sa.indexOf(z)<0)sa.push(z)});CC.cat[si2].s=sa;markC();render()}
   else if(t.dataset.pl!==undefined){var cp=cardBy(S.csel),ip=cp.items[+t.dataset.pl];if(t.checked)ip.plus=1;else delete ip.plus;markC();render()}
   else if(t.dataset.sc2!==undefined){var c=cardBy(S.csel),it=c.items[+t.dataset.sc2];if(t.checked)it.kind="score";else delete it.kind;markC()}
+  else if(t.dataset.tg!==undefined){var cg=cardBy(S.csel),ig=cg.items[+t.dataset.tg];if(t.value)ig.trg=t.value;else delete ig.trg;markC()}
 });
 document.addEventListener("input",function(e){
   var t=e.target;if(!loaded||!t)return;
