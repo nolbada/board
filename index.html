@@ -49,6 +49,8 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .item{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--bd);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
 .item:last-child{border-bottom:0}
 .box{width:30px;height:30px;border-radius:50%;border:2px dashed var(--bd);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--soft)}
+.item.plus{background:#fff6cc;border-radius:10px;padding-left:10px;padding-right:10px}
+.plh{font-size:12px;font-weight:700;color:#8a6d00;margin:16px 4px 2px}
 .item.done .box{border:3px solid var(--o);background:var(--os);color:var(--o);font-size:16px}
 .item.done .t{color:var(--soft);text-decoration:line-through}
 .t{font-size:16px;font-weight:700;flex:1}
@@ -194,7 +196,7 @@ function cardPick(cls,slot,name,date){
 }
 function itemsFor(cls,card,name,date){
   var out;
-  if(CC&&CC.cards){var tid=cardPick(cls,card,name,date),tp=(tid&&tid!=="-")?CC.cards.filter(function(x){return x.id===tid})[0]:null,sk0=(CC.st&&CC.st[name]&&CC.st[name].skip)||[];out=(tp&&tp.items)?tp.items:[];return sk0.length?out.filter(function(i){return sk0.indexOf(i.id)<0}):out}
+  if(CC&&CC.cards){var tid=cardPick(cls,card,name,date),tp=(tid&&tid!=="-")?CC.cards.filter(function(x){return x.id===tid})[0]:null,sk0=(CC.st&&CC.st[name]&&CC.st[name].skip)||[];out=(tp&&tp.items)?tp.items.filter(function(i){return !i.plus}).concat(tp.items.filter(function(i){return i.plus})):[];return sk0.length?out.filter(function(i){return sk0.indexOf(i.id)<0}):out}
   if(card==="reg") out=CLASS_ITEMS[cls]||REGULAR;
   else if(card==="fri"&&name&&FRI_BY[name]) out=FRI_BY[name];
   else{var c=CARDS.filter(function(x){return x.id===card})[0];out=c?c.items:[]}
@@ -381,8 +383,8 @@ function thist(name){
 }
 function trow(cls,name,card){
   var items=itemsFor(cls,card,name),row=TS.rows&&TS.rows[name],ck=(row&&row.chk&&row.chk[card])||{};
-  var n=items.filter(function(i){return ck[i.id]}).length;
-  return {name:name,items:items,ck:ck,n:n,t:items.length,seen:!!row,ap:(row&&row.chk&&row.chk.app)||{}};
+  var rq=items.filter(function(i){return !i.plus}),n=rq.filter(function(i){return ck[i.id]}).length;
+  return {name:name,items:items,ck:ck,n:n,t:rq.length,seen:!!row,ap:(row&&row.chk&&row.chk.app)||{}};
 }
 function isdone(r){return r.t>0&&r.n>=r.t}
 function aLine(k,v){var o={};try{o=JSON.parse(v)}catch(e){}var p=[];if(o.d)p.push(((k==="a_m1"||k==="a_m2")?"Reading ":k==="a_xr"?"분석 ":"Day ")+o.d);else p.push("단계 기록 없음");if(o.m!=null)p.push("실수 "+o.m+"개");if(o.p!=null)p.push(o.p+"%");if(o.ok!=null)p.push(o.ok?"통과":"한번 더");return '<div style="margin:4px 0;font-size:14px">'+esc(AL[k.slice(2)]||k.slice(2))+' '+p.join(" · ")+'</div>'}
@@ -776,7 +778,7 @@ function carryLoad(n,c){
       var card=slotOf(ds[k]),m=(j.chk&&j.chk[card])||{};
       if(!m.tin)continue;
       var cl=clsOf(n);
-      res.d=ds[k];res.items=itemsFor(cl,card,n,ds[k]).filter(function(it){return !m[it.id]}).map(function(it){return {id:it.id,t:it.t.replace(/\s*\(.*$/,"")}});
+      res.d=ds[k];res.items=itemsFor(cl,card,n,ds[k]).filter(function(it){return !m[it.id]&&!it.plus}).map(function(it){return {id:it.id,t:it.t.replace(/\s*\(.*$/,"")}});
       break;
     }
     if(ok)ls(ck,JSON.stringify(res));
@@ -826,16 +828,17 @@ function render(){
     h+='<div class="tabs">'+tabList().filter(function(x){return x.id===card||itemsFor(c0,x.id,name).length}).map(function(x){return '<button class="tab'+(x.id===card?' on':'')+'" data-card="'+x.id+'">'+x.label+'</button>'}).join("")+'</div>';
     h+='<div class="card">';
     if(!cd.items.length) h+='<div class="empty">항목 준비 중</div>';
-    cd.items.forEach(function(it,ix){
-      var d=!!done[it.id];
+    var shp=0;cd.items.forEach(function(it,ix){
+      var d=!!done[it.id],pc=it.plus?' plus':'';
+      if(it.plus&&!shp){shp=1;h+='<div class="plh">플러스</div>'}
       if(it.kind==="score"){
-        h+='<div class="item'+(d?' done':'')+'"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span><input class="score" type="number" inputmode="numeric" min="0" max="100" data-score="'+it.id+'" data-card="'+card+'" value="'+(done[it.id]&&done[it.id]!==1?esc(done[it.id]):'')+'" placeholder="점수"></div>';
+        h+='<div class="item'+pc+(d?' done':'')+'"><span class="box">'+(d?'✓':(it.plus?'+':(ix+1)))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span><input class="score" type="number" inputmode="numeric" min="0" max="100" data-score="'+it.id+'" data-card="'+card+'" value="'+(done[it.id]&&done[it.id]!==1?esc(done[it.id]):'')+'" placeholder="점수"></div>';
         return;
       }
-          h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="'+card+'"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>';
+          h+='<button class="item'+pc+(d?' done':'')+'" data-it="'+it.id+'" data-card="'+card+'"><span class="box">'+(d?'✓':(it.plus?'+':(ix+1)))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>';
     });
     h+='</div>';
-    if(card==="reg" && EXTRA.items.length && cd.items.length && cd.items.every(function(i){return done[i.id]})){
+    if(card==="reg" && EXTRA.items.length && cd.items.length && cd.items.filter(function(i){return !i.plus}).every(function(i){return done[i.id]})){
       var ex=chk(name,"extra");
       h+='<div class="h">'+EXTRA.t+'</div><div class="card">';
       EXTRA.items.forEach(function(it,ix){
@@ -846,7 +849,7 @@ function render(){
     }
     h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
   } else {
-    var c1=clsOf(name),dcard=defCard(c1),cdn=chk(name,dcard),reg=itemsFor(c1,dcard,name),dn=reg.filter(function(i){return cdn[i.id]}).length;
+    var c1=clsOf(name),dcard=defCard(c1),cdn=chk(name,dcard),reg=itemsFor(c1,dcard,name).filter(function(i){return !i.plus}),dn=reg.filter(function(i){return cdn[i.id]}).length;
     h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div>'+(PH?'':'<button class="ghost" data-go="switch">다른 학생</button>')+'</div>';
     h+='<button class="today" data-go="today"><div><b>오늘의 학습</b></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
     h+=carryHtml(name,c1);
