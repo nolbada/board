@@ -454,7 +454,7 @@ function viewWiz(){
   var cls=Object.keys(CFG.r),sel=Object.keys(W.names).filter(function(k){return W.names[k]}),d=wdate(),h="";
   var cd=W.card&&W.card!=="-"?cardBy(W.card):null,sfx=cd?slotForCard(cd):"";
   var snm=function(id){var q=SLOTS.filter(function(x){return x[0]===id})[0];return q?q[1]:id};
-  h+='<div class="card"><h3><span class="stp">1</span>어떤 카드</h3>'+cardList("wcard",W.card)+'<button class="cb'+(W.card==="-"?' on':'')+'" data-wcard="-" style="margin-top:6px"><b>카드 없음 (이 용도는 비움)</b></button><div style="margin-top:8px"><button class="btn sm" data-tab="card">+ 새 카드 만들기 / 고치기</button></div>';
+  h+='<div class="card"><h3><span class="stp">1</span>어떤 카드</h3>'+cardList("wcard",W.card)+'<div style="margin-top:8px"><button class="btn sm" data-tab="card">+ 새 카드 만들기 / 고치기</button></div>';
   if(W.card){
     if(sfx)h+='<div class="lbl" style="margin-top:10px">용도 <b>'+esc(snm(sfx))+'</b> (카드 분류 "'+esc(cd.tag)+'" 기준으로 자동)</div>';
     else h+='<div class="row" style="margin-top:10px"><span class="tag">용도</span><select class="w" id="wslot"><option value=""'+(W.slot?'':' selected')+'>용도를 골라 주세요</option>'+SLOTS.map(function(x){return '<option value="'+x[0]+'"'+(W.slot===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join("")+'</select></div>';
@@ -473,7 +473,7 @@ function viewWiz(){
   if(W.scope==="range")h+='<div class="row" style="margin-top:10px"><input type="date" id="wf" value="'+esc(W.from)+'" style="margin:0"><span>~</span><input type="date" id="wt" value="'+esc(W.to)+'" style="margin:0"><span class="tag">'+dlabel(W.from)+' ~ '+dlabel(W.to)+'</span></div><div class="row" style="margin-top:8px"><input class="q" id="wnm" list="pnames" placeholder="기간 이름 (예: 기말 내신기간, 겨울방학 특강)" value="'+esc(W.nm||"")+'" style="margin:0;flex:1;font-size:13px"><datalist id="pnames">'+pnames().map(function(t){return '<option value="'+esc(t)+'">'}).join("")+'</datalist></div><div class="lbl">기간이 끝나면 자동으로 원래 카드로 돌아가요 (내신기간, 방학 특강 등)</div>';
   else h+='<div class="lbl">끝나는 날 없이 계속 이 카드를 써요</div>';
   h+='</div>';
-  var ok=sel.length&&W.slot&&(cd||W.card==="-");
+  var ok=sel.length&&W.slot&&cd;
   h+='<button class="btn pri go" data-wgo="1"'+(ok?'':' disabled')+'>'+(ok?esc(sel.length+'명에게 "'+(cd?cd.name:'카드 없음')+'" 지정 · '+snm(W.slot)):(W.slot?'학생을 고르면 지정할 수 있어요':'용도를 골라 주세요'))+'</button>';
   var cs0=SLOTS.filter(function(x){return x[0]===W.slot})[0];
   h+='<details style="margin:14px 0"><summary style="font-size:13px;font-weight:700;color:#6a7a7d;padding:6px 0">용도 이름·순서 관리</summary><div class="card"><div class="row"><input class="q" id="sname" value="'+esc(cs0?cs0[1]:"")+'" style="margin:0;flex:1;font-size:13px"><button class="btn sm" data-sup="1">↑</button><button class="btn sm" data-sdn="1">↓</button><button class="btn sm" data-sladd="1">+ 용도 추가</button>'+(W.slot&&isExtra(W.slot)?'<button class="btn sm red'+(S.cf==="sl"?' on':'')+'" data-sldel="1">'+(S.cf==="sl"?'한 번 더 누르면 지워요':'이 용도 지우기')+'</button>':'')+'</div></div></details>';
