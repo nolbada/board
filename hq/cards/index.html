@@ -423,9 +423,10 @@ function viewCard(){
   h+='</div><button class="btn pri" data-newc="1" style="width:100%">+ 새 카드</button>'+catMgr()+'</div><div class="main">';
   var c=S.csel&&cardBy(S.csel);
   if(!c)return h+'<div class="empty">왼쪽에서 카드를 고르거나 새 카드를 만드세요</div></div></div>';
-  h+='<button class="btn mbk" data-cback="1">‹ 목록</button><div class="edit"><div class="card">'+(c.auto?'<div id="cnn" style="font-weight:800;font-size:15px;margin:0 0 8px 2px">'+esc(c.name)+'</div>':'')+'<div class="row"><input class="q" id="cn" value="'+esc(c.auto?(c.memo||""):c.name)+'"'+(c.auto?' placeholder="메모 (없어도 됨, 같은 분류에 카드가 여럿일 때 구분용)"':'')+' style="margin:0;flex:1;font-weight:700"></div>';
+  h+='<button class="btn mbk" data-cback="1">‹ 목록</button><div class="edit"><div class="card">'+(c.auto?'<div id="cnn" style="font-weight:800;font-size:15px;margin:0 0 8px 2px">'+esc(c.name)+'</div>':'')+(c.auto?'':'<div class="row"><input class="q" id="cn" value="'+esc(c.name)+'" style="margin:0;flex:1;font-weight:700"></div>');
   var cs0=catsOf(),cc0=cs0.filter(function(x){return x.n===c.tag})[0],sb0=cc0?cc0.s:[],ss0='border:1px solid #cfd8da;border-radius:10px;padding:9px;font-size:13px;background:#fff';
   h+='<div class="row" style="margin-top:6px;gap:6px"><select id="ct" style="flex:1;'+ss0+'"><option value="">대분류 (분류 없음)</option>'+cs0.map(function(x){return '<option value="'+esc(x.n)+'"'+(x.n===c.tag?' selected':'')+'>'+esc(x.n)+'</option>'}).join("")+'</select>'+(sb0.length?'<select id="csub" style="flex:1;'+ss0+'"><option value="">소분류</option>'+sb0.map(function(x){return '<option value="'+esc(x)+'"'+(x===c.sub?' selected':'')+'>'+esc(x)+'</option>'}).join("")+'</select>':'')+'</div>';
+  if(c.auto)h+='<div class="row" style="margin-top:6px"><input class="q" id="cn" value="'+esc(c.memo||"")+'" placeholder="메모 (없어도 됨, 같은 분류에 카드가 여럿일 때 구분용)" style="margin:0;flex:1;font-size:13px"></div>';
   h+='<div style="margin-top:8px">';
   c.items.forEach(function(it,i){
     h+='<div class="it" data-i="'+i+'"><input class="no" type="number" min="1" inputmode="numeric" data-pos="'+i+'" value="'+(i+1)+'"><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
