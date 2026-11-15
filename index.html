@@ -379,22 +379,24 @@ function dlabel(s){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return (d.
 function tcard(s){return slotOf(s)}
 function mon(s){var p=s.split("-"),w=new Date(+p[0],+p[1]-1,+p[2]).getDay();return dstep(s,w===0?-6:1-w)}
 function dow(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]).getDay()}
-function tload(){
+function tload(silent){
   if(TS.mode==="m"){return}
   if(!TS.date)TS.date=iso();if(!TS.cls)TS.cls=Object.keys(ROSTER)[0];
   if(!tpw()){TS.rows=null;render();return}
   var m=mon(TS.date),ds=[],i,td=iso();
   for(i=0;i<7;i++){var x=dstep(m,i);if(x<=td)ds.push(x)}
   ds.push("2000-01-01");
-  TS.wk={};TS.rows=null;
+  if(!silent){TS.wk={};TS.rows=null}
   Promise.all(ds.map(function(d){return fetch(SRV+"?a=day&date="+d+"&pw="+encodeURIComponent(tpw())).then(function(r){return r.json()}).then(function(j){return {d:d,j:j}})})).then(function(a){
-    TS.err="";
+    var W=silent?{}:TS.wk,bad=false;
+    if(!silent)TS.err="";
     a.forEach(function(o){
-      if(!o.j.ok){if(o.j.err==="pw"){ls("bt-pw",null);TS.err="비밀번호가 맞지 않음"}return}
-      var mp={};o.j.rows.forEach(function(x){mp[x.name]=x});TS.wk[o.d]=mp;
+      if(!o.j.ok){bad=true;if(!silent&&o.j.err==="pw"){ls("bt-pw",null);TS.err="비밀번호가 맞지 않음"}return}
+      var mp={};o.j.rows.forEach(function(x){mp[x.name]=x});W[o.d]=mp;
     });
+    if(silent){if(bad||JSON.stringify(W)===JSON.stringify(TS.wk))return;TS.wk=W;TS.rows=W;if(!editing())render();return}
     TS.rows=TS.wk;render();
-  }).catch(function(){TS.err="불러오지 못함";TS.rows=TS.wk;render()});
+  }).catch(function(){if(silent)return;TS.err="불러오지 못함";TS.rows=TS.wk;render()});
 }
 function thist(name){
   fetch(SRV+"?a=hist&name="+encodeURIComponent(name)+"&pw="+encodeURIComponent(tpw())).then(function(r){return r.json()}).then(function(j){if(j.ok){TS.hist[name]=j.rows;render()}}).catch(function(){});
@@ -913,7 +915,7 @@ if(PH&&ls("bd-name")==="열람")leave();
 render();
 cfgFetch(function(ch){if(ch&&!(T&&TS.mode==="m"))render()});
 ttFetch(function(ch){if(ch&&!editing()&&!(T&&TS.mode==="m"))render()});
-if(T){tload();setInterval(tload,30000)}else{setInterval(function(){cfgFetch(function(ch){if(ch&&S.view==="names")render()});ttFetch(function(ch){if(ch&&S.view==="names")render()})},180000);if(who())pull(ls("bd-name"),ls("bd-cls"));flush();setInterval(flush,60000)}
+if(T){tload();setInterval(function(){if(document.visibilityState==='visible')tload(true)},60000)}else{setInterval(function(){cfgFetch(function(ch){if(ch&&S.view==="names")render()});ttFetch(function(ch){if(ch&&S.view==="names")render()})},180000);if(who())pull(ls("bd-name"),ls("bd-cls"));flush();setInterval(flush,60000)}
 function editing(){var a=document.activeElement;return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"))}
 function cardsTick(){cardsFetch(function(ch){if(ch&&!editing()&&!(T&&TS.mode==="m"))render()})}
 cardsTick();
