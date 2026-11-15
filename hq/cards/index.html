@@ -332,7 +332,7 @@ function todayUse(){
   return m;
 }
 function tagsOf(){var t=[];CC.cards.forEach(function(c){if(c.tag&&t.indexOf(c.tag)<0)t.push(c.tag)});return t.sort(function(a,b){return a.localeCompare(b,"ko")})}
-var DEFCAT=[{n:"정규반",s:["초등","중1","중2","중3","예비고","고등"]},{n:"금요일",s:["초등","중1","중2","중3","예비고"]},{n:"토요일 보충",s:["초등","중등"]},{n:"토요일 고등",s:[]},{n:"내신",s:["중등","고등"]},{n:"페널티",s:[]}];
+var DEFCAT=[{n:"정규반",s:["초등","중1","중2","중3","예비고","고등"]},{n:"숙제",s:["초등","중1","중2","중3"]},{n:"금요일",s:["초등","중1","중2","중3","예비고"]},{n:"토요일 보충",s:["초등","중등"]},{n:"토요일 고등",s:[]},{n:"내신",s:["중등","고등"]},{n:"페널티",s:[]}];
 function catsOf(){var base=(CC&&Array.isArray(CC.cat))?CC.cat:DEFCAT,out=base.map(function(x){return {n:x.n,s:(x.s||[]).slice()}});
   CC.cards.forEach(function(c){var t=c.tag;if(!t)return;var f=out.filter(function(x){return x.n===t})[0];if(!f){f={n:t,s:[]};out.push(f)}if(c.sub&&f.s.indexOf(c.sub)<0)f.s.push(c.sub)});return out}
 function catEdit(){if(!Array.isArray(CC.cat))CC.cat=catsOf();return CC.cat}
