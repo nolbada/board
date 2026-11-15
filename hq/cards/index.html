@@ -347,9 +347,9 @@ function cardList(attr,sel){
     var op=!!S.oc[g.k];
     h+='<button class="oh'+(op?' on':'')+'" data-oc2="'+esc(g.k)+'"><i>'+(op?'▾':'▸')+'</i><b>'+esc(g.n)+'</b><small>'+g.cs.length+'장</small></button>';
     if(!op)return;
-    if(!g.cs.length){h+='<div class="gh">카드 없음</div>';return}
-    g.s.concat([""]).forEach(function(sb){var l=g.cs.filter(function(c){return (c.sub||"")===sb});if(!l.length)return;
-      if(g.s.length)h+='<div class="gh">'+esc(sb||"소분류 없음")+'</div>';
+    if(!g.cs.length&&!g.s.length){h+='<div class="gh">카드 없음</div>';return}
+    g.s.concat([""]).forEach(function(sb){var l=g.cs.filter(function(c){return (c.sub||"")===sb});if(!l.length&&!sb)return;
+      if(g.s.length)h+='<div class="gh">'+esc(sb||"소분류 없음")+' <small style="font-weight:400;color:#8a9a9d">'+l.length+'장</small></div>';
       h+=l.map(function(c){return cardBtn(c,attr,sel,TU)}).join("")});
   });
   return h;
