@@ -67,9 +67,9 @@ details summary{cursor:pointer;color:#00828a;font-size:13px;font-weight:700}
 .cr .mv button{flex:1;width:32px;border:1px solid #dde3e5;background:#fff;border-radius:8px;font-size:13px;padding:0}
 .cb small{margin-left:auto;font-weight:500;color:#7a8a8d;font-size:12px}
 .edit{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
-.it{display:grid;grid-template-columns:26px 1fr auto;gap:6px 8px;align-items:center;padding:9px 0;border-top:1px solid #eef1f1}
+.it{display:grid;grid-template-columns:48px 1fr auto;gap:6px 8px;align-items:center;padding:9px 0;border-top:1px solid #eef1f1}
 .it:first-of-type{border-top:0}
-.it .no{font-weight:700;color:#7a8a8d;text-align:center}
+.it .no{font-weight:700;color:#5b6b6e;text-align:center;width:48px;border:1px solid #cfd8da;border-radius:9px;padding:8px 2px;background:#f7fafa}
 .it input[type=text]{width:100%;border:1px solid #cfd8da;border-radius:9px;padding:9px 10px}
 .it .sub{grid-column:2;display:flex;gap:8px;align-items:center}
 .it .sub input[type=text]{flex:1;font-size:13px;padding:7px 9px}
@@ -395,10 +395,10 @@ function viewCard(){
   h+='<div class="row" style="margin-top:6px"><input class="q" id="ct" list="tags" placeholder="분류 (예: 금요일 중등, 내신, 방학 특강)" value="'+esc(c.tag||"")+'" style="margin:0;flex:1;font-size:13px"><datalist id="tags">'+tagsOf().map(function(t){return '<option value="'+esc(t)+'">'}).join("")+'</datalist></div>';
   h+='<div style="margin-top:8px">';
   c.items.forEach(function(it,i){
-    h+='<div class="it" data-i="'+i+'"><span class="no">'+(i+1)+'</span><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
+    h+='<div class="it" data-i="'+i+'"><input class="no" type="number" min="1" inputmode="numeric" data-pos="'+i+'" value="'+(i+1)+'"><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
     h+='<div class="sub"><input type="text" data-si="'+i+'" value="'+esc(it.sub||"")+'" placeholder="작은 설명 (없어도 됨)"><label><input type="checkbox" data-sc2="'+i+'"'+(it.kind==="score"?' checked':'')+'>점수 칸</label></div></div>';
   });
-  h+='</div><div class="row" style="margin-top:10px"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-cup="1">목록에서 ↑</button><button class="btn" data-cdn="1">목록에서 ↓</button><button class="btn" data-dup="1">복제</button><button class="btn pri" data-togo="1">이 카드를 쓸 학생 정하기 ›</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
+  h+='</div><div class="row" style="margin-top:10px"><input id="addpos" type="number" min="1" inputmode="numeric" placeholder="번호" style="width:66px;border:1px solid #cfd8da;border-radius:9px;padding:9px 6px;text-align:center"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-cup="1">목록에서 ↑</button><button class="btn" data-cdn="1">목록에서 ↓</button><button class="btn" data-dup="1">복제</button><button class="btn pri" data-togo="1">이 카드를 쓸 학생 정하기 ›</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
   h+='<div class="pv"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px"><span id="pvt">'+esc(c.name)+'</span> 카드의 학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
   return h;
 }
@@ -488,7 +488,7 @@ document.addEventListener("click",function(e){
   else if(D.cs){S.csel=D.cs;S.cf=null;render();window.scrollTo(0,0)}
   else if(D.cback){S.csel=null;render()}
   else if(D.newc){var nc={id:uid(),name:"새 카드",items:[{id:uid(),t:""}]};CC.cards.push(nc);S.csel=nc.id;markC();render();var el=document.getElementById("cn");if(el){el.focus();el.select()}}
-  else if(D.addit){c=cardBy(S.csel);c.items.push({id:uid(),t:""});markC();render();var ins=document.querySelectorAll("[data-ti]");if(ins.length)ins[ins.length-1].focus()}
+  else if(D.addit){c=cardBy(S.csel);var ap=document.getElementById("addpos"),an=ap?parseInt(ap.value,10):NaN,ax=(an>=1&&an<=c.items.length)?an-1:c.items.length;c.items.splice(ax,0,{id:uid(),t:""});markC();render();var ins=document.querySelectorAll("[data-ti]");if(ins[ax])ins[ax].focus()}
   else if(D.del!==undefined){c=cardBy(S.csel);c.items.splice(+D.del,1);markC();render()}
   else if(D.up!==undefined){c=cardBy(S.csel);var i=+D.up;if(i>0){var t=c.items[i];c.items[i]=c.items[i-1];c.items[i-1]=t;markC();render()}}
   else if(D.dn!==undefined){c=cardBy(S.csel);var j=+D.dn;if(j<c.items.length-1){var t2=c.items[j];c.items[j]=c.items[j+1];c.items[j+1]=t2;markC();render()}}
@@ -510,6 +510,7 @@ document.addEventListener("change",function(e){
     else{var st=ensureSt(n);if(v)st[slot]=v;else delete st[slot];tidySt(n)}
     markC();render()}
   else if(t.dataset.cc){var p=t.dataset.cc.split("|");CC.cls[p[0]]=CC.cls[p[0]]||{};if(t.value)CC.cls[p[0]][p[1]]=t.value;else delete CC.cls[p[0]][p[1]];markC()}
+  else if(t.dataset.pos!==undefined){var pc=cardBy(S.csel),pf=+t.dataset.pos,pn=parseInt(t.value,10);if(pc&&pn>=1){var pt2=Math.min(pn,pc.items.length)-1;if(pt2!==pf){var pm=pc.items.splice(pf,1)[0];pc.items.splice(pt2,0,pm);markC()}}render()}
   else if(t.id==="sd"){S.sdate=t.value||iso();render()}
   else if(t.id==="wpaste"){W.paste=t.value;W.pop=true}
   else if(t.id==="wpc"){W.pc=t.value}
