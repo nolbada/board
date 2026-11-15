@@ -37,7 +37,7 @@
       dirty=true;
     }).catch(function(){loading=false});
   }
-  var AN={rd:"독해33권",vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
+  var AN={bd:"비단챌",rd:"독해33권",vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
   function lastRec(o){
     var d=o.d,ok=o.ok,w,nx="",nn=(+d||0)+1,chk=null;
     if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":"");nx=ok?(nn<=64?AN[APP]+" Day "+nn:AN[APP]+" 끝"):AN[APP]+" Day "+d+" 다시"}
@@ -47,7 +47,7 @@
       try{var ds=DAYS.map(function(x){return x.d}).sort(function(a,b){return a-b}),dn=JSON.parse(ls.getItem("vsig-y-day-v1")||"{}");nd="";for(var i=0;i<ds.length;i++){if(ds[i]>d&&!dn["D"+ds[i]]){nd=ds[i];break}}}catch(e){}
       nx=nd===null?"":(nd?"V시그널 Y Day "+nd:"V시그널 Y 끝")}
     else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"":d+" 다시"}
-    else if(APP==="rd"){w=o.w;nx=""}
+    else if(APP==="rd"||APP==="bd"){w=o.w;nx=""}
     else return;
     (chk||Promise.resolve()).then(function(){
       lr=JSON.stringify({w:w,nx:nx,t:hm(),d:date});dirty=true;report(false);
@@ -149,6 +149,24 @@
         var cur=cmp(),ids=cur.map(function(x){return x[0]});
         cur.forEach(function(x){if(sn.indexOf(x[0])<0)W.BoardLink.score("rd",{w:BN+" "+x[1]+" 지문 완료"})});
         if(ids.join()!==sn.join()){sn=ids;try{ss.setItem(SKR,JSON.stringify(sn))}catch(e){}}
+      },2000);
+    }
+  }
+  if(APP==="bd"){
+    var BK=(W.BDC&&W.BDC.book)||"",BMX=(W.BDC&&W.BDC.theme&&W.BDC.theme.max)||0,BID=(location.pathname.split("/bidanchael/")[1]||"").split("/")[0];
+    if(BK){
+      var KB="bdc_"+BK+"_v1",SKB="bl-snap-bd-"+BK;
+      var bs=function(){var m={},s={},rc={};
+        try{s=JSON.parse(ls.getItem(KB)||"{}")||{}}catch(e){}
+        try{rc=JSON.parse(ls.getItem("bc_rec_"+BID)||"{}")||{}}catch(e){}
+        Object.keys(s.m2||{}).forEach(function(b){if(s.m2[b]){var a=+b,z=Math.min(a+9,BMX||a+9);m["m"+b]="비단챌 "+BK+" "+a+"~"+z+"번 완료"}});
+        Object.keys(rc).forEach(function(r){var a=(+r)*10+1;m["r"+r]="비단챌 "+BK+" 보충 "+a+"~"+(a+9)+"번 오답 "+((rc[r]||{}).w||0)+"개"});
+        return m};
+      var bn=null;try{bn=JSON.parse(ss.getItem(SKB)||"null")}catch(e){}
+      if(!bn){bn=bs();try{ss.setItem(SKB,JSON.stringify(bn))}catch(e){}}
+      setInterval(function(){var c=bs(),ch=false;
+        Object.keys(c).forEach(function(k){if(bn[k]!==c[k]){bn[k]=c[k];ch=true;W.BoardLink.score("bd",{w:c[k]})}});
+        if(ch){try{ss.setItem(SKB,JSON.stringify(bn))}catch(e){}}
       },2000);
     }
   }
