@@ -51,6 +51,7 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .box{width:30px;height:30px;border-radius:50%;border:2px dashed var(--bd);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--soft)}
 .item.plus{background:#fff6cc;border-radius:10px;padding-left:10px;padding-right:10px}
 .plh{font-size:12px;font-weight:700;color:#8a6d00;margin:16px 4px 2px}
+.card.pen{background:#ffe3ec;border:1px solid #f3b3c6}.h.pk{color:#b0305f}.card.pen .item.done{opacity:.6}
 .item.done .box{border:3px solid var(--o);background:var(--os);color:var(--o);font-size:16px}
 .item.done .t{color:var(--soft);text-decoration:line-through}
 .t{font-size:16px;font-weight:700;flex:1}
@@ -345,12 +346,27 @@ function qadd(b){var a=qget().filter(function(x){return qkey(x)!==qkey(b)});a.pu
 function qdrop(b){ls("bd-q",JSON.stringify(qget().filter(function(x){return qkey(x)!==qkey(b)})))}
 function flush(){var a=qget();if(!a.length)return;ls("bd-q","[]");a.forEach(function(b){post(b).catch(function(){qadd(b)})})}
 function sync(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);toast("저장 중");post(b).then(function(){toast("저장됨");flush()}).catch(function(){qadd(b);toast("연결 확인 중, 곧 다시 저장")})}
+var PEN={};
+function penPull(n,cb){
+  fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(n)+"&v="+Date.now()).then(function(r){return r.json()}).then(function(j){
+    var s=j&&j.ok&&j.chk&&j.chk.pen&&j.chk.pen.j,o=null;try{o=s?JSON.parse(s):null}catch(e){}
+    var c=(o&&o.d===iso()&&o.c&&typeof o.c==="object")?o.c:{};
+    var ch=JSON.stringify(c)!==JSON.stringify(PEN[n]||{});PEN[n]=c;cb&&cb(ch);
+  }).catch(function(){});
+}
+function penItems(n){
+  var c=PEN[n]||{},on={},k,m,out=[],seen={};
+  for(k in c){m=k.match(/^(.*?)(\d+)$/);if(m)on[m[1]+":"+c[k]]=1}
+  ((CC&&CC.cards)||[]).forEach(function(cd){if(cd.tag!=="페널티")return;(cd.items||[]).forEach(function(it){if(it.trg&&on[it.trg]&&!seen[it.id]){seen[it.id]=1;out.push(it)}})});
+  return out;
+}
 function pull(n,c){
   fetch(SRV+"?a=get&date="+iso()+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
     if(!j||!j.ok)return;var ch=false;
     for(var card in j.chk){var loc=chk(n,card),srv=j.chk[card],mg={},k;for(k in loc)mg[k]=loc[k];for(k in srv){if(srv[k]&&!mg[k]){mg[k]=srv[k];ch=true}}ls(key(n,card),JSON.stringify(mg))}
     loadLast(n);carryLoad(n,c);var dc=defCard(c),m2=chk(n,dc);if(!m2.tin){m2.tin=hm();ls(key(n,dc),JSON.stringify(m2));syncQ(n,c,dc,m2)}
     if(ch&&ls("bd-name")===n)render();
+    penPull(n,function(c2){if(c2&&ls("bd-name")===n&&!editing())render()});
   }).catch(function(){});
 }
 /* ---------- 선생님 화면 (?t=1) ---------- */
@@ -676,7 +692,7 @@ function ttClick(D){
 function dropName(nm){for(var c in ROSTER){var i=ROSTER[c].indexOf(nm);if(i>-1)ROSTER[c].splice(i,1)}delete SKIP[nm];delete FRI_BY[nm]}
 function clearRec(nm,kind){
   var c=clsOf(nm),jobs=[];
-  if(kind==="today")["reg","fri","sat","extra","app"].forEach(function(cd){jobs.push({a:"put",date:iso(),cls:c,name:nm,card:cd,chk:{}})});
+  if(kind==="today")["reg","fri","sat","extra","app","pen"].forEach(function(cd){jobs.push({a:"put",date:iso(),cls:c,name:nm,card:cd,chk:{}})});
   else{jobs.push({a:"put",date:"2000-01-01",cls:c,name:nm,card:"app",chk:{}});jobs.push({a:"put",date:"2000-01-02",cls:c,name:nm,card:"app",chk:{}})}
   CFG.rs[nm]=Date.now();
   toast("지우는 중");
@@ -838,6 +854,8 @@ function render(){
           h+='<button class="item'+pc+(d?' done':'')+'" data-it="'+it.id+'" data-card="'+card+'"><span class="box">'+(d?'✓':(it.plus?'+':(ix+1)))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>';
     });
     h+='</div>';
+    var pn=penItems(name);
+    if(pn.length){var pd=chk(name,"pen");h+='<div class="h pk">페널티</div><div class="card pen">';pn.forEach(function(it,ix){var d=!!pd[it.id];h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="pen"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>'});h+='</div>'}
     if(card==="reg" && EXTRA.items.length && cd.items.length && cd.items.filter(function(i){return !i.plus}).every(function(i){return done[i.id]})){
       var ex=chk(name,"extra");
       h+='<div class="h">'+EXTRA.t+'</div><div class="card">';
@@ -895,6 +913,7 @@ function editing(){var a=document.activeElement;return !!(a&&(a.tagName==="INPUT
 function cardsTick(){cardsFetch(function(ch){if(ch&&!editing()&&!(T&&TS.mode==="m"))render()})}
 cardsTick();
 setInterval(function(){if(document.visibilityState==="visible")cardsTick()},45000);
+setInterval(function(){if(!T&&who()&&S.view==="today"&&document.visibilityState==="visible"&&!editing())penPull(ls("bd-name"),function(c){if(c)render()})},20000);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState!=="visible")return;cardsTick();if(!T&&who()){pull(ls("bd-name"),ls("bd-cls"));if(!editing())render()}});
 document.addEventListener("change",function(e){
   var i=e.target;if(!i.dataset||!i.dataset.score)return;
