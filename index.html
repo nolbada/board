@@ -493,7 +493,7 @@ function mCls(){
     h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">'+ns.length+'명 선택 · 반 옮기기</div><div class="chips">'+cl.filter(function(x){return x!==c}).map(function(x){return '<button class="chip" data-bm="'+esc(x)+'">'+esc(x)+'</button>'}).join("")+'</div><div class="chips" style="margin-top:8px"><button class="chip" data-bo="1">'+(TS.cf==="bo"?'한 번 더 누르면 퇴원':'선택한 학생 퇴원')+'</button></div></div>';
   }
   h+='<div class="tlist">'+ROSTER[c].map(function(nm){return rowM(nm,cl)}).join("")+'</div>';
-  h+='<a class="ghost" href="/board/hq/go.html?u='+encodeURIComponent('/via/hw/?c='+encodeURIComponent(c))+'&t=%EC%A3%BC%EA%B0%84%20%EC%88%99%EC%A0%9C%20%ED%99%95%EC%9D%B8" style="display:block;text-align:center;text-decoration:none">숙제 검사 열기</a>';
+  h+='<iframe src="/via/hw/?c='+encodeURIComponent(c)+'" style="width:100%;height:88vh;border:0;border-radius:12px;margin-top:10px;background:#fff"></iframe>';
   return h;
 }
 function mTabs(){
