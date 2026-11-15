@@ -328,7 +328,7 @@ function usage(id){
   return n;
 }
 function brief(n){var c=clsOf(n),a=[],d=iso();[["reg","정규"],["fri","금"],["sat","토"]].forEach(function(x){var e=pickSrc(c,x[0],n,d);if(e.id&&e.id!=="-"&&cardBy(e.id))a.push(x[1]+" "+cardBy(e.id).name)});return a.join(" · ")}
-var SLMAP={"정규반":"reg","숙제":"hw","금요일":"fri","토요일 보충":"sat","토요일 고등":"sat"};function slotForCard(c){var s=c&&SLMAP[c.tag];return s&&SLOTS.some(function(x){return x[0]===s})?s:""}
+var SLMAP={"정규반":"reg","내신":"reg","숙제":"hw","금요일":"fri","토요일 보충":"sat","토요일 고등":"sat"};function slotForCard(c){var s=c&&SLMAP[c.tag];return s&&SLOTS.some(function(x){return x[0]===s})?s:""}
 function hwDay(c){var m=String(c).match(/(초|중)\s*(\d)/);if(!m||(m[1]==="중"&&+m[2]>2))return false;var w=new Date().getDay();return /^M/.test(c)?[2,4,6,0].indexOf(w)>-1:/^T/.test(c)?[6,0,1,3].indexOf(w)>-1:false}
 function todayUse(){
   var d=iso(),w=new Date().getDay(),sl0=w===5?"fri":w===6?"sat":"reg",m={};
@@ -341,12 +341,13 @@ function catsOf(){var base=(CC&&Array.isArray(CC.cat))?CC.cat:DEFCAT,out=base.ma
   CC.cards.forEach(function(c){var t=c.tag;if(!t)return;var f=out.filter(function(x){return x.n===t})[0];if(!f){f={n:t,s:[]};out.push(f)}if(c.sub&&f.s.indexOf(c.sub)<0)f.s.push(c.sub)});return out}
 function catEdit(){if(!Array.isArray(CC.cat))CC.cat=catsOf();return CC.cat}
 function cardBtn(c,attr,sel,TU){var tn=TU[c.id]||0,bt='<button class="cb'+(sel===c.id?' on':'')+(tn?' td':'')+(c.tag==="페널티"?' pn':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>'+(tn?'<em>오늘 '+tn+'명</em> · ':'')+'항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}
-function cardList(attr,sel){
+function cardList(attr,sel,hide){
   var TU=todayUse(),cats=catsOf(),h="",cur=(sel&&sel!=="-")?cardBy(sel):null;S.oc=S.oc||{};
   if(cur&&S.ocFor!==sel){S.oc[cur.tag||"__"]=1;S.ocFor=sel}
   var none=CC.cards.filter(function(c){return !c.tag});
   var groups=cats.map(function(x){return {k:x.n,n:x.n,s:x.s,cs:CC.cards.filter(function(c){return c.tag===x.n})}});
   if(none.length)groups.push({k:"__",n:"분류 없음",s:[],cs:none});
+  if(hide)groups=groups.filter(function(g){return hide.indexOf(g.n)<0});
   groups.forEach(function(g){
     var op=!!S.oc[g.k];
     h+='<button class="oh'+(op?' on':'')+'" data-oc2="'+esc(g.k)+'"><i>'+(op?'▾':'▸')+'</i><b>'+esc(g.n)+'</b><small>'+g.cs.length+'장</small></button>';
@@ -454,11 +455,8 @@ function viewWiz(){
   var cls=Object.keys(CFG.r),sel=Object.keys(W.names).filter(function(k){return W.names[k]}),d=wdate(),h="";
   var cd=W.card&&W.card!=="-"?cardBy(W.card):null,sfx=cd?slotForCard(cd):"";
   var snm=function(id){var q=SLOTS.filter(function(x){return x[0]===id})[0];return q?q[1]:id};
-  h+='<div class="card"><h3><span class="stp">1</span>어떤 카드</h3>'+cardList("wcard",W.card)+'<div style="margin-top:8px"><button class="btn sm" data-tab="card">+ 새 카드 만들기 / 고치기</button></div>';
-  if(W.card){
-    if(sfx)h+='<div class="lbl" style="margin-top:10px">용도 <b>'+esc(snm(sfx))+'</b> (카드 분류 "'+esc(cd.tag)+'" 기준으로 자동)</div>';
-    else h+='<div class="row" style="margin-top:10px"><span class="tag">용도</span><select class="w" id="wslot"><option value=""'+(W.slot?'':' selected')+'>용도를 골라 주세요</option>'+SLOTS.map(function(x){return '<option value="'+x[0]+'"'+(W.slot===x[0]?' selected':'')+'>'+x[1]+'</option>'}).join("")+'</select></div>';
-  }
+  h+='<div class="card"><h3><span class="stp">1</span>어떤 카드</h3>'+cardList("wcard",W.card,["페널티","보관","분류 없음"])+'<div style="margin-top:8px"><button class="btn sm" data-tab="card">+ 새 카드 만들기 / 고치기</button></div>';
+  if(cd&&!sfx)h+='<div class="lbl" style="margin-top:10px;color:#c0392b;font-weight:700">이 카드는 분류가 정해져 있지 않아 지정할 수 없어요. 카드 탭에서 분류를 정해 주세요.</div>';
   h+='</div>';
   if(!W.card)return h;
   h+='<div class="card"><h3><span class="stp">2</span>누구에게 <span class="tag">'+sel.length+'명 선택</span>'+(sel.length?' <button class="btn sm" data-wclr="1">선택 해제</button>':'')+(cd&&W.slot?' <button class="btn sm" data-wseed="1">이 카드 쓰는 학생 불러오기</button>':'')+'</h3>';
@@ -474,9 +472,7 @@ function viewWiz(){
   else h+='<div class="lbl">끝나는 날 없이 계속 이 카드를 써요</div>';
   h+='</div>';
   var ok=sel.length&&W.slot&&cd;
-  h+='<button class="btn pri go" data-wgo="1"'+(ok?'':' disabled')+'>'+(ok?esc(sel.length+'명에게 "'+(cd?cd.name:'카드 없음')+'" 지정 · '+snm(W.slot)):(W.slot?'학생을 고르면 지정할 수 있어요':'용도를 골라 주세요'))+'</button>';
-  var cs0=SLOTS.filter(function(x){return x[0]===W.slot})[0];
-  h+='<details style="margin:14px 0"><summary style="font-size:13px;font-weight:700;color:#6a7a7d;padding:6px 0">용도 이름·순서 관리</summary><div class="card"><div class="row"><input class="q" id="sname" value="'+esc(cs0?cs0[1]:"")+'" style="margin:0;flex:1;font-size:13px"><button class="btn sm" data-sup="1">↑</button><button class="btn sm" data-sdn="1">↓</button><button class="btn sm" data-sladd="1">+ 용도 추가</button>'+(W.slot&&isExtra(W.slot)?'<button class="btn sm red'+(S.cf==="sl"?' on':'')+'" data-sldel="1">'+(S.cf==="sl"?'한 번 더 누르면 지워요':'이 용도 지우기')+'</button>':'')+'</div></div></details>';
+  h+='<button class="btn pri go" data-wgo="1"'+(ok?'':' disabled')+'>'+(ok?esc(sel.length+'명에게 "'+(cd?cd.name:'카드 없음')+'" 지정'):(W.slot?'학생을 고르면 지정할 수 있어요':'카드 분류를 정해 주세요'))+'</button>';
   var d0=iso(),rgs=(CC.rg||[]).filter(function(r){return r.to>=d0});
   if(rgs.length){
     h+='<div class="card" style="margin-top:14px"><h3>기간으로 지정된 것</h3>'+rgs.map(function(r){var sl=SLOTS.filter(function(x){return x[0]===r.slot})[0];return '<div class="ov"><div style="flex:1">'+(r.nm?'<b>'+esc(r.nm)+'</b> · ':'')+'<b>'+dlabel(r.from)+' ~ '+dlabel(r.to)+'</b> '+esc(sl?sl[1]:r.slot)+' → '+esc(cname(r.card))+'<div style="font-size:12.5px;color:#6a7a7d">'+esc(r.names.join(", "))+'</div></div><button class="btn sm" data-rgx="'+esc(r.id)+'">취소</button></div>'}).join("")+'</div>';
@@ -516,7 +512,7 @@ document.addEventListener("click",function(e){
   else if(D.wn){W.names[D.wn]=!W.names[D.wn];render()}
   else if(D.wcls){var ns=CFG.r[D.wcls],all=ns.every(function(n){return W.names[n]});ns.forEach(function(n){W.names[n]=!all});render()}
   else if(D.wclr){W.names={};render()}
-  else if(D.wcard){W.card=D.wcard;W.names={};W.slot=slotForCard(cardBy(D.wcard));S.cf=null;render()}
+  else if(D.wcard){W.card=D.wcard;W.names={};var cw=cardBy(D.wcard);W.slot=slotForCard(cw);if(cw&&cw.tag==="내신")W.scope="range";S.cf=null;render()}
   else if(D.wseed){wizSeed();render()}
   else if(D.wgo){wizApply()}
   else if(D.rgx){CC.rg=(CC.rg||[]).filter(function(r){return r.id!==D.rgx});markC();render()}
