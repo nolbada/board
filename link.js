@@ -133,7 +133,7 @@
         Object.keys(dn).forEach(function(pid){
           var r=dn[pid];if(seenX[pid]||!r||typeof r.s!=="number")return;seenX[pid]=1;
           var p=null;ps.forEach(function(x){if(x.id===pid)p=x});
-          W.BoardLink.score("rd",{w:BN+" "+(p?nm(p.u,pid,p.no):pid)+" Exit test "+(r.s*10)+"점"});
+          W.BoardLink.score("rd",{w:BN+" "+(p?nm(p.u,pid,p.no):pid)+" Exit test 완료"});
         });
       },1500);
     }else{
@@ -147,7 +147,7 @@
       if(!sn){sn=cmp().map(function(x){return x[0]});try{ss.setItem(SKR,JSON.stringify(sn))}catch(e){}}
       setInterval(function(){
         var cur=cmp(),ids=cur.map(function(x){return x[0]});
-        cur.forEach(function(x){if(sn.indexOf(x[0])<0)W.BoardLink.score("rd",{w:BN+" "+x[1]+" 지문 완료"})});
+        cur.forEach(function(x){if(sn.indexOf(x[0])<0)W.BoardLink.score("rd",{w:BN+" "+x[1]+" 완료"})});
         if(ids.join()!==sn.join()){sn=ids;try{ss.setItem(SKR,JSON.stringify(sn))}catch(e){}}
       },2000);
     }
