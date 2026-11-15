@@ -2,7 +2,7 @@
  "name": "EM 관제실",
  "short_name": "EM관제실",
  "description": "학생 학습 기록 중앙 관제",
- "start_url": "/board/?t=1",
+ "start_url": "/board/hq/",
  "scope": "/board/",
  "display": "standalone",
  "orientation": "portrait",
