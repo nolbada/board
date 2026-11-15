@@ -535,7 +535,7 @@ document.addEventListener("click",function(e){
   else if(D.cmv){var mp=D.cmv.split("|"),mi=CC.cards.map(function(x){return x.id}).indexOf(mp[0]),ms=+mp[1],mt=CC.cards[mi].tag||"",mj=mi+ms;while(mj>=0&&mj<CC.cards.length&&(CC.cards[mj].tag||"")!==mt)mj+=ms;if(mj>=0&&mj<CC.cards.length){var mx=CC.cards[mi];CC.cards[mi]=CC.cards[mj];CC.cards[mj]=mx;markC()}render()}
   else if(D.cup||D.cdn){var ci=CC.cards.map(function(x){return x.id}).indexOf(S.csel),tg0=CC.cards[ci].tag||"",st0=D.cup?-1:1,cj=ci+st0;while(cj>=0&&cj<CC.cards.length&&(CC.cards[cj].tag||"")!==tg0)cj+=st0;if(cj>=0&&cj<CC.cards.length){var tmp=CC.cards[ci];CC.cards[ci]=CC.cards[cj];CC.cards[cj]=tmp;markC()}render()}
   else if(D.sup||D.sdn){var ids=SLOTS.map(function(x){return x[0]}),si=ids.indexOf(W.slot),sj=si+(D.sup?-1:1);if(si>-1&&sj>=0&&sj<ids.length){var t5=ids[si];ids[si]=ids[sj];ids[sj]=t5;CC.so=ids;markC()}render()}
-  else if(D.dup){c=cardBy(S.csel);var d2={id:uid(),name:c.name+" 복사",items:cl(c.items)};CC.cards.push(d2);S.csel=d2.id;markC();render()}
+  else if(D.dup){c=cardBy(S.csel);var d2={id:uid(),auto:1,memo:"",items:cl(c.items)};if(c.tag&&c.tag!=="보관"){d2.tag=c.tag;if(c.sub)d2.sub=c.sub}d2.name=autoName(d2);CC.cards.push(d2);S.csel=d2.id;S.oc=S.oc||{};S.oc[d2.tag||"__"]=1;markC();render()}
   else if(D.dc){if(S.cf==="dc"){var id=S.csel,k2,s2;CC.cards=CC.cards.filter(function(x){return x.id!==id});
       for(k2 in CC.cls)for(s2 in CC.cls[k2])if(CC.cls[k2][s2]===id)delete CC.cls[k2][s2];
       for(k2 in CC.st){for(s2 in CC.st[k2])if(s2!=="skip"&&CC.st[k2][s2]===id)delete CC.st[k2][s2];tidySt(k2)}
