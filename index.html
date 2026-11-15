@@ -461,7 +461,6 @@ function mHome(){
   if(R.un.length)h+='<div class="h">시간 미정</div><div class="chips">'+R.un.map(function(x){return '<button class="chip" '+(TS.mode==="r"?'data-rc':'data-oc')+'="'+esc(x.c)+'" style="border-left-color:'+colOf(x.c)+'">'+esc(x.c)+' '+ROSTER[x.c].length+'</button>'}).join("")+'</div>';
   if(TS.mode==="r")return h;
   h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">반 추가</div><div style="display:flex;gap:8px"><input class="score" id="ncn" type="text" placeholder="반 이름 (예: M중2D)" maxlength="8" style="flex:1;text-align:left"><button class="leave" data-na="1" style="margin:0;width:auto;padding:0 18px">추가</button></div></div>';
-  h+='<button class="ghost" data-tv="n" style="display:block;width:100%;text-align:center">신규 · 퇴원</button>';
   h+='<a class="ghost" href="/board/hq/cards/" style="display:block;text-align:center;text-decoration:none">카드 · 학생 지정 열기</a>';
   return h;
 }
@@ -500,7 +499,7 @@ function mCls(){
 }
 function mTabs(){
   if(["n","t","s"].indexOf(TS.v)<0)return "";
-  return '<div class="chips" style="margin:0 0 12px">'+[["t","시간표"],["s","학교별"]].map(function(x){return '<button class="chip'+(TS.v===x[0]?' on':'')+'" data-tv="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
+  return '<div class="chips" style="margin:0 0 12px">'+[["n","명부"],["s","학교별"]].map(function(x){return '<button class="chip'+(TS.v===x[0]?' on':'')+'" data-tv="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
 }
 function lvl(nm){
   var g=gNow(nm);if(g)return g<=6?0:g<=9?1:2;
@@ -536,6 +535,7 @@ function exList(){
 }
 function mRoster(){
   var cl=Object.keys(ROSTER),h='';
+  h+='<button class="ghost" data-tv="t" style="display:block;width:100%;text-align:center;margin:0 0 10px">반 · 시간 편집</button>';
   h+='<div style="display:flex;gap:8px;margin:0 0 10px"><input class="score" id="rq" type="text" placeholder="이름 검색" value="'+esc(TS.rq||"")+'" style="flex:1;text-align:left;font-weight:500"><button class="leave" data-nwo="1" style="margin:0;width:auto;padding:0 18px">'+(TS.nw?'닫기':'+ 신규')+'</button><button class="leave" data-exo="1" style="margin:0;width:auto;padding:0 18px">'+(TS.ex?'닫기':'− 퇴원')+'</button></div>';
   if(TS.ex){h+='<div class="card" style="padding:12px 14px"><input class="score" id="exq" type="text" placeholder="퇴원할 학생 이름" value="'+esc(TS.exq||"")+'" style="width:100%;text-align:left;font-weight:500"><div id="exr">'+exList()+'</div></div>'}
   if(TS.nw){
@@ -610,7 +610,7 @@ function mImp(){
 function renderM(){
   var app=document.getElementById("app"),h="";
   document.title="EM보드 관리";
-  if(!TS.v)TS.v="t";
+  if(!TS.v)TS.v="n";
   if(TS.v==="c"&&(!TS.cls||!ROSTER[TS.cls]))TS.v="t";
   h+='<div class="top"><div class="who">EM보드 관리<small>바꾸면 바로 저장됨</small></div></div>'+modeBar()+mTabs();
   h+=(TS.note?'<div class="card" style="padding:12px 14px;border-left:6px solid #D6336C"><div style="font-weight:700">'+esc(TS.note)+'</div><button class="ghost" data-nx="1" style="margin-top:8px">확인</button></div>':"")+(TS.v==="n"?mRoster():TS.v==="s"?mSch():TS.v==="o"?mOut():TS.v==="i"?mImp():TS.v==="c"?mCls():mHome());
