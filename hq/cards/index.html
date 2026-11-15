@@ -316,7 +316,7 @@ function pickSrc(cls,slot,name,date){
 function cname(id){return id==="-"||!id?"없음":(cardBy(id)?cardBy(id).name:"(지워진 카드)")}
 function hasOverride(n){return !!(CC.st[n]&&(CC.st[n].reg||CC.st[n].fri||CC.st[n].sat||CC.st[n].nohw||CC.st[n].mk||(CC.st[n].skip&&CC.st[n].skip.length)))}
 function cardOpts(sel,first){
-  return '<option value=""'+(sel===""?' selected':'')+'>'+esc(first)+'</option>'+CC.cards.map(function(c){return '<option value="'+esc(c.id)+'"'+(sel===c.id?' selected':'')+'>'+esc(c.name)+'</option>'}).join("")+'<option value="-"'+(sel==="-"?' selected':'')+'>카드 없음</option>';
+  return '<option value=""'+(sel===""?' selected':'')+'>'+esc(first)+'</option>'+CC.cards.filter(function(c){return c.tag!=="보관"||sel===c.id}).map(function(c){return '<option value="'+esc(c.id)+'"'+(sel===c.id?' selected':'')+'>'+esc(c.name)+(c.tag==="보관"?" (보관)":"")+'</option>'}).join("")+'<option value="-"'+(sel==="-"?' selected':'')+'>카드 없음</option>';
 }
 function usage(id){
   var n=0,k,s;
