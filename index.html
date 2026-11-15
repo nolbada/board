@@ -493,8 +493,6 @@ function mCls(){
     h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">'+ns.length+'명 선택 · 반 옮기기</div><div class="chips">'+cl.filter(function(x){return x!==c}).map(function(x){return '<button class="chip" data-bm="'+esc(x)+'">'+esc(x)+'</button>'}).join("")+'</div><div class="chips" style="margin-top:8px"><button class="chip" data-bo="1">'+(TS.cf==="bo"?'한 번 더 누르면 퇴원':'선택한 학생 퇴원')+'</button></div></div>';
   }
   h+='<div class="tlist">'+ROSTER[c].map(function(nm){return rowM(nm,cl)}).join("")+'</div>';
-  var hu=/중3/.test(c)?'/via/wn-t/':(/고등|관리형/.test(c)?'':'/via/hw/?c='+encodeURIComponent(c));
-  if(hu)h+='<iframe src="'+hu+'" style="width:100%;height:88vh;border:0;border-radius:12px;margin-top:10px;background:#fff"></iframe>';
   return h;
 }
 function mTabs(){
@@ -707,6 +705,8 @@ function renderT(){
     h+='</div>';
   });
   h+='</div>';
+  var hc=TS.cls||"",hu=/중3/.test(hc)?'/via/wn-t/':(/고등|관리형/.test(hc)?'':'/via/hw/?c='+encodeURIComponent(hc));
+  if(hu)h+='<iframe src="'+hu+'" style="width:100%;height:88vh;border:0;border-radius:12px;margin-top:10px;background:#fff"></iframe>';
   app.innerHTML=h;
 }
 document.addEventListener("click",function(e){
