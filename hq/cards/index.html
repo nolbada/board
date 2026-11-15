@@ -103,6 +103,10 @@ details summary{cursor:pointer;color:#00828a;font-size:13px;font-weight:700}
 .pk.on b,.pk.on small{color:#fff}
 .stp{display:inline-flex;width:22px;height:22px;border-radius:50%;background:#1c2b2d;color:#fff;align-items:center;justify-content:center;font-size:12px;margin-right:8px}
 .gh{font-size:12px;font-weight:700;color:#6a7a7d;margin:10px 0 4px}
+.oh{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid #dde3e5;background:#fff;border-radius:12px;padding:12px;font-weight:800;font-size:15px;margin-top:6px}
+.oh small{margin-left:auto;font-weight:500;color:#7a8a8d;font-size:12px}
+.oh.on{background:#eef7f7;border-color:#00A1A7}
+.oh i{font-style:normal;color:#7a8a8d;width:12px}
 .go{width:100%;padding:15px;font-size:16px;border-radius:14px}
 .go:disabled{background:#cfd8da;border-color:#cfd8da;cursor:default}
 select.w{border:1px solid #cfd8da;border-radius:10px;padding:9px 10px;background:#fff}
@@ -328,7 +332,35 @@ function todayUse(){
   return m;
 }
 function tagsOf(){var t=[];CC.cards.forEach(function(c){if(c.tag&&t.indexOf(c.tag)<0)t.push(c.tag)});return t.sort(function(a,b){return a.localeCompare(b,"ko")})}
+var DEFCAT=[{n:"정규반",s:["초등","중1","중2","중3","예비고","고등"]},{n:"금요일",s:["초등","중1","중2","중3","예비고"]},{n:"토요일 보충",s:["초등","중등"]},{n:"토요일 고등",s:[]},{n:"내신",s:["중등","고등"]},{n:"페널티",s:[]}];
+function catsOf(){var base=(CC&&Array.isArray(CC.cat))?CC.cat:DEFCAT,out=base.map(function(x){return {n:x.n,s:(x.s||[]).slice()}});
+  CC.cards.forEach(function(c){var t=c.tag;if(!t)return;var f=out.filter(function(x){return x.n===t})[0];if(!f){f={n:t,s:[]};out.push(f)}if(c.sub&&f.s.indexOf(c.sub)<0)f.s.push(c.sub)});return out}
+function catEdit(){if(!Array.isArray(CC.cat))CC.cat=catsOf();return CC.cat}
+function cardBtn(c,attr,sel,TU){var tn=TU[c.id]||0,bt='<button class="cb'+(sel===c.id?' on':'')+(tn?' td':'')+'" id="cl-'+esc(c.id)+'" data-'+attr+'="'+esc(c.id)+'"><b>'+esc(c.name)+'</b><small>'+(tn?'<em>오늘 '+tn+'명</em> · ':'')+'항목 '+c.items.length+' · '+usage(c.id)+'곳</small></button>';return attr==="cs"?'<div class="cr">'+bt+'<span class="mv"><button data-cmv="'+esc(c.id)+'|-1">↑</button><button data-cmv="'+esc(c.id)+'|1">↓</button></span></div>':bt}
 function cardList(attr,sel){
+  var TU=todayUse(),cats=catsOf(),h="",cur=(sel&&sel!=="-")?cardBy(sel):null;S.oc=S.oc||{};
+  if(cur&&S.ocFor!==sel){S.oc[cur.tag||"__"]=1;S.ocFor=sel}
+  var none=CC.cards.filter(function(c){return !c.tag});
+  var groups=cats.map(function(x){return {k:x.n,n:x.n,s:x.s,cs:CC.cards.filter(function(c){return c.tag===x.n})}});
+  if(none.length)groups.push({k:"__",n:"분류 없음",s:[],cs:none});
+  groups.forEach(function(g){
+    var op=!!S.oc[g.k];
+    h+='<button class="oh'+(op?' on':'')+'" data-oc2="'+esc(g.k)+'"><i>'+(op?'▾':'▸')+'</i><b>'+esc(g.n)+'</b><small>'+g.cs.length+'장</small></button>';
+    if(!op)return;
+    if(!g.cs.length){h+='<div class="gh">카드 없음</div>';return}
+    g.s.concat([""]).forEach(function(sb){var l=g.cs.filter(function(c){return (c.sub||"")===sb});if(!l.length)return;
+      if(g.s.length)h+='<div class="gh">'+esc(sb||"소분류 없음")+'</div>';
+      h+=l.map(function(c){return cardBtn(c,attr,sel,TU)}).join("")});
+  });
+  return h;
+}
+function catMgr(){
+  if(!S.catm)return '<button class="btn sm" data-catm="1" style="width:100%;margin-top:8px">분류 관리</button>';
+  var h='<div class="card" style="margin-top:8px;padding:10px"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin-bottom:6px">대분류와 소분류 (소분류는 쉼표로 구분)</div>';
+  CC.cat.forEach(function(x,i){h+='<div style="margin-bottom:8px"><div class="row" style="gap:6px"><input type="text" data-catn="'+i+'" value="'+esc(x.n)+'" style="flex:1;border:1px solid #cfd8da;border-radius:9px;padding:8px;font-weight:700"><button class="btn sm" data-catx="'+i+'">×</button></div><input type="text" data-cats="'+i+'" value="'+esc((x.s||[]).join(", "))+'" placeholder="소분류 (없어도 됨)" style="width:100%;margin-top:4px;border:1px solid #cfd8da;border-radius:9px;padding:7px 8px;font-size:13px"></div>'});
+  return h+'<div class="row" style="gap:6px"><button class="btn sm" data-catadd="1">+ 대분류</button><button class="btn sm" data-catm="0">닫기</button></div></div>';
+}
+function cardListOld(attr,sel){
   var tg=tagsOf(),h="",TU=todayUse();
   tg.concat([""]).forEach(function(t){
     var cs=CC.cards.filter(function(c){return (c.tag||"")===t});if(!cs.length)return;
@@ -388,11 +420,12 @@ function detail(n){
 function viewCard(){
   var h='<div class="two'+(S.csel?' sel':'')+'"><div class="side"><div class="cl">';
   h+=cardList("cs",S.csel);
-  h+='</div><button class="btn pri" data-newc="1" style="width:100%">+ 새 카드</button></div><div class="main">';
+  h+='</div><button class="btn pri" data-newc="1" style="width:100%">+ 새 카드</button>'+catMgr()+'</div><div class="main">';
   var c=S.csel&&cardBy(S.csel);
   if(!c)return h+'<div class="empty">왼쪽에서 카드를 고르거나 새 카드를 만드세요</div></div></div>';
   h+='<button class="btn mbk" data-cback="1">‹ 목록</button><div class="edit"><div class="card"><div class="row"><input class="q" id="cn" value="'+esc(c.name)+'" style="margin:0;flex:1;font-weight:700"></div>';
-  h+='<div class="row" style="margin-top:6px"><input class="q" id="ct" list="tags" placeholder="분류 (예: 금요일 중등, 내신, 방학 특강)" value="'+esc(c.tag||"")+'" style="margin:0;flex:1;font-size:13px"><datalist id="tags">'+tagsOf().map(function(t){return '<option value="'+esc(t)+'">'}).join("")+'</datalist></div>';
+  var cs0=catsOf(),cc0=cs0.filter(function(x){return x.n===c.tag})[0],sb0=cc0?cc0.s:[],ss0='border:1px solid #cfd8da;border-radius:10px;padding:9px;font-size:13px;background:#fff';
+  h+='<div class="row" style="margin-top:6px;gap:6px"><select id="ct" style="flex:1;'+ss0+'"><option value="">대분류 (분류 없음)</option>'+cs0.map(function(x){return '<option value="'+esc(x.n)+'"'+(x.n===c.tag?' selected':'')+'>'+esc(x.n)+'</option>'}).join("")+'</select>'+(sb0.length?'<select id="csub" style="flex:1;'+ss0+'"><option value="">소분류</option>'+sb0.map(function(x){return '<option value="'+esc(x)+'"'+(x===c.sub?' selected':'')+'>'+esc(x)+'</option>'}).join("")+'</select>':'')+'</div>';
   h+='<div style="margin-top:8px">';
   c.items.forEach(function(it,i){
     h+='<div class="it" data-i="'+i+'"><input class="no" type="number" min="1" inputmode="numeric" data-pos="'+i+'" value="'+(i+1)+'"><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
@@ -485,9 +518,13 @@ document.addEventListener("click",function(e){
     S.sel=nm;rosterEdit(function(cf){cf.r[cc].push(nm)})}
   else if(D.skip){var n3=S.sel,st=ensureSt(n3),a=(st.skip||[]).slice(),ix=a.indexOf(D.skip);if(ix>-1)a.splice(ix,1);else a.push(D.skip);if(a.length)st.skip=a;else delete st.skip;tidySt(n3);markC();render()}
   else if(D.dx){var p=D.dx.split("|");if(CC.day[p[0]]&&CC.day[p[0]][S.sel]){delete CC.day[p[0]][S.sel][p[1]];tidyDay(p[0],S.sel);markC();render()}}
+  else if(D.oc2!==undefined){S.oc=S.oc||{};if(S.oc[D.oc2])delete S.oc[D.oc2];else{S.oc[D.oc2]=1;S.ocLast=D.oc2}render()}
+  else if(D.catm!==undefined){if(D.catm==="1"){catEdit();S.catm=true}else S.catm=false;render()}
+  else if(D.catadd){catEdit().push({n:"새 대분류",s:[]});markC();render()}
+  else if(D.catx!==undefined){var cxi=+D.catx,cxo=catEdit()[cxi];if(CC.cards.some(function(k){return k.tag===cxo.n})){toast("카드가 있는 대분류는 지울 수 없음")}else{CC.cat.splice(cxi,1);markC();render()}}
   else if(D.cs){S.csel=D.cs;S.cf=null;render();window.scrollTo(0,0)}
   else if(D.cback){S.csel=null;render()}
-  else if(D.newc){var nc={id:uid(),name:"새 카드",items:[{id:uid(),t:""}]};CC.cards.push(nc);S.csel=nc.id;markC();render();var el=document.getElementById("cn");if(el){el.focus();el.select()}}
+  else if(D.newc){var nc={id:uid(),name:"새 카드",items:[{id:uid(),t:""}]};if(S.ocLast&&S.ocLast!=="__")nc.tag=S.ocLast;CC.cards.push(nc);S.csel=nc.id;markC();render();var el=document.getElementById("cn");if(el){el.focus();el.select()}}
   else if(D.addit){c=cardBy(S.csel);var ap=document.getElementById("addpos"),an=ap?parseInt(ap.value,10):NaN,ax=(an>=1&&an<=c.items.length)?an-1:c.items.length;c.items.splice(ax,0,{id:uid(),t:""});markC();render();var ins=document.querySelectorAll("[data-ti]");if(ins[ax])ins[ax].focus()}
   else if(D.del!==undefined){c=cardBy(S.csel);c.items.splice(+D.del,1);markC();render()}
   else if(D.up!==undefined){c=cardBy(S.csel);var i=+D.up;if(i>0){var t=c.items[i];c.items[i]=c.items[i-1];c.items[i-1]=t;markC();render()}}
@@ -519,7 +556,10 @@ document.addEventListener("change",function(e){
   else if(t.id==="sname"){var nv=t.value.trim();if(nv){var ex=(CC.sl||[]).filter(function(s){return s.id===W.slot})[0];if(ex)ex.name=nv;else{CC.sn=CC.sn||{};CC.sn[W.slot]=nv}markC()}render()}
   else if(t.id==="wf"){W.from=t.value||iso();if(W.to<W.from)W.to=W.from;render()}
   else if(t.id==="wt"){W.to=t.value||W.from;render()}
-  else if(t.id==="ct"){var cc2=cardBy(S.csel);if(t.value.trim())cc2.tag=t.value.trim();else delete cc2.tag;markC();render()}
+  else if(t.id==="ct"){var cc2=cardBy(S.csel);if(t.value.trim())cc2.tag=t.value.trim();else delete cc2.tag;delete cc2.sub;S.oc=S.oc||{};S.oc[cc2.tag||"__"]=1;markC();render()}
+  else if(t.id==="csub"){var cc3=cardBy(S.csel);if(t.value)cc3.sub=t.value;else delete cc3.sub;markC();render()}
+  else if(t.dataset.catn!==undefined){var ni=+t.dataset.catn,nv2=t.value.trim(),cr=catEdit()[ni];if(nv2&&cr&&nv2!==cr.n&&!CC.cat.some(function(z){return z.n===nv2})){CC.cards.forEach(function(k){if(k.tag===cr.n)k.tag=nv2});cr.n=nv2;markC()}render()}
+  else if(t.dataset.cats!==undefined){var si2=+t.dataset.cats,sa=[];t.value.split(/[,，]/).forEach(function(z){z=z.trim();if(z&&sa.indexOf(z)<0)sa.push(z)});CC.cat[si2].s=sa;markC();render()}
   else if(t.dataset.sc2!==undefined){var c=cardBy(S.csel),it=c.items[+t.dataset.sc2];if(t.checked)it.kind="score";else delete it.kind;markC()}
 });
 document.addEventListener("input",function(e){
