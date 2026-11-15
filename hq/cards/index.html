@@ -460,7 +460,10 @@ function viewWiz(){
   if(!W.card)return h;
   h+='<div class="card"><h3><span class="stp">2</span>누구에게 <span class="tag">'+sel.length+'명 선택</span>'+(sel.length?' <button class="btn sm" data-wclr="1">선택 해제</button>':'')+(cd&&W.slot?' <button class="btn sm" data-wseed="1">이 카드 쓰는 학생 불러오기</button>':'')+'</h3>';
   h+='<details'+(W.pop?' open':'')+' data-wdet="1" style="margin:6px 0 8px"><summary style="font-size:13px;font-weight:700;color:#00A1A7;padding:6px 0">이름 붙여넣기로 선택 (명단에 없는 이름은 새로 추가)</summary><textarea id="wpaste" rows="6" placeholder="이름을 한 줄에 하나씩 붙여넣기" style="width:100%;border:1px solid #cfd8da;border-radius:10px;padding:10px;font:inherit">'+esc(W.paste||"")+'</textarea><div class="row" style="margin-top:6px"><input class="q" id="wpc" list="wpcl" placeholder="새로 추가할 반 이름 (예: 중2)" value="'+esc(W.pc||"")+'" style="margin:0;flex:1;font-size:13px"><datalist id="wpcl">'+cls.map(function(c){return '<option value="'+esc(c)+'">'}).join("")+'</datalist><button class="btn pri sm" data-wpaste="1">선택하기</button></div></details>';
-  cls.forEach(function(c){
+  W.tc=W.tc||{};var tcs=cls.slice().sort(function(a,b){return a.localeCompare(b,"ko")});
+  h+='<div class="pg" style="margin-bottom:6px">'+tcs.map(function(c){var n0=CFG.r[c].filter(function(n){return W.names[n]}).length;return '<button class="pk'+(W.tc[c]?' on':'')+'" data-wtile="'+esc(c)+'"><b>'+esc(c)+'</b><small>'+CFG.r[c].length+'명'+(n0?' · '+n0+'명 선택':'')+'</small></button>'}).join("")+'</div>';
+  if(!tcs.some(function(c){return W.tc[c]}))h+='<div class="lbl">반을 누르면 그 반 학생이 아래에 나와요</div>';
+  tcs.filter(function(c){return W.tc[c]}).forEach(function(c){
     var ns=CFG.r[c].slice().sort(function(a,b){return a.localeCompare(b,"ko")}),all=ns.length&&ns.every(function(n){return W.names[n]});
     h+='<div class="gh">'+esc(c)+' · '+ns.length+'명 <button class="btn sm" data-wcls="'+esc(c)+'">'+(all?'반 선택 해제':'반 전체 선택')+'</button></div><div class="pg">';
     h+=ns.map(function(n){var e=W.slot?pickSrc(c,W.slot,n,d):{};return '<button class="pk'+(W.names[n]?' on':'')+'" data-wn="'+esc(n)+'"><b>'+esc(n)+'</b><small>'+esc(W.slot?(e.id?cname(e.id):"카드 없음"):"")+'</small></button>'}).join("")+'</div>';
@@ -509,6 +512,7 @@ document.addEventListener("click",function(e){
       if(padd.length){rosterEdit(function(cf){cf.r[pcn]=cf.r[pcn]||[];padd.forEach(function(n){var ex=false;for(var k in cf.r)if(cf.r[k].indexOf(n)>-1)ex=true;if(!ex)cf.r[pcn].push(n)})}).then(function(){toast(padd.length+"명 추가, "+pn.length+"명 선택")})}else{render();toast(pn.length+"명 선택")}}}
   else if(D.wsc){W.scope=D.wsc;render()}
   else if(D.wn){W.names[D.wn]=!W.names[D.wn];render()}
+  else if(D.wtile){W.tc=W.tc||{};W.tc[D.wtile]=!W.tc[D.wtile];render()}
   else if(D.wcls){var ns=CFG.r[D.wcls],all=ns.every(function(n){return W.names[n]});ns.forEach(function(n){W.names[n]=!all});render()}
   else if(D.wclr){W.names={};render()}
   else if(D.wcard){W.card=D.wcard;W.names={};var cw=cardBy(D.wcard);W.slot=slotForCard(cw);if(cw&&cw.tag==="내신")W.scope="range";S.cf=null;render()}
