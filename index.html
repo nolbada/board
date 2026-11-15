@@ -412,7 +412,7 @@ function lastH(nm){
   var lw=TS.wk&&TS.wk["2000-01-01"],row=lw&&lw[nm],ap=(row&&row.chk&&row.chk.app)||{};
   var ks=Object.keys(ap).filter(function(k){return k.indexOf("l_")===0});
   var hs=ks.map(function(k){var o={};try{o=JSON.parse(ap[k])}catch(e){}return o.w?'<div style="font-size:14px;margin:2px 0">'+(o.nx?'<span style="color:#2f8f6b;font-weight:700">다음 '+esc(o.nx)+'</span>':esc(o.w))+oLink(o)+'</div>':""}).join("");
-  return hs?'<div style="margin-top:8px;padding:8px 10px;background:#f3f8f5;border-radius:10px">'+hs+'</div>':"";
+  return "";
 }
 function weekH(nm,m,td){
   var out="",n=0,i;
