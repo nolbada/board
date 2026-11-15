@@ -69,6 +69,7 @@ details summary{cursor:pointer;color:#00828a;font-size:13px;font-weight:700}
 .edit{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
 .it{display:grid;grid-template-columns:48px 1fr auto;gap:6px 8px;align-items:center;padding:9px 0;border-top:1px solid #eef1f1}
 .it:first-of-type{border-top:0}
+.pv .pi.pl{background:#fff6cc}
 .it .no{font-weight:700;color:#5b6b6e;text-align:center;width:48px;border:1px solid #cfd8da;border-radius:9px;padding:8px 2px;background:#f7fafa}
 .it input[type=text]{width:100%;border:1px solid #cfd8da;border-radius:9px;padding:9px 10px}
 .it .sub{grid-column:2;display:flex;gap:8px;align-items:center}
@@ -430,7 +431,7 @@ function viewCard(){
   h+='<div style="margin-top:8px">';
   c.items.forEach(function(it,i){
     h+='<div class="it" data-i="'+i+'"><input class="no" type="number" min="1" inputmode="numeric" data-pos="'+i+'" value="'+(i+1)+'"><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
-    h+='<div class="sub"><input type="text" data-si="'+i+'" value="'+esc(it.sub||"")+'" placeholder="작은 설명 (없어도 됨)"><label><input type="checkbox" data-sc2="'+i+'"'+(it.kind==="score"?' checked':'')+'>점수 칸</label></div></div>';
+    h+='<div class="sub"><input type="text" data-si="'+i+'" value="'+esc(it.sub||"")+'" placeholder="작은 설명 (없어도 됨)"><label><input type="checkbox" data-sc2="'+i+'"'+(it.kind==="score"?' checked':'')+'>점수 칸</label><label><input type="checkbox" data-pl="'+i+'"'+(it.plus?' checked':'')+'>플러스</label></div></div>';
   });
   h+='</div><div class="row" style="margin-top:10px"><input id="addpos" type="number" min="1" inputmode="numeric" placeholder="번호" style="width:66px;border:1px solid #cfd8da;border-radius:9px;padding:9px 6px;text-align:center"><button class="btn" data-addit="1">+ 항목 추가</button><button class="btn" data-cup="1">목록에서 ↑</button><button class="btn" data-cdn="1">목록에서 ↓</button><button class="btn" data-dup="1">복제</button><button class="btn pri" data-togo="1">이 카드를 쓸 학생 정하기 ›</button><button class="btn red'+(S.cf==="dc"?' on':'')+'" data-dc="1">'+(S.cf==="dc"?'한 번 더 누르면 지워요 ('+usage(c.id)+'곳에서 빠짐)':'카드 지우기')+'</button></div></div>';
   h+='<div class="pv"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px"><span id="pvt">'+esc(c.name)+'</span> 카드의 학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
@@ -439,7 +440,7 @@ function viewCard(){
 function autoName(c){var b=[c.tag,c.sub].filter(Boolean).join(" · ")||"새 카드";if(c.memo)b+=" · "+c.memo;var n=b,k=2;while(CC.cards.some(function(x){return x.id!==c.id&&x.name===n}))n=b+" "+(k++);return n}
 function pvHtml(c){
   if(!c.items.length)return '<div class="empty" style="padding:16px">항목 없음</div>';
-  return c.items.map(function(it,i){return '<div class="pi"><span class="pb">'+(i+1)+'</span><span class="pt">'+esc(it.t||" ")+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></div>'}).join("");
+  return c.items.map(function(it,i){return '<div class="pi'+(it.plus?' pl':'')+'"><span class="pb">'+(i+1)+'</span><span class="pt">'+esc(it.t||" ")+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></div>'}).join("");
 }
 function pnames(){var a=[];(CC.rg||[]).forEach(function(r){if(r.nm&&a.indexOf(r.nm)<0)a.push(r.nm)});return a}
 function wdate(){return W.scope==="range"?W.from:iso()}
@@ -562,6 +563,7 @@ document.addEventListener("change",function(e){
   else if(t.id==="csub"){var cc3=cardBy(S.csel);if(t.value)cc3.sub=t.value;else delete cc3.sub;if(cc3.auto)cc3.name=autoName(cc3);markC();render()}
   else if(t.dataset.catn!==undefined){var ni=+t.dataset.catn,nv2=t.value.trim(),cr=catEdit()[ni];if(nv2&&cr&&nv2!==cr.n&&!CC.cat.some(function(z){return z.n===nv2})){CC.cards.forEach(function(k){if(k.tag===cr.n)k.tag=nv2});cr.n=nv2;CC.cards.forEach(function(k){if(k.auto)k.name=autoName(k)});markC()}render()}
   else if(t.dataset.cats!==undefined){var si2=+t.dataset.cats,sa=[];t.value.split(/[,，]/).forEach(function(z){z=z.trim();if(z&&sa.indexOf(z)<0)sa.push(z)});CC.cat[si2].s=sa;markC();render()}
+  else if(t.dataset.pl!==undefined){var cp=cardBy(S.csel),ip=cp.items[+t.dataset.pl];if(t.checked)ip.plus=1;else delete ip.plus;markC();render()}
   else if(t.dataset.sc2!==undefined){var c=cardBy(S.csel),it=c.items[+t.dataset.sc2];if(t.checked)it.kind="score";else delete it.kind;markC()}
 });
 document.addEventListener("input",function(e){
