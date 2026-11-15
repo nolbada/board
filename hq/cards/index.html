@@ -423,7 +423,7 @@ function viewCard(){
   h+='</div><button class="btn pri" data-newc="1" style="width:100%">+ 새 카드</button>'+catMgr()+'</div><div class="main">';
   var c=S.csel&&cardBy(S.csel);
   if(!c)return h+'<div class="empty">왼쪽에서 카드를 고르거나 새 카드를 만드세요</div></div></div>';
-  h+='<button class="btn mbk" data-cback="1">‹ 목록</button><div class="edit"><div class="card"><div class="row"><input class="q" id="cn" value="'+esc(c.name)+'" style="margin:0;flex:1;font-weight:700"></div>';
+  h+='<button class="btn mbk" data-cback="1">‹ 목록</button><div class="edit"><div class="card">'+(c.auto?'<div id="cnn" style="font-weight:800;font-size:15px;margin:0 0 8px 2px">'+esc(c.name)+'</div>':'')+'<div class="row"><input class="q" id="cn" value="'+esc(c.auto?(c.memo||""):c.name)+'"'+(c.auto?' placeholder="메모 (없어도 됨, 같은 분류에 카드가 여럿일 때 구분용)"':'')+' style="margin:0;flex:1;font-weight:700"></div>';
   var cs0=catsOf(),cc0=cs0.filter(function(x){return x.n===c.tag})[0],sb0=cc0?cc0.s:[],ss0='border:1px solid #cfd8da;border-radius:10px;padding:9px;font-size:13px;background:#fff';
   h+='<div class="row" style="margin-top:6px;gap:6px"><select id="ct" style="flex:1;'+ss0+'"><option value="">대분류 (분류 없음)</option>'+cs0.map(function(x){return '<option value="'+esc(x.n)+'"'+(x.n===c.tag?' selected':'')+'>'+esc(x.n)+'</option>'}).join("")+'</select>'+(sb0.length?'<select id="csub" style="flex:1;'+ss0+'"><option value="">소분류</option>'+sb0.map(function(x){return '<option value="'+esc(x)+'"'+(x===c.sub?' selected':'')+'>'+esc(x)+'</option>'}).join("")+'</select>':'')+'</div>';
   h+='<div style="margin-top:8px">';
@@ -435,6 +435,7 @@ function viewCard(){
   h+='<div class="pv"><div style="font-size:12px;font-weight:700;color:#6a7a7d;margin:0 0 8px 2px"><span id="pvt">'+esc(c.name)+'</span> 카드의 학생 화면</div><div class="pbox" id="pv"></div></div></div></div></div>';
   return h;
 }
+function autoName(c){var b=[c.tag,c.sub].filter(Boolean).join(" · ")||"새 카드";if(c.memo)b+=" · "+c.memo;var n=b,k=2;while(CC.cards.some(function(x){return x.id!==c.id&&x.name===n}))n=b+" "+(k++);return n}
 function pvHtml(c){
   if(!c.items.length)return '<div class="empty" style="padding:16px">항목 없음</div>';
   return c.items.map(function(it,i){return '<div class="pi"><span class="pb">'+(i+1)+'</span><span class="pt">'+esc(it.t||" ")+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></div>'}).join("");
@@ -505,7 +506,7 @@ document.addEventListener("click",function(e){
   else if(D.wcard){W.card=D.wcard;wizSeed();render()}
   else if(D.wgo){wizApply()}
   else if(D.rgx){CC.rg=(CC.rg||[]).filter(function(r){return r.id!==D.rgx});markC();render()}
-  else if(D.togo){W.card=S.csel;wizSeed();S.tab="wiz";render();window.scrollTo(0,0)}
+  else if(D.togo){W.card=S.csel;var cx=cardBy(S.csel),mp={"정규반":"reg","금요일":"fri","토요일 보충":"sat","토요일 고등":"sat"};if(cx&&mp[cx.tag]&&SLOTS.some(function(x){return x[0]===mp[cx.tag]}))W.slot=mp[cx.tag];wizSeed();S.tab="wiz";render();window.scrollTo(0,0)}
   else if(D.fc!==undefined){S.cls=D.fc;render()}
   else if(D.sel){S.sel=D.sel;S.cf=null;render();window.scrollTo(0,0)}
   else if(D.back){S.sel=null;render()}
@@ -524,7 +525,7 @@ document.addEventListener("click",function(e){
   else if(D.catx!==undefined){var cxi=+D.catx,cxo=catEdit()[cxi];if(CC.cards.some(function(k){return k.tag===cxo.n})){toast("카드가 있는 대분류는 지울 수 없음")}else{CC.cat.splice(cxi,1);markC();render()}}
   else if(D.cs){S.csel=D.cs;S.cf=null;render();window.scrollTo(0,0)}
   else if(D.cback){S.csel=null;render()}
-  else if(D.newc){var nc={id:uid(),name:"새 카드",items:[{id:uid(),t:""}]};if(S.ocLast&&S.ocLast!=="__")nc.tag=S.ocLast;CC.cards.push(nc);S.csel=nc.id;markC();render();var el=document.getElementById("cn");if(el){el.focus();el.select()}}
+  else if(D.newc){var nc={id:uid(),auto:1,memo:"",name:"새 카드",items:[{id:uid(),t:""}]};if(S.ocLast&&S.ocLast!=="__")nc.tag=S.ocLast;CC.cards.push(nc);nc.name=autoName(nc);S.csel=nc.id;markC();render();var el=document.getElementById("cn");if(el){el.focus()}}
   else if(D.addit){c=cardBy(S.csel);var ap=document.getElementById("addpos"),an=ap?parseInt(ap.value,10):NaN,ax=(an>=1&&an<=c.items.length)?an-1:c.items.length;c.items.splice(ax,0,{id:uid(),t:""});markC();render();var ins=document.querySelectorAll("[data-ti]");if(ins[ax])ins[ax].focus()}
   else if(D.del!==undefined){c=cardBy(S.csel);c.items.splice(+D.del,1);markC();render()}
   else if(D.up!==undefined){c=cardBy(S.csel);var i=+D.up;if(i>0){var t=c.items[i];c.items[i]=c.items[i-1];c.items[i-1]=t;markC();render()}}
@@ -556,16 +557,16 @@ document.addEventListener("change",function(e){
   else if(t.id==="sname"){var nv=t.value.trim();if(nv){var ex=(CC.sl||[]).filter(function(s){return s.id===W.slot})[0];if(ex)ex.name=nv;else{CC.sn=CC.sn||{};CC.sn[W.slot]=nv}markC()}render()}
   else if(t.id==="wf"){W.from=t.value||iso();if(W.to<W.from)W.to=W.from;render()}
   else if(t.id==="wt"){W.to=t.value||W.from;render()}
-  else if(t.id==="ct"){var cc2=cardBy(S.csel);if(t.value.trim())cc2.tag=t.value.trim();else delete cc2.tag;delete cc2.sub;S.oc=S.oc||{};S.oc[cc2.tag||"__"]=1;markC();render()}
-  else if(t.id==="csub"){var cc3=cardBy(S.csel);if(t.value)cc3.sub=t.value;else delete cc3.sub;markC();render()}
-  else if(t.dataset.catn!==undefined){var ni=+t.dataset.catn,nv2=t.value.trim(),cr=catEdit()[ni];if(nv2&&cr&&nv2!==cr.n&&!CC.cat.some(function(z){return z.n===nv2})){CC.cards.forEach(function(k){if(k.tag===cr.n)k.tag=nv2});cr.n=nv2;markC()}render()}
+  else if(t.id==="ct"){var cc2=cardBy(S.csel);if(t.value.trim())cc2.tag=t.value.trim();else delete cc2.tag;delete cc2.sub;if(cc2.auto)cc2.name=autoName(cc2);S.oc=S.oc||{};S.oc[cc2.tag||"__"]=1;markC();render()}
+  else if(t.id==="csub"){var cc3=cardBy(S.csel);if(t.value)cc3.sub=t.value;else delete cc3.sub;if(cc3.auto)cc3.name=autoName(cc3);markC();render()}
+  else if(t.dataset.catn!==undefined){var ni=+t.dataset.catn,nv2=t.value.trim(),cr=catEdit()[ni];if(nv2&&cr&&nv2!==cr.n&&!CC.cat.some(function(z){return z.n===nv2})){CC.cards.forEach(function(k){if(k.tag===cr.n)k.tag=nv2});cr.n=nv2;CC.cards.forEach(function(k){if(k.auto)k.name=autoName(k)});markC()}render()}
   else if(t.dataset.cats!==undefined){var si2=+t.dataset.cats,sa=[];t.value.split(/[,，]/).forEach(function(z){z=z.trim();if(z&&sa.indexOf(z)<0)sa.push(z)});CC.cat[si2].s=sa;markC();render()}
   else if(t.dataset.sc2!==undefined){var c=cardBy(S.csel),it=c.items[+t.dataset.sc2];if(t.checked)it.kind="score";else delete it.kind;markC()}
 });
 document.addEventListener("input",function(e){
   var t=e.target;if(!loaded||!t)return;
   if(t.id==="q"){S.q=t.value.trim();var pos=t.selectionStart;render();var q=document.getElementById("q");q.focus();q.setSelectionRange(pos,pos)}
-  else if(t.id==="cn"){var c=cardBy(S.csel);c.name=t.value;var el=document.getElementById("cl-"+S.csel);if(el)el.querySelector("b").textContent=t.value;var pt=document.getElementById("pvt");if(pt)pt.textContent=t.value;markC()}
+  else if(t.id==="cn"){var c=cardBy(S.csel);if(c.auto){c.memo=t.value.trim();c.name=autoName(c);var hn=document.getElementById("cnn");if(hn)hn.textContent=c.name}else c.name=t.value;var el=document.getElementById("cl-"+S.csel);if(el)el.querySelector("b").textContent=c.name;var pt=document.getElementById("pvt");if(pt)pt.textContent=c.name;markC()}
   else if(t.dataset.ti!==undefined){var c1=cardBy(S.csel);c1.items[+t.dataset.ti].t=t.value;document.getElementById("pv").innerHTML=pvHtml(c1);markC()}
   else if(t.dataset.si!==undefined){var c2=cardBy(S.csel),it=c2.items[+t.dataset.si];if(t.value)it.sub=t.value;else delete it.sub;document.getElementById("pv").innerHTML=pvHtml(c2);markC()}
 });
