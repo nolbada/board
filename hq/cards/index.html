@@ -511,7 +511,7 @@ document.addEventListener("click",function(e){
   else if(D.wcard){W.card=D.wcard;wizSeed();render()}
   else if(D.wgo){wizApply()}
   else if(D.rgx){CC.rg=(CC.rg||[]).filter(function(r){return r.id!==D.rgx});markC();render()}
-  else if(D.togo){W.card=S.csel;var cx=cardBy(S.csel),mp={"정규반":"reg","금요일":"fri","토요일 보충":"sat","토요일 고등":"sat"};if(cx&&mp[cx.tag]&&SLOTS.some(function(x){return x[0]===mp[cx.tag]}))W.slot=mp[cx.tag];wizSeed();S.tab="wiz";render();window.scrollTo(0,0)}
+  else if(D.togo){W.names={};W.card=S.csel;var cx=cardBy(S.csel),mp={"정규반":"reg","금요일":"fri","토요일 보충":"sat","토요일 고등":"sat"};if(cx&&mp[cx.tag]&&SLOTS.some(function(x){return x[0]===mp[cx.tag]}))W.slot=mp[cx.tag];wizSeed();S.tab="wiz";render();window.scrollTo(0,0)}
   else if(D.fc!==undefined){S.cls=D.fc;render()}
   else if(D.sel){S.sel=D.sel;S.cf=null;render();window.scrollTo(0,0)}
   else if(D.back){S.sel=null;render()}
