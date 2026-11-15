@@ -1,6 +1,6 @@
 {
- "name": "EM 관제실",
- "short_name": "EM관제실",
+ "name": "관리보드",
+ "short_name": "관리보드",
  "description": "학생 학습 기록 중앙 관제",
  "start_url": "/board/hq/",
  "scope": "/board/",
