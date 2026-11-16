@@ -423,7 +423,7 @@ function weekH(nm,m,td){
     var row=TS.wk[d]&&TS.wk[d][nm],ap=(row&&row.chk&&row.chk.app)||{},ls_=[];
     Object.keys(ap).forEach(function(k){
       if(k.indexOf("l_")===0){var x=lLine(ap[k]);if(x)ls_.push(x)}
-      else if(k.indexOf("a_")===0&&!ap["l_"+k.slice(2)])ls_.push(aLine(k,ap[k]));
+      else if(k.indexOf("a_")===0&&!ap["l_"+k.slice(2)]){var lw0=TS.wk["2000-01-01"]&&TS.wk["2000-01-01"][nm],la=(lw0&&lw0.chk&&lw0.chk.app&&lw0.chk.app["l_"+k.slice(2)])||"",lo={};try{lo=JSON.parse(la||"{}")}catch(e){}ls_.push(lo.w&&lo.d===d?lLine(la):aLine(k,ap[k]))}
     });
     if(ls_.length){n++;out+='<div style="margin-top:8px"><b>'+dlabel(d)+'</b>'+ls_.join("")+'</div>'}
   }
