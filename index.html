@@ -349,11 +349,14 @@ function qdrop(b){ls("bd-q",JSON.stringify(qget().filter(function(x){return qkey
 function flush(){var a=qget();if(!a.length)return;ls("bd-q","[]");a.forEach(function(b){post(b).catch(function(){qadd(b)})})}
 function sync(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);toast("저장 중");post(b).then(function(){toast("저장됨");flush()}).catch(function(){qadd(b);toast("연결 확인 중, 곧 다시 저장")})}
 var PEN={};
+function penSet(n,j){
+  var s=j&&j.ok&&j.chk&&j.chk.pen&&j.chk.pen.j,o=null;try{o=s?JSON.parse(s):null}catch(e){}
+  var c=(o&&o.d===iso()&&o.c&&typeof o.c==="object")?o.c:{};
+  var ch=JSON.stringify(c)!==JSON.stringify(PEN[n]||{});PEN[n]=c;return ch;
+}
 function penPull(n,cb){
   fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(n)+"&v="+Date.now()).then(function(r){return r.json()}).then(function(j){
-    var s=j&&j.ok&&j.chk&&j.chk.pen&&j.chk.pen.j,o=null;try{o=s?JSON.parse(s):null}catch(e){}
-    var c=(o&&o.d===iso()&&o.c&&typeof o.c==="object")?o.c:{};
-    var ch=JSON.stringify(c)!==JSON.stringify(PEN[n]||{});PEN[n]=c;cb&&cb(ch);
+    var ch=penSet(n,j);cb&&cb(ch);
   }).catch(function(){});
 }
 function penItems(n){
@@ -363,12 +366,13 @@ function penItems(n){
   return out;
 }
 function pull(n,c){
+  /* 261117: "이어서 할 차례"·"지난 시간에 못 끝낸 것"·페널티는 오늘 기록의 답을 기다리지 않고 같이 받기 시작한다(전에는 오늘 기록이 온 뒤에야 받기 시작했다) */
+  loadLast(n);carryLoad(n,c);
   fetch(SRV+"?a=get&date="+iso()+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
     if(!j||!j.ok)return;var ch=false;
     for(var card in j.chk){var loc=chk(n,card),srv=j.chk[card],mg={},k;for(k in loc)mg[k]=loc[k];for(k in srv){if(srv[k]&&!mg[k]){mg[k]=srv[k];ch=true}}ls(key(n,card),JSON.stringify(mg))}
-    loadLast(n);carryLoad(n,c);var dc=defCard(c,n),m2=chk(n,dc);if(!m2.tin){m2.tin=hm();ls(key(n,dc),JSON.stringify(m2));syncQ(n,c,dc,m2)}
+    var dc=defCard(c,n),m2=chk(n,dc);if(!m2.tin){m2.tin=hm();ls(key(n,dc),JSON.stringify(m2));syncQ(n,c,dc,m2)}
     if(ch&&ls("bd-name")===n)render();
-    penPull(n,function(c2){if(c2&&ls("bd-name")===n&&!editing())render()});
   }).catch(function(){});
 }
 /* ---------- 선생님 화면 (?t=1) ---------- */
@@ -379,6 +383,16 @@ function dlabel(s){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return (d.
 function tcard(s){return slotOf(s)}
 function mon(s){var p=s.split("-"),w=new Date(+p[0],+p[1]-1,+p[2]).getDay();return dstep(s,w===0?-6:1-w)}
 function dow(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]).getDay()}
+/* 261117: 여러 날짜를 요청 하나(a=days)로 받는다. 전에는 날짜마다 요청을 따로 보내 모두 올 때까지 기다렸다. 서버가 이 요청을 모르면 예전 방식으로 받는다 */
+function tdays(ds){
+  var pw=encodeURIComponent(tpw());
+  var old=function(){return Promise.all(ds.map(function(d){return fetch(SRV+"?a=day&date="+d+"&pw="+pw).then(function(r){return r.json()}).then(function(j){return {d:d,j:j}})}))};
+  return fetch(SRV+"?a=days&dates="+ds.join(",")+"&pw="+pw).then(function(r){return r.json()}).then(function(j){
+    if(j&&j.ok&&j.days)return ds.map(function(d){return {d:d,j:{ok:true,rows:j.days[d]||[]}}});
+    if(j&&j.err==="pw")return ds.map(function(d){return {d:d,j:j}});
+    return old();
+  },function(){return old()});
+}
 function tload(silent){
   if(TS.mode==="m"){return}
   if(!TS.date)TS.date=iso();if(!TS.cls)TS.cls=Object.keys(ROSTER)[0];
@@ -387,7 +401,7 @@ function tload(silent){
   for(i=0;i<7;i++){var x=dstep(m,i);if(x<=td)ds.push(x)}
   ds.push("2000-01-01");
   if(!silent){TS.wk={};TS.rows=null}
-  Promise.all(ds.map(function(d){return fetch(SRV+"?a=day&date="+d+"&pw="+encodeURIComponent(tpw())).then(function(r){return r.json()}).then(function(j){return {d:d,j:j}})})).then(function(a){
+  tdays(ds).then(function(a){
     var W=silent?{}:TS.wk,bad=false;
     if(!silent)TS.err="";
     a.forEach(function(o){
@@ -781,10 +795,16 @@ function hubHref(g,a,q){
 }
 var LAST={};
 function loadLast(n){
-  fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+  /* 261117: 지난번에 받아 둔 "이어서 할 차례"를 먼저 보여 주고(보여 주기만 한다), 서버 답이 오면 그것으로 바꾼다. 같은 답에서 페널티도 함께 읽는다 */
+  var lk="bd-last|"+n,lc=null;try{lc=JSON.parse(ls(lk)||"null")}catch(e){}
+  if(!lc||typeof lc!=="object")lc={};
+  if(JSON.stringify(lc)!==JSON.stringify(LAST)){LAST=lc;if(ls("bd-name")===n&&!T&&!editing())render()}
+  fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(n)+"&v="+Date.now()).then(function(r){return r.json()}).then(function(j){
     if(!j||!j.ok)return;var ap=(j.chk&&j.chk.app)||{},o={};
     Object.keys(ap).forEach(function(k){if(k.indexOf("l_")===0){try{o[k]=JSON.parse(ap[k])}catch(e){}}});
-    LAST=o;if(ls("bd-name")===n&&!T)render();
+    var pc=penSet(n,j),lch=JSON.stringify(o)!==JSON.stringify(LAST);
+    LAST=o;ls(lk,JSON.stringify(o));
+    if((lch||pc)&&ls("bd-name")===n&&!T&&!editing())render();
   }).catch(function(){});
 }
 var CARRY=null;
@@ -796,7 +816,12 @@ function carryLoad(n,c){
   try{o=JSON.parse(ls(ck)||"null")}catch(e){}
   if(o&&o.on===today){CARRY={n:n,d:o.d,items:o.items};if(ls("bd-name")===n)render();return}
   var ds=[],i;for(i=1;i<=4;i++)ds.push(dstep(today,-i));
-  Promise.all(ds.map(function(dt){return fetch(SRV+"?a=get&date="+dt+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).catch(function(){return null})})).then(function(rs){
+  /* 261117: 지난 네 날짜를 요청 하나(a=getm)로 받는다. 서버가 이 요청을 모르면 예전처럼 날짜마다 받는다 */
+  var getOld=function(){return Promise.all(ds.map(function(dt){return fetch(SRV+"?a=get&date="+dt+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).catch(function(){return null})}))};
+  fetch(SRV+"?a=getm&dates="+ds.join(",")+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+    if(j&&j.ok&&j.recs)return ds.map(function(dt){return {ok:true,chk:j.recs[dt]||{}}});
+    return getOld();
+  },function(){return getOld()}).then(function(rs){
     var res={on:today,d:"",items:[]},ok=true;
     for(var k=0;k<rs.length;k++){
       var j=rs[k];if(!j||!j.ok){ok=false;continue}
