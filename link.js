@@ -103,20 +103,24 @@
     b.addEventListener("click",function(){try{report(true);ls.setItem("bd-t",String(Date.now()))}catch(e){}});
     D.body.appendChild(b);
   }
-  if(D.body)mk();else D.addEventListener("DOMContentLoaded",mk);
-  /* 독해 M1·M2: 앱이 자기 localStorage의 <앱>-res 에 {번호:{p,ok,t}} 로 남기는 결과를, 목록 화면이 열릴 때 지난번과 비교해 새로 끝난 것만 보낸다 */
+  if(!(cs&&cs.hasAttribute("data-noback"))){if(D.body)mk();else D.addEventListener("DOMContentLoaded",mk)}
+  /* 독해 M1·M2: 앱이 localStorage의 <앱>-res 에 남기는 결과 {번호:{p,ok,t}}를 2초마다 살펴, 보드로 아직 안 넘긴 것만 그 자리에서 보낸다.
+     목록 화면이든 Reading 화면이든 이 파일이 붙어 있으면 끝내는 순간 번호가 넘어간다. 넘긴 것은 학생별로 이 기기에 기억한다 */
   var RESK={m1:"m1-res",m2:"m2-res"}[APP];
   if(RESK){
-    var SK="bl-snap-"+APP,cur={},snap=null,now={};
-    try{cur=JSON.parse(ls.getItem(RESK)||"{}")}catch(e){}
+    var SK="bl-snap-"+APP,RK="bl-rep-"+APP,snap=null,rep=null;
     try{snap=JSON.parse(ss.getItem(SK)||"null")}catch(e){}
-    Object.keys(cur).forEach(function(k){var o=cur[k]||{};now[k]=[o.p,o.ok?1:0,o.t||0].join("|")});
-    /* 보드로 넘긴 번호를 학생별로 이 기기에 기억한다. 목록을 거치지 않고 보드로 간 날의 Reading도 다음에 목록을 열 때 번호와 함께 넘긴다 */
-    var RK="bl-rep-"+APP,rep=null;try{rep=JSON.parse(ls.getItem(RK)||"null")}catch(e){}
-    if(!rep||rep.n!==who.n||!rep.m){var base={};if(snap){base=snap}else{var lk=+(ls.getItem(APP+"-last")||0);if(!now[lk]){lk=0;Object.keys(now).forEach(function(k){if(+k>lk)lk=+k})}Object.keys(now).forEach(function(k){if(+k!==lk)base[k]=now[k]})}rep={n:who.n,m:base}}
-    Object.keys(now).sort(function(x,y){return x-y}).forEach(function(k){if(rep.m[k]!==now[k]){var o=cur[k]||{};W.BoardLink.score(APP,{p:o.p,ok:o.ok,d:+k,secs:o.t})}});
-    rep.m=now;try{ls.setItem(RK,JSON.stringify(rep))}catch(e){}
-    try{ss.setItem(SK,JSON.stringify(now))}catch(e){}
+    try{rep=JSON.parse(ls.getItem(RK)||"null")}catch(e){}
+    var resNow=function(){var cur={},now={};try{cur=JSON.parse(ls.getItem(RESK)||"{}")||{}}catch(e){}Object.keys(cur).forEach(function(k){var o=cur[k]||{};now[k]=[o.p,o.ok?1:0,o.t||0].join("|")});return {cur:cur,now:now}};
+    var r0=resNow();
+    if(!rep||rep.n!==who.n||!rep.m){var base={};if(snap){base=snap}else{var lk=+(ls.getItem(APP+"-last")||0);if(!r0.now[lk]){lk=0;Object.keys(r0.now).forEach(function(k){if(+k>lk)lk=+k})}Object.keys(r0.now).forEach(function(k){if(+k!==lk)base[k]=r0.now[k]})}rep={n:who.n,m:base}}
+    var resChk=function(){
+      if(stopped)return;var r=resNow(),ch=false;
+      Object.keys(r.now).sort(function(x,y){return x-y}).forEach(function(k){if(rep.m[k]!==r.now[k]){var o=r.cur[k]||{};rep.m[k]=r.now[k];ch=true;W.BoardLink.score(APP,{p:o.p,ok:o.ok,d:+k,secs:o.t})}});
+      if(ch){try{ls.setItem(RK,JSON.stringify(rep))}catch(e){}}
+    };
+    resChk();try{ls.setItem(RK,JSON.stringify(rep))}catch(e){}
+    setInterval(resChk,2000);
   }
   if(APP==="vy"){
     var YK="vsig-y-day-v1",SKY="bl-snap-vy";
