@@ -4,6 +4,8 @@
 (function(){try{
   var W=window,D=document;if(W.__bl)return;W.__bl=1;
   var cs=D.currentScript,APP=(cs&&cs.getAttribute("data-app"))||"";if(!APP)return;
+  /* M1·M2 Reading 화면: 연 Reading 번호를 바로 보드에 남긴다(끝내기 전에도 "Reading N"이 보이게) */
+  var OPENR=0;try{var _rm=/\/m[12]-reading\/reading_(\d+)\.html/.exec(location.pathname);if(_rm&&(APP==="m1"||APP==="m2"))OPENR=+_rm[1]}catch(e){}
   var SRV="https://script.google.com/macros/s/AKfycbyGjwU2UXP8hoRLn0VThkus7bj_ZnGc12ByvFXuFDVtPSz-GmyumnDd2CkLSBWJw81I/exec";
   var BOARD="https://nolbada.github.io/board/?back=1",IDLE_MIN=10;
   var ss,ls;try{ss=W.sessionStorage;ls=W.localStorage;ls.getItem("x")}catch(e){return}
@@ -33,8 +35,9 @@
       var o={};try{o=JSON.parse(card["a_"+APP]||"{}")}catch(e){}
       st=o&&typeof o==="object"?o:{};st.s=+st.s||0;st.n=+st.n||0;
       got=true;loading=false;
+      if(OPENR&&+st.d!==OPENR){st.d=OPENR;delete st.p;delete st.ok}
       pend.splice(0).forEach(applyScore);
-      dirty=true;
+      dirty=true;if(OPENR)setTimeout(function(){report(false)},1500);
     }).catch(function(){loading=false});
   }
   var AN={bd:"비단챌",rd:"독해33권",vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
