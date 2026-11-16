@@ -764,11 +764,14 @@ function clsOf(n){if(n==="열람")return "열람";var s=ls("bd-cls");if(s&&ROSTE
 function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d.getMonth()+1)+"/"+d.getDate()+"("+w+")"}
 function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
 function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
-function tabList(){var FO=["hw","reg","fri","sat","nae","nohw","mk"],L=CARDS.map(function(x){return {id:x.id,label:(CC&&CC.sn&&CC.sn[x.id])||x.label}});((CC&&CC.sl)||[]).forEach(function(s){L.push({id:s.id,label:s.name})});return L.map(function(x,i){return [x,i]}).sort(function(a,c){var p=FO.indexOf(a[0].id),q=FO.indexOf(c[0].id);p=p<0?99:p;q=q<0?99:q;return p-q||a[1]-c[1]}).map(function(x){return x[0]})}
+function tabList(){var FO=[dayCard(),"reg","fri","sat","hw","nae","nohw","mk"],L=CARDS.map(function(x){return {id:x.id,label:(CC&&CC.sn&&CC.sn[x.id])||x.label}});((CC&&CC.sl)||[]).forEach(function(s){L.push({id:s.id,label:s.name})});return L.map(function(x,i){return [x,i]}).sort(function(a,c){var p=FO.indexOf(a[0].id),q=FO.indexOf(c[0].id);p=p<0?99:p;q=q<0?99:q;return p-q||a[1]-c[1]}).map(function(x){return x[0]})}
 function tabsFor(c,name,card){var L=tabList(),has=function(id){return itemsFor(c,id,name).length};if(has("nae"))return L.filter(function(x){return x.id==="nae"});return L.filter(function(x){return x.id===card||has(x.id)})}
 function groupsAll(){var G={},used={},g,c;for(g in GROUPS){G[g]=GROUPS[g].slice();GROUPS[g].forEach(function(x){used[x]=1})}for(c in ROSTER)if(!used[c]&&ROSTER[c].length)G[c]=[c];return G}
 function hasCard(cls,slot,name){return !!(CC&&CC.cards&&itemsFor(cls,slot,name).length)}
-function defCard(cls,name){var w=new Date().getDay();if(name){if(hasCard(cls,"nae",name))return "nae"}return w===5?"fri":w===6?"sat":"reg"}
+function dayCard(){var w=new Date().getDay();return w===5?"fri":w===6?"sat":"reg"}
+/* 오늘 학생이 먼저 체크하기 시작한 카드가 있으면 그 카드를 첫 화면으로 (마지막으로 체크한 카드 우선) */
+function startedCard(cls,name){var best="",bt="";try{tabList().forEach(function(x){var id=x.id;if(id==="nae"||!hasCard(cls,id,name))return;var m=chk(name,id),on=false,k;for(k in m){if(k!=="tin"&&k!=="tlt"&&k.indexOf("t_")!==0&&m[k])on=true}if(on){var tt=m.tlt||"";if(!best||tt>bt){best=id;bt=tt}}})}catch(e){}return best}
+function defCard(cls,name){if(name){if(hasCard(cls,"nae",name))return "nae";var s=startedCard(cls,name);if(s)return s}return dayCard()}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
 function hubHref(g,a,q){
