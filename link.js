@@ -111,7 +111,11 @@
     try{cur=JSON.parse(ls.getItem(RESK)||"{}")}catch(e){}
     try{snap=JSON.parse(ss.getItem(SK)||"null")}catch(e){}
     Object.keys(cur).forEach(function(k){var o=cur[k]||{};now[k]=[o.p,o.ok?1:0,o.t||0].join("|")});
-    if(snap){Object.keys(now).forEach(function(k){if(snap[k]!==now[k]){var o=cur[k]||{};W.BoardLink.score(APP,{p:o.p,ok:o.ok,d:+k,secs:o.t})}})}
+    /* 보드로 넘긴 번호를 학생별로 이 기기에 기억한다. 목록을 거치지 않고 보드로 간 날의 Reading도 다음에 목록을 열 때 번호와 함께 넘긴다 */
+    var RK="bl-rep-"+APP,rep=null;try{rep=JSON.parse(ls.getItem(RK)||"null")}catch(e){}
+    if(!rep||rep.n!==who.n||!rep.m){var base={};if(snap){base=snap}else{var lk=+(ls.getItem(APP+"-last")||0);if(!now[lk]){lk=0;Object.keys(now).forEach(function(k){if(+k>lk)lk=+k})}Object.keys(now).forEach(function(k){if(+k!==lk)base[k]=now[k]})}rep={n:who.n,m:base}}
+    Object.keys(now).sort(function(x,y){return x-y}).forEach(function(k){if(rep.m[k]!==now[k]){var o=cur[k]||{};W.BoardLink.score(APP,{p:o.p,ok:o.ok,d:+k,secs:o.t})}});
+    rep.m=now;try{ls.setItem(RK,JSON.stringify(rep))}catch(e){}
     try{ss.setItem(SK,JSON.stringify(now))}catch(e){}
   }
   if(APP==="vy"){
