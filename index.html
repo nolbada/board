@@ -768,7 +768,7 @@ function tabList(){var FO=["hw","reg","fri","sat","nae","nohw","mk"],L=CARDS.map
 function tabsFor(c,name,card){var L=tabList(),has=function(id){return itemsFor(c,id,name).length};if(has("nae"))return L.filter(function(x){return x.id==="nae"});return L.filter(function(x){return x.id===card||has(x.id)})}
 function groupsAll(){var G={},used={},g,c;for(g in GROUPS){G[g]=GROUPS[g].slice();GROUPS[g].forEach(function(x){used[x]=1})}for(c in ROSTER)if(!used[c]&&ROSTER[c].length)G[c]=[c];return G}
 function hasCard(cls,slot,name){return !!(CC&&CC.cards&&itemsFor(cls,slot,name).length)}
-function defCard(cls,name){var w=new Date().getDay();if(name){if(hasCard(cls,"nae",name))return "nae";if(hasCard(cls,"hw",name))return "hw"}return w===5?"fri":w===6?"sat":"reg"}
+function defCard(cls,name){var w=new Date().getDay();if(name){if(hasCard(cls,"nae",name))return "nae"}return w===5?"fri":w===6?"sat":"reg"}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","M":"dm","B":"db","H":"dh"};
 function hubHref(g,a,q){
