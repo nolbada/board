@@ -274,7 +274,11 @@ function cl(o){return JSON.parse(JSON.stringify(o))}
 function toast(s){var e=document.getElementById("sv");e.textContent=s;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.opacity=0},1600)}
 
 /* ---------- 서버 ---------- */
+function snapOf(k){var w=window.__cSnap;if(!w||!w.on)return undefined;var id=k.date+"|"+k.name;if(!Object.prototype.hasOwnProperty.call(w.d,id))return undefined;return w.d[id]}
 function getRec(k){
+  /* 바뀔 때만 받는 연결이 살아 있으면 이미 받아 둔 내용으로 답한다(다시 읽지 않음) */
+  var c=snapOf(k);
+  if(c!==undefined){var s0=c&&c[k.card]&&c[k.card].j;if(!s0)return Promise.resolve(null);try{return Promise.resolve(JSON.parse(s0))}catch(e){return Promise.resolve(null)}}
   return fetch(SRV+"?a=get&date="+k.date+"&name="+encodeURIComponent(k.name)).then(function(r){return r.json()}).then(function(j){
     if(!j||!j.ok)throw new Error("get");
     var s=j.chk&&j.chk[k.card]&&j.chk[k.card].j;if(!s)return null;
@@ -627,17 +631,48 @@ function load(){
   }).catch(function(){document.getElementById("app").innerHTML='<div class="empty">불러오지 못했어요. 새로고침해 주세요</div>'});
 }
 /* 남편 쪽에서 바꾼 내용이 있으면 가져온다 (입력 중이 아닐 때만) */
-setInterval(function(){
+var staleC=false;
+window.__cChanged=function(){staleC=true;sync()};
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")sync()});
+function sync(){
   if(!loaded||dirtyC||document.visibilityState!=="visible")return;
   var a=document.activeElement;if(a&&(a.tagName==="INPUT"||a.tagName==="SELECT"))return;
+  if(snapOf(CFGK)!==undefined&&snapOf(CCK)!==undefined&&!staleC)return;
+  staleC=false;
   Promise.all([getRec(CFGK),getRec(CCK)]).then(function(r){
     var ch=false;
     if(r[0]&&(+r[0].u||0)>(CFG.u||0)){CFG=normCfg(r[0]);ch=true}
     if(r[1]&&Array.isArray(r[1].cards)&&(+r[1].u||0)>(CC.u||0)&&!dirtyC){CC=r[1];CC.cls=CC.cls||{};CC.st=CC.st||{};CC.day=CC.day||{};ch=true}
     if(ch)render();
   }).catch(function(){});
-},20000);
+}
+setInterval(sync,20000);
 load();
+</script>
+<script type="module">
+/* cards-snap 261118a — 설정·카드 문서를 "바뀔 때만" 받는다. 연결이 안 되면 화면은 예전처럼 20초마다 서버에 묻는다. 주소에 snap=0 을 붙이면 끈다. */
+const W=window;
+if(!/[?&]snap=0/.test(location.search)){
+  try{
+    const {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
+    const {getFirestore,doc,onSnapshot}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
+    const db=getFirestore(initializeApp({apiKey:"AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA",projectId:"h-roadmap",appId:"1:575520405083:web:b9f40b64cb0ae3d1a9317e"},"cards-snap"));
+    const B=W.__cSnap={on:false,d:{},raw:{},n:0,err:0};
+    const off=id=>()=>{B.err++;delete B.d[id];delete B.raw[id]};
+    onSnapshot(doc(db,"board","_on"),s=>{if(!s.metadata.fromCache)B.on=s.exists()},()=>{B.on=false});
+    ["2000-01-03|_설정","2000-01-04|_카드"].forEach(id=>{
+      onSnapshot(doc(db,"board",id),s=>{
+        if(s.metadata.fromCache)return;
+        const raw=s.exists()?String(s.data().chk||"{}"):"";
+        const first=!Object.prototype.hasOwnProperty.call(B.d,id);
+        if(!first&&B.raw[id]===raw)return;
+        let chk=null;if(raw){try{chk=JSON.parse(raw)}catch(e){chk={}}}
+        B.raw[id]=raw;B.d[id]=chk;B.n++;
+        if(!first&&W.__cChanged)W.__cChanged();
+      },off(id));
+    });
+  }catch(e){W.__cSnapErr=String(e)}
+}
 </script>
 </body>
 </html>
