@@ -11,7 +11,7 @@
   function ask(names){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},2500):0;
     return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:batchGet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({documents:names}),signal:ac?ac.signal:undefined})
       .then(function(r){clearTimeout(tm);return r.ok?r.json():null}).catch(function(){clearTimeout(tm);return null})}
-  var ONX=[0,0];
+  var ONX=[0,0];W.__bdn=dn;
   function resp(o){return new W.Response(JSON.stringify(o),{status:200,headers:{'Content-Type':'application/json'}})}
   W.fetch=function(u,o){
     try{
@@ -21,6 +21,9 @@
           var name=String(p.name||'').trim(),smp=/^샘플/.test(name),ds=p.a==='get'?[String(p.date||'')]:String(p.dates||'').split(','),okd=/^\d{4}-\d{1,2}-\d{1,2}$/,seen={},dup=false;
           ds.forEach(function(d){if(seen[d])dup=true;seen[d]=1});
           if(name&&name.length<=12&&ds.length&&ds.length<=12&&!dup&&ds.every(function(d){return okd.test(d)})){
+            /* 261117 밤: 이 문서를 "바뀌면 알려 주기"로 지켜보는 중이면(아래 __bsnap) 받아 둔 최신 내용으로 바로 답한다. Firebase 를 다시 읽지 않는다 */
+            if(p.a==='get'&&W.__bsnap){var lk=dn(smp,ds[0]+'|'+name),lc=smp?'board_s':'board';
+              if(W.__bsnap.live[lc]&&Object.prototype.hasOwnProperty.call(W.__bsnap.d,lk))return Promise.resolve(resp({ok:true,chk:W.__bsnap.d[lk]||{},fs:2}))}
             /* 261117 밤: "Firebase 가 원본" 표시(_on)는 한 번 확인하면 10분 동안 다시 읽지 않는다(하루 읽기 횟수를 절반 가까이 줄임) */
             var sk=smp?1:0,need=!(ONX[sk]>Date.now()),off=need?1:0;
             var names=(need?[dn(smp,'_on')]:[]).concat(ds.map(function(d){return dn(smp,d+'|'+name)})),self=this,args=arguments;
@@ -402,6 +405,7 @@ function penItems(n){
 }
 function pull(n,c){
   /* 261117: "이어서 할 차례"·"지난 시간에 못 끝낸 것"·페널티는 오늘 기록의 답을 기다리지 않고 같이 받기 시작한다(전에는 오늘 기록이 온 뒤에야 받기 시작했다) */
+  try{if(window.__bWatchName)window.__bWatchName(n)}catch(e9){}
   loadLast(n);carryLoad(n,c);
   fetch(SRV+"?a=get&date="+iso()+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
     if(!j||!j.ok)return;var ch=false;
@@ -1000,6 +1004,14 @@ render();
 cfgFetch(function(ch){if(ch&&!(T&&TS.mode==="m"))render()});
 ttFetch(function(ch){if(ch&&!editing()&&!(T&&TS.mode==="m"))render()});
 if(T){tload();setInterval(function(){if(document.visibilityState==='visible')tload(true)},60000)}else{setInterval(function(){cfgFetch(function(ch){if(ch&&S.view==="names")render()});ttFetch(function(ch){if(ch&&S.view==="names")render()})},180000);if(who())pull(ls("bd-name"),ls("bd-cls"));flush();setInterval(flush,60000)}
+/* 261117 밤: 지켜보던 문서가 바뀌면(아래 모듈이 알려 줌) 주기적으로 하던 확인을 그 자리에서 한 번 돌린다. 내용은 받아 둔 것을 쓰므로 Firebase 를 다시 읽지 않는다 */
+window.__bChanged=function(kind){try{
+  if(T)return;
+  if(kind==="cfg")cfgFetch(function(ch){if(ch&&S.view==="names")render()});
+  else if(kind==="tt")ttFetch(function(ch){if(ch&&S.view==="names")render()});
+  else if(kind==="cards")cardsTick();
+  else if(kind==="pen"){var n0=ls("bd-name");if(n0&&who()){loadLast(n0);if(!editing())penPull(n0,function(c){if(c)render()})}}
+}catch(e){}};
 function editing(){var a=document.activeElement;return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"))}
 function cardsTick(){cardsFetch(function(ch){if(ch&&!editing()&&!(T&&TS.mode==="m"))render()})}
 cardsTick();
@@ -1015,6 +1027,48 @@ document.addEventListener("change",function(e){
 document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="qs")return;TS.q=e.target.value;var el=document.getElementById("qres");if(el)el.innerHTML=qHtml()});
 document.addEventListener("change",function(e){if(!T||!e.target||(e.target.id!=="ts"&&e.target.id!=="te"))return;var c=TS.cls;if(!c||!ROSTER[c])return;var t=TT.t[c]||(TT.t[c]={d:"",s:"",e:"",c:""});if(e.target.id==="ts")t.s=e.target.value||"";else t.e=e.target.value||"";ttSave();render()});
 setInterval(function(){if(ls("bd-name")&&!who())render()},60000);
+</script>
+<script type="module">
+/* 261117 밤: 학생 화면이 20초·45초·3분마다 Firebase 에 묻던 것을 "바뀌면 알려 주기"로 바꾼다.
+   설정·시간표·카드·내 페널티 문서를 지켜보다가 바뀐 내용을 받아 두고(window.__bsnap), 위쪽 가로채기가 그 내용으로 답한다.
+   선생님 화면(?t=1)과 ?snap=0 에서는 쓰지 않는다. 이 부분이 실패하면 예전처럼 주기적으로 읽는다. */
+const W=window;
+if(!/[?&](t=1|snap=0)/.test(location.search)&&W.__bdn){
+  try{
+    const {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
+    const {getFirestore,doc,onSnapshot}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
+    const db=getFirestore(initializeApp({apiKey:"AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA",projectId:"h-roadmap",appId:"1:575520405083:web:b9f40b64cb0ae3d1a9317e"},"board-snap"));
+    const B=W.__bsnap={live:{},d:{},n:0,err:0},subs={};
+    const watch=(col,id,kind)=>{
+      const key=W.__bdn(col==="board_s",id);
+      if(subs[key])return;
+      subs[key]=onSnapshot(doc(db,col,id),snap=>{
+        if(snap.metadata.fromCache)return;
+        let chk=null;if(snap.exists()){try{chk=JSON.parse(snap.data().chk||"{}")}catch(e){chk={}}}
+        const first=!Object.prototype.hasOwnProperty.call(B.d,key),same=!first&&JSON.stringify(B.d[key])===JSON.stringify(chk);
+        B.d[key]=chk;B.n++;
+        if(!first&&!same&&kind&&W.__bChanged)W.__bChanged(kind);
+      },()=>{B.err++;delete B.d[key];try{subs[key]()}catch(e){}delete subs[key]});
+    };
+    const sentinel=col=>{
+      if(subs["_on:"+col])return;
+      subs["_on:"+col]=onSnapshot(doc(db,col,"_on"),snap=>{if(!snap.metadata.fromCache)B.live[col]=snap.exists()},()=>{B.live[col]=false;delete subs["_on:"+col]});
+    };
+    sentinel("board");
+    watch("board","2000-01-03|_설정","cfg");
+    watch("board","2000-01-05|_시간표","tt");
+    watch("board","2000-01-04|_카드","cards");
+    let penKey="";
+    W.__bWatchName=n=>{
+      n=String(n||"").trim();if(!n||n==="열람"||n.length>12)return;
+      const col=/^샘플/.test(n)?"board_s":"board",id="2000-01-01|"+n,key=W.__bdn(col==="board_s",id);
+      if(key===penKey)return;
+      if(penKey&&subs[penKey]){try{subs[penKey]()}catch(e){}delete subs[penKey];delete B.d[penKey]}
+      penKey=key;sentinel(col);watch(col,id,"pen");
+    };
+    try{W.__bWatchName(localStorage.getItem("bd-name"))}catch(e){}
+  }catch(e){W.__bsnapErr=String(e)}
+}
 </script>
 </body>
 </html>
