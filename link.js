@@ -50,7 +50,7 @@
       try{var ds=DAYS.map(function(x){return x.d}).sort(function(a,b){return a-b}),dn=JSON.parse(ls.getItem("vsig-y-day-v1")||"{}");nd="";for(var i=0;i<ds.length;i++){if(ds[i]>d&&!dn["D"+ds[i]]){nd=ds[i];break}}}catch(e){}
       nx=nd===null?"":(nd?"V시그널 Y Day "+nd:"V시그널 Y 끝")}
     else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"":d+" 다시"}
-    else if(APP==="rd"||APP==="bd"){w=o.w;nx=""}
+    else if(APP==="rd"||APP==="bd"||APP==="vl"){w=o.w;nx=""}
     else return;
     (chk||Promise.resolve()).then(function(){
       lr=JSON.stringify({w:w,nx:nx,t:hm(),d:date});dirty=true;report(false);
