@@ -249,6 +249,27 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return
 function iso(d){d=d||new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
 function dlabel(s){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return (d.getMonth()+1)+"/"+d.getDate()+"("+"일월화수목금토"[d.getDay()]+")"}
 function uid(){return "u"+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+/* 261117 줄글로 쓰기: 한 줄 = 항목 하나(위에서부터 순서), 줄 끝의 (괄호) = 작은 설명 */
+function bulkParse(txt){
+  return String(txt||"").split(/\r?\n/).map(function(l){
+    l=l.replace(/^\s+|\s+$/g,"").replace(/^(?:[-•·*]\s+|\d{1,2}[.)]\s+)/,"");
+    if(!l)return null;
+    var m=l.match(/^(.*?)\s*[(（]([^()（）]*)[)）]$/),t=l,sub="";
+    if(m&&m[1].replace(/\s+/g,"")){t=m[1].replace(/\s+$/,"");sub=m[2].replace(/^\s+|\s+$/g,"")}
+    return {t:t,sub:sub};
+  }).filter(Boolean);
+}
+function bulkText(c){return c.items.filter(function(i){return i.t}).map(function(i){return i.t+(i.sub?" ("+i.sub+")":"")}).join("\n")}
+/* 같은 이름 항목은 그대로 살리고(체크 기록·점수 칸 유지), 이름만 바뀐 줄은 순서대로 짝지어 같은 항목으로 본다 */
+function bulkApply(c,rows){
+  var old=c.items.slice(),used={},out=new Array(rows.length),i,j;
+  for(i=0;i<rows.length;i++){for(j=0;j<old.length;j++){if(!used[j]&&old[j].t===rows[i].t){used[j]=1;out[i]=old[j];break}}}
+  var rest=[];for(j=0;j<old.length;j++)if(!used[j]&&old[j].t)rest.push(old[j]);
+  for(i=0;i<rows.length;i++){if(!out[i]){var o=rest.shift();out[i]=o||{id:uid(),t:""}}
+    out[i].t=rows[i].t;if(rows[i].sub)out[i].sub=rows[i].sub;else delete out[i].sub}
+  c.items=out;
+}
+function bulkPv(rows){return rows.length?rows.map(function(r,i){return '<div style="padding:3px 0"><b>'+(i+1)+'. '+esc(r.t)+'</b>'+(r.sub?' <span style="color:#6a7a7d">'+esc(r.sub)+'</span>':'')+'</div>'}).join(""):'<span style="color:#8a9a9d">한 줄에 하나씩 적으면 여기에 순서대로 보입니다</span>'}
 function cl(o){return JSON.parse(JSON.stringify(o))}
 function toast(s){var e=document.getElementById("sv");e.textContent=s;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.opacity=0},1600)}
 
@@ -433,6 +454,11 @@ function viewCard(){
   var cs0=catsOf(),cc0=cs0.filter(function(x){return x.n===c.tag})[0],sb0=cc0?cc0.s:[],ss0='border:1px solid #cfd8da;border-radius:10px;padding:9px;font-size:13px;background:#fff';
   h+='<div class="row" style="margin-top:6px;gap:6px"><select id="ct" style="flex:1;'+ss0+'"><option value="">대분류 (분류 없음)</option>'+cs0.map(function(x){return '<option value="'+esc(x.n)+'"'+(x.n===c.tag?' selected':'')+'>'+esc(x.n)+'</option>'}).join("")+'</select>'+(sb0.length?'<select id="csub" style="flex:1;'+ss0+'"><option value="">소분류</option>'+sb0.map(function(x){return '<option value="'+esc(x)+'"'+(x===c.sub?' selected':'')+'>'+esc(x)+'</option>'}).join("")+'</select>':'')+'</div>';
   if(c.auto)h+='<div class="row" style="margin-top:6px"><input class="q" id="cn" value="'+esc(c.memo||"")+'" placeholder="메모 (없어도 됨, 같은 분류에 카드가 여럿일 때 구분용)" style="margin:0;flex:1;font-size:13px"></div>';
+  h+='<details id="bulkd"'+(S.bulk?' open':'')+' style="margin-top:10px;border:1px solid #dde3e5;border-radius:12px;padding:10px 12px;background:#fafcfc"><summary style="font-weight:800;font-size:14px;cursor:pointer">줄글로 한꺼번에 쓰기</summary>'+
+    '<div style="font-size:12.5px;color:#5b6b6e;margin:8px 0 6px">한 줄이 할 일 하나입니다. 줄 끝에 (괄호)로 쓰면 작은 설명이 됩니다.</div>'+
+    '<textarea id="bulk" rows="8" style="width:100%;border:1px solid #cfd8da;border-radius:9px;padding:10px;font:inherit;font-size:14px;line-height:1.6" placeholder="단어 시험 (Day 3~4)&#10;독해 2지문&#10;숙제 검사 (틀린 문제 다시 풀기)">'+esc(S.bulkTxt!==undefined?S.bulkTxt:bulkText(c))+'</textarea>'+
+    '<div id="bulkpv" style="font-size:13.5px;margin:8px 2px">'+bulkPv(bulkParse(S.bulkTxt!==undefined?S.bulkTxt:bulkText(c)))+'</div>'+
+    '<div class="row"><button class="btn pri" data-bulkok="1">이대로 목록에 반영</button><button class="btn" data-bulkno="1">취소</button></div></details>';
   h+='<div style="margin-top:8px">';
   c.items.forEach(function(it,i){
     h+='<div class="it" data-i="'+i+'"><input class="no" type="number" min="1" inputmode="numeric" data-pos="'+i+'" value="'+(i+1)+'"><input type="text" data-ti="'+i+'" value="'+esc(it.t)+'" placeholder="항목 이름"><span class="ops"><button data-up="'+i+'">↑</button><button data-dn="'+i+'">↓</button><button data-del="'+i+'">×</button></span>';
@@ -536,11 +562,13 @@ document.addEventListener("click",function(e){
   else if(D.catm!==undefined){if(D.catm==="1"){catEdit();S.catm=true}else S.catm=false;render()}
   else if(D.catadd){catEdit().push({n:"새 대분류",s:[]});markC();render()}
   else if(D.catx!==undefined){var cxi=+D.catx,cxo=catEdit()[cxi];if(CC.cards.some(function(k){return k.tag===cxo.n})){toast("카드가 있는 대분류는 지울 수 없음")}else{CC.cat.splice(cxi,1);markC();render()}}
-  else if(D.cs){S.csel=D.cs;S.cf=null;render();window.scrollTo(0,0)}
+  else if(D.cs){S.csel=D.cs;S.cf=null;delete S.bulkTxt;S.bulk=false;render();window.scrollTo(0,0)}
   else if(D.cback){S.csel=null;render()}
   else if(D.newc){var nc={id:uid(),auto:1,memo:"",name:"새 카드",items:[{id:uid(),t:""}]};if(S.ocLast&&S.ocLast!=="__")nc.tag=S.ocLast;CC.cards.push(nc);nc.name=autoName(nc);S.csel=nc.id;markC();render();var el=document.getElementById("cn");if(el){el.focus()}}
   else if(D.addit){c=cardBy(S.csel);var ap=document.getElementById("addpos"),an=ap?parseInt(ap.value,10):NaN,ax=(an>=1&&an<=c.items.length)?an-1:c.items.length;c.items.splice(ax,0,{id:uid(),t:""});markC();render();var ins=document.querySelectorAll("[data-ti]");if(ins[ax])ins[ax].focus()}
   else if(D.del!==undefined){c=cardBy(S.csel);c.items.splice(+D.del,1);markC();render()}
+  else if(D.bulkok){c=cardBy(S.csel);var bt=document.getElementById("bulk"),br=bulkParse(bt?bt.value:"");if(!br.length){toast("적힌 줄이 없어요");return}bulkApply(c,br);delete S.bulkTxt;S.bulk=false;markC();render();toast("목록에 반영했어요")}
+  else if(D.bulkno){delete S.bulkTxt;S.bulk=false;render()}
   else if(D.up!==undefined){c=cardBy(S.csel);var i=+D.up;if(i>0){var t=c.items[i];c.items[i]=c.items[i-1];c.items[i-1]=t;markC();render()}}
   else if(D.dn!==undefined){c=cardBy(S.csel);var j=+D.dn;if(j<c.items.length-1){var t2=c.items[j];c.items[j]=c.items[j+1];c.items[j+1]=t2;markC();render()}}
   else if(D.cmv){var mp=D.cmv.split("|"),mi=CC.cards.map(function(x){return x.id}).indexOf(mp[0]),ms=+mp[1],mt=CC.cards[mi].tag||"",mj=mi+ms;while(mj>=0&&mj<CC.cards.length&&(CC.cards[mj].tag||"")!==mt)mj+=ms;if(mj>=0&&mj<CC.cards.length){var mx=CC.cards[mi];CC.cards[mi]=CC.cards[mj];CC.cards[mj]=mx;markC()}render()}
@@ -581,12 +609,14 @@ document.addEventListener("change",function(e){
 document.addEventListener("input",function(e){
   var t=e.target;if(!loaded||!t)return;
   if(t.id==="q"){S.q=t.value.trim();var pos=t.selectionStart;render();var q=document.getElementById("q");q.focus();q.setSelectionRange(pos,pos)}
+  else if(t.id==="bulk"){S.bulkTxt=t.value;S.bulk=true;var bp=document.getElementById("bulkpv");if(bp)bp.innerHTML=bulkPv(bulkParse(t.value))}
   else if(t.id==="cn"){var c=cardBy(S.csel);if(c.auto){c.memo=t.value.trim();c.name=autoName(c);var hn=document.getElementById("cnn");if(hn)hn.textContent=c.name}else c.name=t.value;var el=document.getElementById("cl-"+S.csel);if(el)el.querySelector("b").textContent=c.name;var pt=document.getElementById("pvt");if(pt)pt.textContent=c.name;markC()}
   else if(t.dataset.ti!==undefined){var c1=cardBy(S.csel);c1.items[+t.dataset.ti].t=t.value;document.getElementById("pv").innerHTML=pvHtml(c1);markC()}
   else if(t.dataset.si!==undefined){var c2=cardBy(S.csel),it=c2.items[+t.dataset.si];if(t.value)it.sub=t.value;else delete it.sub;document.getElementById("pv").innerHTML=pvHtml(c2);markC()}
 });
 var _r=render;render=function(){_r();if(S.tab==="card"&&S.csel&&cardBy(S.csel)){var pv=document.getElementById("pv");if(pv)pv.innerHTML=pvHtml(cardBy(S.csel))}};
 
+document.addEventListener("toggle",function(e){var t=e.target;if(t&&t.id==="bulkd"){S.bulk=t.open;if(!t.open)delete S.bulkTxt}},true);
 /* ---------- 시작 ---------- */
 function load(){
   Promise.all([getRec(CFGK),getRec(CCK)]).then(function(a){
