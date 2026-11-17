@@ -862,7 +862,7 @@ function carryLoad(n,c){
     try{for(var b0=0;b0<rs.length;b0++){
       var jb=rs[b0];if(!jb||!jb.ok)continue;
       var ab=jb.chk&&jb.chk.app&&jb.chk.app.a_bd,ob=null;try{ob=ab?JSON.parse(ab):null}catch(e0){}
-      if(ob&&(+ob.s>0||+ob.n>0||ob.w))res.bd.push({d:ds[b0],w:String(ob.w||""),s:+ob.s||0,n:+ob.n||0,t:String(ob.t||"")});
+      if(ob&&(+ob.s>0||+ob.n>0||ob.w))res.bd.push({d:ds[b0],w:String(ob.w||""),s:+ob.s||0,n:+ob.n||0,t:String(ob.t||""),l:Array.isArray(ob.l)?ob.l.slice(-15):null});
       var mb=(jb.chk&&jb.chk[slotOf(ds[b0])])||{};if(mb.tin)break;
     }}catch(e1){res.bd=[]}
     for(var k=0;k<rs.length;k++){
@@ -885,9 +885,9 @@ function bdHtml(name,c1){try{
   if(!itemsFor(c1,dc,name).some(function(i){return /비단챌/.test(String(i.t||""))}))return "";
   var rows=CARRY.bd.slice(),ta=chk(name,"app").a_bd,o=null;
   try{o=ta?JSON.parse(ta):null}catch(e){}
-  if(o&&(+o.s>0||+o.n>0||o.w))rows.unshift({d:iso(),w:String(o.w||""),s:+o.s||0,n:+o.n||0,t:String(o.t||"")});
+  if(o&&(+o.s>0||+o.n>0||o.w))rows.unshift({d:iso(),w:String(o.w||""),s:+o.s||0,n:+o.n||0,t:String(o.t||""),l:Array.isArray(o.l)?o.l.slice(-15):null});
   if(!rows.length)return '<div class="gc" style="--ac:#c2410c"><div class="gh">비단챌 숙제 기록</div><div style="padding:8px 2px;border-top:1px solid #eee;font-size:17px;font-weight:800;color:#c2410c">비단챌 기록 없음</div></div>';
-  return '<div class="gc" style="--ac:#1f7a5c"><div class="gh">비단챌 숙제 기록</div>'+rows.map(function(r){var mn=r.s>=60?Math.round(r.s/60)+"분":(r.s>0?"1분 미만":"");return '<div style="padding:8px 2px;border-top:1px solid #eee"><div style="font-size:17px;font-weight:800;color:#1f6f50">'+esc(r.w||"비단챌 접속")+'</div><div style="font-size:13px;color:#5b6b62;margin-top:2px">'+esc(dlabel(r.d)+(mn?" · "+mn:"")+(r.t?" · "+r.t:""))+'</div></div>'}).join("")+'</div>';
+  return '<div class="gc" style="--ac:#1f7a5c"><div class="gh">비단챌 숙제 기록</div>'+rows.map(function(r){var mn=r.s>=60?Math.round(r.s/60)+"분":(r.s>0?"1분 미만":"");var ws=(r.l&&r.l.length)?r.l.map(function(x){return String(x.w||"")+(x.t?" ("+x.t+")":"")}):[r.w||"비단챌 접속"];return '<div style="padding:8px 2px;border-top:1px solid #eee">'+ws.map(function(w1){return '<div style="font-size:17px;font-weight:800;color:#1f6f50">'+esc(w1)+'</div>'}).join("")+'<div style="font-size:13px;color:#5b6b62;margin-top:2px">'+esc(dlabel(r.d)+(mn?" · "+mn:"")+(r.t&&!(r.l&&r.l.length)?" · "+r.t:""))+'</div></div>'}).join("")+'</div>';
 }catch(e){return ""}}
 /* 261117: 선생님 요청으로 "지난 시간에 못 끝낸 것" 칸은 보이지 않게 함(화면이 지저분해짐). 되살리려면 아래 CARRY_SHOW 를 true 로. 이 자리는 숙제(비단챌) 기록 칸으로 바꿀 예정 */
 var CARRY_SHOW=false;
