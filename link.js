@@ -72,13 +72,20 @@
     lastRec(o);
   }
   function stop(){stopped=true;try{ss.removeItem("bl-who")}catch(e){}var b=D.getElementById("bl-back");if(b)b.remove()}
+  /* 묶어 저장(261118): 화면을 닫거나 보드로 돌아갈 때(keep)는 바로 보내고, 그 밖에는 20초에 한 번만 보낸다. 그 사이 바뀐 것은 다음 번에 한꺼번에 간다 */
+  var lastRep=0,repT=null,GAP=20000;
   function report(keep){
     if(stopped)return;
+    if(!keep&&got){
+      var wait=GAP-(Date.now()-lastRep);
+      if(wait>0){if(!repT)repT=setTimeout(function(){repT=null;report(false)},wait+50);return}
+    }
+    if(repT){clearTimeout(repT);repT=null}
     if(!valid()){stop();return}
     if(iso()!==date){date=iso();got=false;st=null;card=null;load();return}
     if(!got){load();return}
     if(!acc&&!dirty)return;
-    st.s+=acc;acc=0;st.t=hm();dirty=false;
+    st.s+=acc;acc=0;st.t=hm();dirty=false;lastRep=Date.now();
     card["a_"+APP]=JSON.stringify(st);if(lr)card["l_"+APP]=lr;
     var body={a:"put",date:date,cls:who.c,name:who.n,card:"app",chk:card};
     fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(body),keepalive:!!keep}).catch(function(){dirty=true});

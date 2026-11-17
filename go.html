@@ -80,7 +80,7 @@ if(AP){
   if(!j||!j.ok)throw 0;CARD=(j.chk&&j.chk.app)||{};if(!started)restoreThenStart();else snapReady=true;
  }).catch(function(){start()});
 }else{snapReady=true;start()}
-setInterval(function(){if(document.visibilityState!=="visible")return;refresh().then(function(){if(Date.now()-lastFlush>=12000)flushSnap(false)})},3000);
+setInterval(function(){if(document.visibilityState!=="visible")return;refresh().then(function(){if(Date.now()-lastFlush>=45000)flushSnap(false)})},3000);
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")snap(true)});
 window.addEventListener("pagehide",function(){snap(true)});
 document.getElementById("home").addEventListener("click",function(){snap(true)});
@@ -215,7 +215,7 @@ if(XID){
  function hook(){try{wins(f.contentWindow,[],0).forEach(function(w){if(w.__bdAct)return;w.__bdAct=1;["pointerdown","keydown","touchstart","scroll"].forEach(function(e){w.document.addEventListener(e,act,{passive:true,capture:true})})})}catch(e){}}
  function sendUse(){if(usec===sentSec||usec<20)return;sentSec=usec;recK(XID,XN+" 오늘 "+Math.max(1,Math.round(usec/60))+"분 사용","",U)}
  setInterval(function(){hook();if(document.visibilityState==="visible"&&Date.now()-lastAct<30000){usec++;if(usec%10===0)try{ls.setItem(UK,String(usec))}catch(e){}}},1000);
- setInterval(sendUse,120000);
+ setInterval(sendUse,300000);
  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"){try{ls.setItem(UK,String(usec))}catch(e){}sendUse()}});
  window.addEventListener("pagehide",sendUse);
  document.getElementById("home").addEventListener("click",sendUse);
