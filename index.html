@@ -432,6 +432,7 @@ function tdays(ds){
     return old();
   },function(){return old()});
 }
+var TLN=0;
 function tload(silent){
   if(TS.mode==="m"){return}
   if(!TS.date)TS.date=iso();if(!TS.cls)TS.cls=Object.keys(ROSTER)[0];
@@ -440,8 +441,13 @@ function tload(silent){
   for(i=0;i<7;i++){var x=dstep(m,i);if(x<=td)ds.push(x)}
   ds.push("2000-01-01");
   if(!silent){TS.wk={};TS.rows=null}
-  tdays(ds).then(function(a){
+  /* 261117 밤: 1분마다 조용히 새로 받을 때는 이번 주 전체가 아니라 오늘 날짜만 받는다(지난 날짜는 거의 안 바뀜).
+     학생별 최근 기록(2000-01-01)은 5번에 한 번만. 읽기 횟수를 크게 줄인다. 처음 열 때·주를 바꿀 때는 예전처럼 전부 받는다 */
+  var req=ds,part=false;
+  if(silent&&TS.wk&&TS.wk["2000-01-01"]){TLN++;req=ds.filter(function(d){return d===td||(d==="2000-01-01"&&TLN%5===0)});part=true;if(!req.length)return}
+  tdays(req).then(function(a){
     var W=silent?{}:TS.wk,bad=false;
+    if(part){for(var k0 in TS.wk)W[k0]=TS.wk[k0]}
     if(!silent)TS.err="";
     a.forEach(function(o){
       if(!o.j.ok){bad=true;if(!silent&&o.j.err==="pw"){ls("bt-pw",null);TS.err="비밀번호가 맞지 않음"}return}
