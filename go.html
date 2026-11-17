@@ -26,7 +26,10 @@ var APPS=[
  {g:"vs",p:/^\/via\/switch-mission-/,k:/^vs_(unl|recs)_/},
  {g:"wm",p:/^\/via\/wama2000\//,k:/^wama2000_/},
  {g:"vl",p:/^\/via\/vocalink\//,k:/^vl_/},
- {g:"rd",p:/^\/via\/reading\//,k:/^(tutorstarter|hackersstarter|tutorjunior|hackersmaster|hackers|1316reading|bricks|readinggraphy|tutorchallenger)\d+/}
+ {g:"rd",p:/^\/via\/reading\//,k:/^(tutorstarter|hackersstarter|tutorjunior|hackersmaster|hackers|1316reading|bricks|readinggraphy|tutorchallenger)\d+/},
+ /* 261118: M1·M2 리딩도 이어하기(기기를 바꿔도 푼 기록·오답노트가 따라옴). 앱이 스스로 두는 주인 표시(m1-owner)까지 함께 옮겨야 앱이 지우지 않는다 */
+ {g:"m1",p:/^\/via\/m1-reading\//,k:/^m1-/},
+ {g:"m2",p:/^\/via\/m2-reading\//,k:/^m2-/}
 ];
 var SD="2000-01-02",CAP=16000,AP=null,CARD={},lastSnap="";
 APPS.forEach(function(a){if(a.p.test(U))AP=a});
