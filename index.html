@@ -1,7 +1,39 @@
 <!DOCTYPE html>
 <html lang="ko" translate="no">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><script>/* 261117h: 학생 기록 받기(a=get, a=getm)는 Firebase 에서 바로 답한다(서버를 거치지 않는다).
+   표식 문서(_on)가 없거나 실패·2.5초 초과면 원래 요청을 그대로 서버로 보낸다. 저장(put)과 선생님용 요청(pw 가 붙은 것)은 건드리지 않는다. */
+(function(){try{
+  var W=window;if(W.__bfs||!W.fetch||!W.Response)return;W.__bfs=1;var of=W.fetch;
+  var DB='projects/h-roadmap/databases/(default)/documents/';
+  function dn(smp,key){return DB+(smp?'board_s':'board')+'/'+String(key).replace(/%/g,'%25').replace(/\//g,'%2F')}
+  function chkOf(x){try{return JSON.parse((x.found.fields.chk&&x.found.fields.chk.stringValue)||'{}')}catch(e){return {}}}
+  function ask(names){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},2500):0;
+    return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:batchGet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({documents:names}),signal:ac?ac.signal:undefined})
+      .then(function(r){clearTimeout(tm);return r.ok?r.json():null}).catch(function(){clearTimeout(tm);return null})}
+  function resp(o){return new W.Response(JSON.stringify(o),{status:200,headers:{'Content-Type':'application/json'}})}
+  W.fetch=function(u,o){
+    try{
+      if(typeof u==='string'&&!o&&u.indexOf('AKfycbyGjwU2U')>0){
+        var q=u.split('?')[1]||'',p={};q.split('&').forEach(function(kv){var i=kv.indexOf('=');if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1))});
+        if((p.a==='get'||p.a==='getm')&&!p.pw){
+          var name=String(p.name||'').trim(),smp=/^샘플/.test(name),ds=p.a==='get'?[String(p.date||'')]:String(p.dates||'').split(','),okd=/^\d{4}-\d{1,2}-\d{1,2}$/,seen={},dup=false;
+          ds.forEach(function(d){if(seen[d])dup=true;seen[d]=1});
+          if(name&&name.length<=12&&ds.length&&ds.length<=12&&!dup&&ds.every(function(d){return okd.test(d)})){
+            var names=[dn(smp,'_on')].concat(ds.map(function(d){return dn(smp,d+'|'+name)})),self=this,args=arguments;
+            return ask(names).then(function(a){
+              if(!Array.isArray(a)||a.length!==names.length)return of.apply(self,args);
+              var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x;else if(!x.missing)return of.apply(self,args)}
+              if(!by[names[0]])return of.apply(self,args);
+              if(p.a==='get'){var g=by[names[1]];return resp({ok:true,chk:g?chkOf(g):{},fs:1})}
+              var recs={};ds.forEach(function(d,j){var g2=by[names[j+1]];recs[d]=g2?chkOf(g2):{}});return resp({ok:true,recs:recs,fs:1})});
+          }
+        }
+      }
+    }catch(e){}
+    return of.apply(this,arguments);
+  };
+}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EM보드</title>
 <meta name="google" content="notranslate">
