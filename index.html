@@ -868,7 +868,9 @@ function carryLoad(n,c){
     if(ls("bd-name")===n)render();
   });
 }
-function carryHtml(name,c1){if(new Date().getDay()===6)return "";
+/* 261117: 선생님 요청으로 "지난 시간에 못 끝낸 것" 칸은 보이지 않게 함(화면이 지저분해짐). 되살리려면 아래 CARRY_SHOW 를 true 로. 이 자리는 숙제(비단챌) 기록 칸으로 바꿀 예정 */
+var CARRY_SHOW=false;
+function carryHtml(name,c1){if(!CARRY_SHOW||new Date().getDay()===6)return "";
   if(!CARRY||CARRY.n!==name||!CARRY.d||!CARRY.items.length)return "";
   var td=chk(name,defCard(c1)),a=CARRY.items.filter(function(it){return !td[it.id]});
   if(!a.length)return "";
