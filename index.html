@@ -11,6 +11,7 @@
   function ask(names){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},2500):0;
     return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:batchGet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({documents:names}),signal:ac?ac.signal:undefined})
       .then(function(r){clearTimeout(tm);return r.ok?r.json():null}).catch(function(){clearTimeout(tm);return null})}
+  var ONX=[0,0];
   function resp(o){return new W.Response(JSON.stringify(o),{status:200,headers:{'Content-Type':'application/json'}})}
   W.fetch=function(u,o){
     try{
@@ -20,13 +21,15 @@
           var name=String(p.name||'').trim(),smp=/^샘플/.test(name),ds=p.a==='get'?[String(p.date||'')]:String(p.dates||'').split(','),okd=/^\d{4}-\d{1,2}-\d{1,2}$/,seen={},dup=false;
           ds.forEach(function(d){if(seen[d])dup=true;seen[d]=1});
           if(name&&name.length<=12&&ds.length&&ds.length<=12&&!dup&&ds.every(function(d){return okd.test(d)})){
-            var names=[dn(smp,'_on')].concat(ds.map(function(d){return dn(smp,d+'|'+name)})),self=this,args=arguments;
+            /* 261117 밤: "Firebase 가 원본" 표시(_on)는 한 번 확인하면 10분 동안 다시 읽지 않는다(하루 읽기 횟수를 절반 가까이 줄임) */
+            var sk=smp?1:0,need=!(ONX[sk]>Date.now()),off=need?1:0;
+            var names=(need?[dn(smp,'_on')]:[]).concat(ds.map(function(d){return dn(smp,d+'|'+name)})),self=this,args=arguments;
             return ask(names).then(function(a){
               if(!Array.isArray(a)||a.length!==names.length)return of.apply(self,args);
               var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x;else if(!x.missing)return of.apply(self,args)}
-              if(!by[names[0]])return of.apply(self,args);
-              if(p.a==='get'){var g=by[names[1]];return resp({ok:true,chk:g?chkOf(g):{},fs:1})}
-              var recs={};ds.forEach(function(d,j){var g2=by[names[j+1]];recs[d]=g2?chkOf(g2):{}});return resp({ok:true,recs:recs,fs:1})});
+              if(need){if(!by[names[0]])return of.apply(self,args);ONX[sk]=Date.now()+600000}
+              if(p.a==='get'){var g=by[names[off]];return resp({ok:true,chk:g?chkOf(g):{},fs:1})}
+              var recs={};ds.forEach(function(d,j){var g2=by[names[j+off]];recs[d]=g2?chkOf(g2):{}});return resp({ok:true,recs:recs,fs:1})});
           }
         }
       }
