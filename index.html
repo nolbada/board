@@ -406,7 +406,7 @@ function penItems(n){
 function pull(n,c){
   /* 261117: "이어서 할 차례"·"지난 시간에 못 끝낸 것"·페널티는 오늘 기록의 답을 기다리지 않고 같이 받기 시작한다(전에는 오늘 기록이 온 뒤에야 받기 시작했다) */
   try{if(window.__bWatchName)window.__bWatchName(n)}catch(e9){}
-  loadLast(n);carryLoad(n,c);
+  loadLast(n);carryLoad(n,c);basketLoad(n,c);
   fetch(SRV+"?a=get&date="+iso()+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
     if(!j||!j.ok)return;var ch=false;
     for(var card in j.chk){var loc=chk(n,card),srv=j.chk[card],mg={},k;for(k in loc)mg[k]=loc[k];for(k in srv){if(srv[k]&&!mg[k]){mg[k]=srv[k];ch=true}}ls(key(n,card),JSON.stringify(mg))}
@@ -888,6 +888,59 @@ function carryLoad(n,c){
     if(ls("bd-name")===n)render();
   });
 }
+/* 261117 밤: 바구니. 이번 주(월요일~어제)에 출석했는데 체크하지 못한 항목을 모아 둔다. 평일 화면에는 그날 것만 보이고,
+   못 한 것은 바구니 타일 하나에 담긴다(금요일에 눈에 띄게). 바구니에서 체크하면 그 항목은 원래 날짜 기록에 "한 것"으로 적힌다(t_bk_<id> 에 체크한 날짜).
+   다음 주 월요일이 되면 바구니는 비어서 새로 시작한다. 오류가 나도 화면 전체에는 영향이 없다 */
+var BASKET=null;
+function bkSave(){try{if(BASKET)ls("bd-bk|"+BASKET.n,JSON.stringify(BASKET))}catch(e){}}
+function basketLoad(n,c){try{
+  if(n==="열람"||T)return;
+  var today=iso(),o=null;try{o=JSON.parse(ls("bd-bk|"+n)||"null")}catch(e){}
+  if(o&&o.on===today&&o.n===n&&Array.isArray(o.items)){BASKET=o;if(ls("bd-name")===n)render();return}
+  var ds=[],d=mon(today),g=0;while(d<today&&g++<7){ds.push(d);d=dstep(d,1)}
+  if(!ds.length){BASKET={n:n,on:today,items:[],recs:{}};bkSave();if(ls("bd-name")===n)render();return}
+  fetch(SRV+"?a=getm&dates="+ds.join(",")+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+    if(!j||!j.ok||!j.recs)return;
+    var res={n:n,on:today,items:[],recs:{}},cl=clsOf(n);
+    ds.forEach(function(dt){
+      var card=slotOf(dt),m=(j.recs[dt]&&j.recs[dt][card])||{};
+      if(!m.tin)return;
+      var left=itemsFor(cl,card,n,dt).filter(function(it){return !it.plus&&!m[it.id]});
+      if(!left.length)return;
+      res.recs[dt]={card:card,m:m};
+      left.forEach(function(it){res.items.push({d:dt,card:card,id:it.id,t:String(it.t||""),sub:String(it.sub||""),done:0})});
+    });
+    BASKET=res;bkSave();
+    if(ls("bd-name")===n)render();
+  }).catch(function(){});
+}catch(e){}}
+function bkLeft(name){return (BASKET&&BASKET.n===name)?BASKET.items.filter(function(x){return !x.done}).length:0}
+function basketTile(name){try{
+  if(!BASKET||BASKET.n!==name||!BASKET.items.length)return "";
+  var n=bkLeft(name),fri=new Date().getDay()===5;
+  if(!n&&!fri)return "";
+  return '<button data-go="basket" style="display:flex;align-items:center;justify-content:space-between;width:100%;margin:10px 0 0;padding:14px 16px;border-radius:16px;text-align:left;border:'+(fri&&n?'0;background:#b45309;color:#fff':'1.5px dashed #d6a25a;background:#fff8ec;color:#7a4a0a')+'"><span><b style="font-size:17px">바구니</b><span style="display:block;font-size:13px;opacity:.85;margin-top:2px">'+(n?(fri?'오늘 비우는 날 · 이번 주에 못 끝낸 것':'이번 주에 못 끝낸 것 · 금요일에 마무리'):'다 비웠어요')+'</span></span><span style="font-size:22px;font-weight:800">'+n+'</span></button>';
+}catch(e){return ""}}
+function basketView(name){
+  var h='<button class="back" data-go="hub">‹ 돌아가기</button><div class="top"><div class="who">바구니<small>이번 주에 못 끝낸 것</small></div></div>',by={},order=[];
+  ((BASKET&&BASKET.n===name)?BASKET.items:[]).forEach(function(x,i){if(!by[x.d]){by[x.d]=[];order.push(x.d)}by[x.d].push(i)});
+  if(!order.length)h+='<div class="card"><div class="empty">바구니가 비어 있어요</div></div>';
+  order.forEach(function(d){
+    h+='<div class="h">'+dlabel(d)+'</div><div class="card">';
+    by[d].forEach(function(i,ix){var x=BASKET.items[i];h+='<button class="item'+(x.done?' done':'')+'" data-bk="'+i+'"><span class="box">'+(x.done?'✓':(ix+1))+'</span><span class="t">'+esc(x.t)+(x.sub?'<small>'+esc(x.sub)+'</small>':'')+'</span></button>'});
+    h+='</div>';
+  });
+  return h+'<button class="back" data-go="hub">‹ 돌아가기</button>';
+}
+function basketToggle(i){
+  var n=ls("bd-name");if(!BASKET||BASKET.n!==n)return;
+  var x=BASKET.items[i];if(!x)return;var r=BASKET.recs[x.d];if(!r)return;
+  x.done=x.done?0:1;
+  if(x.done){r.m[x.id]=1;r.m["t_"+x.id]=hm();r.m["t_bk_"+x.id]=iso()}else{r.m[x.id]=0;delete r.m["t_"+x.id];delete r.m["t_bk_"+x.id]}
+  bkSave();touch();render();
+  var b={a:"put",date:x.d,cls:clsOf(n),name:n,card:x.card,chk:r.m};qdrop(b);toast("저장 중");
+  post(b).then(function(){toast("저장됨");flush()}).catch(function(){qadd(b);toast("연결 확인 중, 곧 다시 저장")});
+}
 /* 261117: 오늘 목록 맨 위 "비단챌 숙제 기록". 이 학생의 오늘 목록에 비단챌이 있을 때만 보인다. 기록을 다 받기 전에는 아무것도 보이지 않는다(잘못 "기록 없음"이 뜨지 않게). 오류가 나도 화면 전체에는 영향이 없다 */
 function bdHtml(name,c1){try{
   if(!CARRY||CARRY.n!==name||!CARRY.bd)return "";
@@ -936,6 +989,8 @@ function render(){
     h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
     if(S.pin)h+='<div class="card" style="margin-top:14px;display:flex;gap:8px;align-items:center"><input id="pinin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="flex:1;font-size:20px;padding:10px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-pinok="1" style="padding:12px 18px;font-size:16px">확인</button></div>';
     else if(!SMP)h+='<button data-view="1" style="display:block;margin:18px auto 0;border:0;background:none;color:#aaa;font-size:13px;padding:8px 16px">열람</button>';
+  } else if(S.view==="basket"){
+    h+=basketView(name);
   } else if(S.view==="today"){
     var c0=clsOf(name),card=hasCard(c0,"nae",name)?"nae":(S.card||defCard(c0,name)),cdItems=itemsFor(c0,card,name),done=chk(name,card),cd={items:cdItems};
     h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
@@ -971,6 +1026,7 @@ function render(){
     h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div>'+(PH?'':'<button class="ghost" data-go="switch">다른 학생</button>')+'</div>';
     h+='<button class="today" data-go="today"><div><b>오늘의 학습</b></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
     h+=bdHtml(name,c1);
+    h+=basketTile(name);
     h+=carryHtml(name,c1);
     h+=lastHtml();
     h+=hubHtml(c1);
@@ -1000,6 +1056,8 @@ document.addEventListener("click",function(e){
   else if(b.dataset.name){ls("bd-name",b.dataset.name);ls("bd-cls",b.dataset.c);touch();cfgReset();S.view="hub";render();pull(b.dataset.name,b.dataset.c)}
   else if(b.dataset.it){var n=ls("bd-name"),c=b.dataset.card,m=chk(n,c);m[b.dataset.it]=m[b.dataset.it]?0:1;stampT(m,b.dataset.it);ls(key(n,c),JSON.stringify(m));touch();render();sync(n,clsOf(n),c,m)}
   else if(b.dataset.card){S.card=b.dataset.card;render()}
+  else if(b.dataset.bk!==undefined){basketToggle(+b.dataset.bk)}
+  else if(b.dataset.go==="basket"){S.view="basket";touch();render()}
   else if(b.dataset.go==="today"){S.view="today";S.card=null;touch();render()}
   else if(b.dataset.go==="hub"){S.view="hub";render()}
   else if(b.dataset.go==="switch"||b.dataset.go==="leave"){leave();render()}
