@@ -50,7 +50,7 @@
       try{var ds=DAYS.map(function(x){return x.d}).sort(function(a,b){return a-b}),dn=JSON.parse(ls.getItem("vsig-y-day-v1")||"{}");nd="";for(var i=0;i<ds.length;i++){if(ds[i]>d&&!dn["D"+ds[i]]){nd=ds[i];break}}}catch(e){}
       nx=nd===null?"":(nd?"V시그널 Y Day "+nd:"V시그널 Y 끝")}
     else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"":d+" 다시"}
-    else if(APP==="rd"||APP==="bd"||APP==="vl"||APP==="dv"){w=o.w;nx=""}
+    else if(APP==="rd"||APP==="bd"||APP==="vl"||APP==="dv"||APP==="dd"){w=o.w;nx=""}
     else return;
     (chk||Promise.resolve()).then(function(){
       lr=JSON.stringify({w:w,nx:nx,t:hm(),d:date});dirty=true;report(false);
@@ -67,7 +67,7 @@
     if(o.ok!=null)st.ok=o.ok?1:0;
     if(o.w)st.w=o.w;if(o.d!=null)st.d=o.d;
     /* 261117: 비단챌·독해는 그날 끝낸 묶음을 하나만 남기지 않고 차례로 쌓는다(최대 15개). 보드 첫 화면 "비단챌 숙제 기록"에 쓴다 */
-    if(o.w&&(APP==="bd"||APP==="rd"||APP==="dv")){var L0=Array.isArray(st.l)?st.l:[];if(!L0.length||L0[L0.length-1].w!==o.w)L0.push({w:String(o.w).slice(0,60),t:hm()});st.l=L0.slice(-15)}if(o.m!=null)st.m=o.m;if(o.secs)st.s=(+st.s||0)+(+o.secs||0);
+    if(o.w&&(APP==="bd"||APP==="rd"||APP==="dd")){var L0=Array.isArray(st.l)?st.l:[];if(!L0.length||L0[L0.length-1].w!==o.w)L0.push({w:String(o.w).slice(0,60),t:hm()});st.l=L0.slice(-15)}if(o.m!=null)st.m=o.m;if(o.secs)st.s=(+st.s||0)+(+o.secs||0);
     st.t=hm();dirty=true;
     lastRec(o);
   }
