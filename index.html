@@ -456,6 +456,7 @@ function tload(silent){
   if(!tpw()){TS.rows=null;render();return}
   var m=mon(TS.date),ds=[],i,td=iso();
   for(i=0;i<7;i++){var x=dstep(m,i);if(x<=td)ds.push(x)}
+  if(mon(td)===m){var q;for(q=1;q<=4;q++){var xq=dstep(td,-q);if(ds.indexOf(xq)<0)ds.push(xq)}}
   ds.push("2000-01-01");
   if(!silent){TS.wk={};TS.rows=null}
   /* 261117 밤: 1분마다 조용히 새로 받을 때는 이번 주 전체가 아니라 오늘 날짜만 받는다(지난 날짜는 거의 안 바뀜).
@@ -492,8 +493,47 @@ function lastH(nm){
   var hs=ks.map(function(k){var o={};try{o=JSON.parse(ap[k])}catch(e){}return o.w?'<div style="font-size:14px;margin:2px 0">'+(o.nx?'<span style="color:#2f8f6b;font-weight:700">다음 '+esc(o.nx)+'</span>':esc(o.w))+oLink(o)+'</div>':""}).join("");
   return "";
 }
+/* 261118 선생님 화면 3구역: (1) 비단챌 숙제 기록(마지막 수업일~오늘) (2) 오늘 기록 (3) 주중 미완료(독해·비단챌·M1/M2·V시그널, 중1은 보카링크·데일리보카). 오류가 나도 화면 전체는 그대로 */
+var KEYRE=/비단챌|V시그널|독해|M1|M2|보카링크|데일리보카/;
+function hasBdItem(nm){try{var c=clsOf(nm),td=iso();return ["reg","fri"].some(function(cd){return itemsFor(c,cd,nm,td).some(function(i){return /비단챌/.test(String(i.t||""))})})}catch(e){return false}}
+function bdT(nm,td){try{
+  if(!hasBdItem(nm)||!TS.wk)return "";
+  /* 261118 선생님 뜻: 비단챌 숙제는 수업 들어오기 전에 한 것만 숙제로 인정. 수업 있는 날(월~목) 15:20 이후 기록은 수업 중에 한 것이라 숙제는 △ */
+  var cut="15:20",cd=dayOf(clsOf(nm))||"",ok=[],late=[],i,d;
+  for(i=0;i<=4;i++){
+    d=i?dstep(td,-i):td;
+    var row=TS.wk[d]&&TS.wk[d][nm],ap=(row&&row.chk&&row.chk.app)||{},ob=null;
+    if(i>0){var m0=(row&&row.chk&&row.chk[slotOf(d)])||{};if(m0.tin)break}
+    try{ob=ap.a_bd?JSON.parse(ap.a_bd):null}catch(e0){}
+    if(ob&&(+ob.s>0||+ob.n>0||ob.w)){
+      var L=(Array.isArray(ob.l)&&ob.l.length)?ob.l:[{w:String(ob.w||"비단챌 접속"),t:String(ob.t||"")}],w=dow(d),cls=(w>=1&&w<=4&&cd.indexOf("일월화수목금토".charAt(w))>-1);
+      L.forEach(function(x){var t=String(x.t||""),it={d:d,w:String(x.w||""),t:t};if(cls&&t&&t>=cut)late.push(it);else ok.push(it)});
+    }
+  }
+  var ln=function(x,c){return '<div style="margin-top:4px"><span style="font-size:14px;font-weight:700;color:'+c+'">'+esc(x.w)+'</span> <span style="font-size:12px;color:#5b6b62">'+esc(dlabel(x.d)+(x.t?" "+x.t:""))+'</span></div>'};
+  if(!ok.length&&!late.length)return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #c2410c;background:#fff4ec"><div style="font-size:13px;font-weight:800;color:#c2410c">비단챌 숙제 · 수업 전 기록 없음</div></div>';
+  if(!ok.length)return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #b7791f;background:#fff7dc"><div style="font-size:13px;font-weight:800;color:#8a5a00">비단챌 숙제 △ · 수업 중에 한 기록만 있음</div>'+late.map(function(x){return ln(x,"#8a5a00")}).join("")+'</div>';
+  return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #1f7a5c;background:#effaf5"><div style="font-size:13px;font-weight:800;color:#1f7a5c">비단챌 숙제 · 수업 전 기록</div>'+ok.map(function(x){return ln(x,"#1f6f50")}).join("")+(late.length?'<div style="margin-top:6px;font-size:12px;font-weight:800;color:#8a5a00">수업 중 기록 (숙제 아님)</div>'+late.map(function(x){return ln(x,"#8a5a00")}).join(""):"")+'</div>';
+}catch(e){return ""}}
+function carryT(nm,m,td){try{
+  if(!TS.wk)return "";
+  var c=clsOf(nm),end=(mon(td)===m)?td:dstep(m,7),d,by={},order=[],n=0;
+  for(d=m;d<end;d=dstep(d,1)){
+    var row=TS.wk[d]&&TS.wk[d][nm];if(!row||!row.chk)continue;
+    var card=slotOf(d),mk=row.chk[card]||{},ap=row.chk.app||{};
+    if(!mk.tin)continue;
+    itemsFor(c,card,nm,d).forEach(function(it){
+      if(it.plus)return;var t=String(it.t||"");if(!KEYRE.test(t)||mk[it.id])return;
+      if(/보카링크/.test(t)&&ap.a_vl)return;if(/데일리보카/.test(t)&&ap.a_dv)return;
+      if(!by[d]){by[d]=[];order.push(d)}by[d].push(t.replace(/\s*\(.*$/,""));n++;
+    });
+  }
+  var fri=new Date().getDay()===5,pk="bk|"+nm+"|"+m;
+  if(!n)return '<div style="margin-top:8px;font-size:13px;color:#8a8a8a">주중 미완료 없음</div>';
+  return '<details data-pk="'+esc(pk)+'"'+((TS.po&&TS.po[pk]!==undefined)?(TS.po[pk]?' open':''):(fri?' open':''))+' style="margin-top:8px;border-radius:10px;background:'+(fri?'#fff1dc':'#fff8ec')+';border:1px solid #e8c48a;padding:2px 10px"><summary style="cursor:pointer;font-size:14px;font-weight:800;color:#b45309;padding:8px 0">주중 미완료 끝내기 '+n+'</summary>'+order.map(function(x){return '<div style="margin:2px 0 8px"><b style="font-size:13px">'+dlabel(x)+'</b>'+by[x].map(function(t){return '<div style="font-size:14px;margin:2px 0 0 8px">· '+esc(t)+'</div>'}).join("")+'</div>'}).join("")+'</details>';
+}catch(e){return ""}}
 function weekH(nm,m,td){
-  var out="",n=0,i;
+  var out="",n=0,i,pst=[],ht=false,pd="";
   for(i=6;i>=0;i--){
     var d=dstep(m,i);if(d>td)continue;
     var row=TS.wk[d]&&TS.wk[d][nm],ap=(row&&row.chk&&row.chk.app)||{},ls_=[];
@@ -501,9 +541,10 @@ function weekH(nm,m,td){
       if(k.indexOf("l_")===0){var x=lLine(ap[k]);if(x)ls_.push([k.slice(2),x])}
       else if(k.indexOf("a_")===0&&!ap["l_"+k.slice(2)]){var lw0=TS.wk["2000-01-01"]&&TS.wk["2000-01-01"][nm],la=(lw0&&lw0.chk&&lw0.chk.app&&lw0.chk.app["l_"+k.slice(2)])||"",lo={};try{lo=JSON.parse(la||"{}")}catch(e){}ls_.push([k.slice(2),(lo.w&&lo.d===d?lLine(la):aLine(k,ap[k]))])}
     });
-    if(ls_.length){n++;var gm={},go=[];ls_.forEach(function(p){var an=AL[p[0]]||p[1].replace(/<[^>]+>/g,'').split(' ')[0]||p[0];if(!gm[an]){gm[an]=[];go.push(an)}gm[an].push(p[1])});out+='<div style="margin-top:8px"><b>'+dlabel(d)+'</b>'+go.map(function(an){return '<div style="margin:6px 0 2px;font-size:14px;font-weight:800"><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin:0 7px 2px 1px;vertical-align:middle"></i>'+esc(an)+'</div>'+gm[an].map(function(h){var i=h.indexOf('>')+1,pre=h.slice(0,i),tx=h.slice(i);if(tx.indexOf(an)===0)tx=tx.slice(an.length).replace(/^\s+/,'');return pre+'· '+tx}).join("")}).join("")+'</div>'}
+    if(ls_.length){n++;var gm={},go=[];ls_.forEach(function(p){var an=AL[p[0]]||p[1].replace(/<[^>]+>/g,'').split(' ')[0]||p[0];if(!gm[an]){gm[an]=[];go.push(an)}gm[an].push(p[1])});var dh='<div style="margin-top:8px"><b>'+dlabel(d)+'</b>'+go.map(function(an){return '<div style="margin:6px 0 2px;font-size:14px;font-weight:800"><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin:0 7px 2px 1px;vertical-align:middle"></i>'+esc(an)+'</div>'+gm[an].map(function(h){var i=h.indexOf('>')+1,pre=h.slice(0,i),tx=h.slice(i);if(tx.indexOf(an)===0)tx=tx.slice(an.length).replace(/^\s+/,'');return pre+'· '+tx}).join("")}).join("")+'</div>';/* 261118: 오늘 기록만 펼치고 지난 날짜는 "지난 기록"으로 접는다(선생님 뜻: 지난 수업이 같이 떠서 헷갈림) */if(d===td){out+=dh;ht=true}else pst.push([d,dh])}
   }
-  return {h:out,n:n};
+  if(pst.length){var pk=nm+"|"+m;pd='<details data-pk="'+esc(pk)+'"'+(TS.po&&TS.po[pk]?' open':'')+' style="margin-top:10px;border-top:1px solid #eee;padding-top:6px"><summary style="cursor:pointer;font-size:14px;font-weight:700;color:#555;padding:6px 0">지난 기록 '+pst.length+'일</summary>'+pst.map(function(x){return x[1]}).join("")+'</details>'}
+  return {h:out,n:n,p:pd,t:ht};
 }
 function modeBar(){return '<div class="chips" style="margin:0 0 10px"><button class="chip'+(TS.mode==="r"?' on':'')+'" data-tm="r">기록</button><button class="chip'+(TS.mode==="m"?' on':'')+'" data-tm="m">관리</button></div>'}
 function allItemsOf(cls){return CLASS_ITEMS[cls]||REGULAR}
@@ -798,8 +839,8 @@ function renderT(){
   h+='<div class="tlist">';
   (/중3/.test(TS.cls)?[]:ROSTER[TS.cls]).forEach(function(nm){
     var w=weekH(nm,m,td);
-    h+='<div class="card" style="padding:12px 14px"><div style="display:flex;align-items:center;gap:10px"><span class="nm" style="font-weight:700;font-size:17px;flex:1">'+esc(nm)+'</span><span class="pl'+(w.n?'':' z')+'">'+(w.n?w.n+'일 기록':'기록 없음')+'</span></div>';
-    h+=lastH(nm)+w.h;
+    h+='<div class="card" style="padding:12px 14px"><div style="display:flex;align-items:center;gap:10px"><span class="nm" style="font-weight:700;font-size:17px;flex:1">'+esc(nm)+'</span><span class="pl'+(w.t?'':' z')+'">'+(w.t?'오늘 기록':'기록 없음')+'</span></div>';
+    h+=lastH(nm)+bdT(nm,td)+'<div style="margin-top:8px;font-size:13px;font-weight:800;color:#1c2b2d">오늘 · '+dlabel(td)+'</div>'+(w.t?w.h:'<div style="font-size:13px;color:#8a8a8a;margin-top:2px">아직 기록 없음</div>')+carryT(nm,m,td);
     h+='</div>';
   });
   h+='</div>';
@@ -826,6 +867,7 @@ document.addEventListener("click",function(e){
   else if(D.td!==undefined){TS.date=D.td==="0"?iso():dstep(TS.date,+D.td*7);TS.open=null;TS.rows=null;tload()}
   else if(D.st){TS.open=TS.open===D.st?null:D.st;render()}
 });
+document.addEventListener("toggle",function(e){var el=e.target;if(!T||!el||!el.dataset||!el.dataset.pk)return;if(!TS.po)TS.po={};TS.po[el.dataset.pk]=el.open},true);
 document.addEventListener("change",function(e){var el=e.target;if(T&&el&&el.id==="pschool"&&TS.mo){setProf(TS.mo,el.value,null);ttSave()}});
 document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="rq")return;TS.rq=e.target.value;var el=document.getElementById("rl");if(el)el.innerHTML=rList()});
 document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="exq")return;TS.exq=e.target.value;var el=document.getElementById("exr");if(el)el.innerHTML=exList()});
