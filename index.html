@@ -849,6 +849,8 @@ function renderT(){
   h+='</div>';
   var hc=TS.cls||"",hu=/중3/.test(hc)?'/via/wn-t/':(/고등|관리형/.test(hc)?'':'/via/hw/?c='+encodeURIComponent(hc));
   if(hu)h+='<iframe src="'+hu+'" style="width:100%;height:88vh;border:0;border-radius:12px;margin-top:10px;background:#fff"></iframe>';
+  /* 261118: 맨 아래 숙제 검사까지 내려온 뒤 메인이 아니라 바로 앞 단계(시간표)로 돌아가는 버튼 */
+  h+='<button data-rb="1" style="display:block;width:100%;margin-top:12px;padding:14px;border:1.5px solid #00A1A7;border-radius:12px;background:#fff;color:#00787c;font-size:16px;font-weight:800">‹ 시간표로 돌아가기</button>';
   app.innerHTML=h;
 }
 document.addEventListener("click",function(e){
