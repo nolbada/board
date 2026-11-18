@@ -89,7 +89,7 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .box{width:30px;height:30px;border-radius:50%;border:2px dashed var(--bd);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--soft)}
 .item.plus{background:#fff6cc;border-radius:10px;padding-left:10px;padding-right:10px}
 .plh{font-size:12px;font-weight:700;color:#8a6d00;margin:16px 4px 2px}
-.card.pen{background:#ffe3ec;border:1px solid #f3b3c6}.h.pk{color:#b0305f}.card.pen .item.done{opacity:.6}
+.card.pen{background:#ffe3ec;border:1px solid #f3b3c6}.h.pk{color:#b0305f}.card.pen .item.done{opacity:.6}.pwhy{font-size:13px;font-weight:800;color:#b0305f;padding:10px 4px 0}.pwhy+.item{padding-top:8px}
 .item.done .box{border:3px solid var(--o);background:var(--os);color:var(--o);font-size:16px}
 .item.done .t{color:var(--soft);text-decoration:line-through}
 .t{font-size:16px;font-weight:700;flex:1}
@@ -399,13 +399,14 @@ function penPull(n,cb){
     var ch=penSet(n,j);cb&&cb(ch);
   }).catch(function(){});
 }
-/* 261118: 페널티마다 '왜 걸렸는지'를 한 줄로 붙인다(예: 단어 숙제를 안 해서) */
+/* 261118: 페널티를 '무엇 때문에 걸렸는지'(예: 단어 숙제 X)별로 묶어 작은 제목을 달고, 그 아래에 해야 할 일을 보여 준다 */
 var PENNM={w:"단어",g:"문법",b:"비단챌",l:"듣기",v:"보카링크",r:"독해책",m:"문법책"};
-function penWhy(trg,cnt){var p=String(trg||"").split(":"),nm=PENNM[p[0]];if(!nm)return "";var c=cnt>1?cnt+"번 ":"";return nm+" 숙제를 "+(p[1]==="T"?c+"다 못 해서":c+"안 해서")}
+function penWhy(trg){var p=String(trg||"").split(":"),nm=PENNM[p[0]];if(!nm)return "";return nm+" 숙제 "+(p[1]==="T"?"△":"X")}
 function penItems(n){
   var c=PEN[n]||{},on={},k,m,out=[],seen={};
   for(k in c){m=k.match(/^(.*?)(\d+)$/);if(m)on[m[1]+":"+c[k]]=(on[m[1]+":"+c[k]]||0)+1}
-  ((CC&&CC.cards)||[]).forEach(function(cd){if(cd.tag!=="페널티")return;(cd.items||[]).forEach(function(it){if(it.trg&&on[it.trg]&&!seen[it.id]){seen[it.id]=1;var o={},q;for(q in it)o[q]=it[q];o.why=penWhy(it.trg,on[it.trg]);out.push(o)}})});
+  ((CC&&CC.cards)||[]).forEach(function(cd){if(cd.tag!=="페널티")return;(cd.items||[]).forEach(function(it){if(it.trg&&on[it.trg]&&!seen[it.id]){seen[it.id]=1;var o={},q;for(q in it)o[q]=it[q];o.why=penWhy(it.trg);out.push(o)}})});
+  var ord=[];out.forEach(function(o){if(ord.indexOf(o.trg)<0)ord.push(o.trg)});out.sort(function(x,y){return ord.indexOf(x.trg)-ord.indexOf(y.trg)});
   return out;
 }
 function pull(n,c){
@@ -1077,7 +1078,7 @@ function render(){
     h+='</div>';
     var ad=(card===defCard(c0,name)&&card!=="nae")?itemsFor(c0,"add",name):[];if(ad.length){var ads=chk(name,"add");h+='<div class="h">추가 숙제</div><div class="card">';ad.forEach(function(it,ix){var d=!!ads[it.id];h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="add"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>'});h+='</div>'}
     var pn=penItems(name);
-    if(pn.length){var pd=chk(name,"pen");h+='<div class="h pk">페널티</div><div class="card pen">';pn.forEach(function(it,ix){var d=!!pd[it.id];h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="pen"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.why?'<small>'+esc(it.why)+'</small>':'')+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>'});h+='</div>'}
+    if(pn.length){var pd=chk(name,"pen");h+='<div class="h pk">페널티</div><div class="card pen">';var pw="";pn.forEach(function(it,ix){var d=!!pd[it.id];if(it.why&&it.why!==pw){pw=it.why;h+='<div class="pwhy">'+esc(it.why)+'</div>'}h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="pen"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>'});h+='</div>'}
     if(card==="reg" && EXTRA.items.length && cd.items.length && cd.items.filter(function(i){return !i.plus}).every(function(i){return done[i.id]})){
       var ex=chk(name,"extra");
       h+='<div class="h">'+EXTRA.t+'</div><div class="card">';
