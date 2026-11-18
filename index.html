@@ -507,13 +507,13 @@ function bdT(nm,td){try{
     try{ob=ap.a_bd?JSON.parse(ap.a_bd):null}catch(e0){}
     if(ob&&(+ob.s>0||+ob.n>0||ob.w)){
       var L=(Array.isArray(ob.l)&&ob.l.length)?ob.l:[{w:String(ob.w||"비단챌 접속"),t:String(ob.t||"")}],w=dow(d),cls=(w>=1&&w<=4&&cd.indexOf("일월화수목금토".charAt(w))>-1);
-      L.forEach(function(x){var t=String(x.t||""),it={d:d,w:String(x.w||""),t:t};if(cls&&t&&t>=cut)late.push(it);else ok.push(it)});
+      L.forEach(function(x){var t=String(x.t||""),it={d:d,w:String(x.w||""),t:t,ac:false},tn=((row&&row.chk&&row.chk[slotOf(d)])||{}).tin||"";if(t&&tn&&t>=tn)it.ac=true;if(cls&&t&&t>=cut){it.ac=true;late.push(it)}else ok.push(it)});
     }
   }
-  var ln=function(x,c){return '<div style="margin-top:4px"><span style="font-size:14px;font-weight:700;color:'+c+'">'+esc(x.w)+'</span> <span style="font-size:12px;color:#5b6b62">'+esc(dlabel(x.d)+(x.t?" "+x.t:""))+'</span></div>'};
+  var ln=function(x,c){return '<div style="margin-top:4px"><span style="font-size:14px;font-weight:700;color:'+c+'">'+esc(x.w)+'</span> <span style="font-size:12px;color:#5b6b62">'+esc(dlabel(x.d)+(x.t?" "+x.t:""))+'</span>'+(x.ac?' <span style="font-size:11px;font-weight:800;color:#fff;background:#8a5a00;border-radius:4px;padding:1px 5px">학원에서</span>':'')+'</div>'};
   if(!ok.length&&!late.length)return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #c2410c;background:#fff4ec"><div style="font-size:13px;font-weight:800;color:#c2410c">비단챌 숙제 · 수업 전 기록 없음</div></div>';
-  if(!ok.length)return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #b7791f;background:#fff7dc"><div style="font-size:13px;font-weight:800;color:#8a5a00">비단챌 숙제 △ · 수업 중에 한 기록만 있음</div>'+late.map(function(x){return ln(x,"#8a5a00")}).join("")+'</div>';
-  return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #1f7a5c;background:#effaf5"><div style="font-size:13px;font-weight:800;color:#1f7a5c">비단챌 숙제 · 수업 전 기록</div>'+ok.map(function(x){return ln(x,"#1f6f50")}).join("")+(late.length?'<div style="margin-top:6px;font-size:12px;font-weight:800;color:#8a5a00">수업 중 기록 (숙제 아님)</div>'+late.map(function(x){return ln(x,"#8a5a00")}).join(""):"")+'</div>';
+  if(!ok.length)return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #b7791f;background:#fff7dc"><div style="font-size:13px;font-weight:800;color:#8a5a00">비단챌 숙제 △ · 학원에서 한 기록만 있음</div>'+late.map(function(x){return ln(x,"#8a5a00")}).join("")+'</div>';
+  return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #1f7a5c;background:#effaf5"><div style="font-size:13px;font-weight:800;color:#1f7a5c">비단챌 숙제 · 수업 전 기록</div>'+ok.map(function(x){return ln(x,"#1f6f50")}).join("")+(late.length?'<div style="margin-top:6px;font-size:12px;font-weight:800;color:#8a5a00">학원에서 한 기록 (숙제 아님)</div>'+late.map(function(x){return ln(x,"#8a5a00")}).join(""):"")+'</div>';
 }catch(e){return ""}}
 function carryT(nm,m,td){try{
   if(!TS.wk)return "";
