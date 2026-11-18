@@ -498,16 +498,16 @@ var KEYRE=/비단챌|V시그널|독해|M1|M2|보카링크|데일리보카/;
 function hasBdItem(nm){try{var c=clsOf(nm),td=iso();return ["reg","fri"].some(function(cd){return itemsFor(c,cd,nm,td).some(function(i){return /비단챌/.test(String(i.t||""))})})}catch(e){return false}}
 function bdT(nm,td){try{
   if(!hasBdItem(nm)||!TS.wk)return "";
-  /* 261118 선생님 뜻: 비단챌 숙제는 수업 들어오기 전에 한 것만 숙제로 인정. 수업 있는 날(월~목) 15:20 이후 기록은 수업 중에 한 것이라 숙제는 △ */
-  var cut="15:20",cd=dayOf(clsOf(nm))||"",ok=[],late=[],i,d;
+  /* 261118 선생님 뜻: 비단챌 숙제는 수업 들어오기 전에 한 것만 숙제로 인정. 월수반 15:20·화목반 15:10·금요일 14:00 이후 기록은 수업 중에 한 것이라 숙제는 △ */
+  var cd=dayOf(clsOf(nm))||"",cut=(/화|목/.test(cd)&&!/월|수/.test(cd))?"15:10":"15:20",ok=[],late=[],i,d;
   for(i=0;i<=4;i++){
     d=i?dstep(td,-i):td;
     var row=TS.wk[d]&&TS.wk[d][nm],ap=(row&&row.chk&&row.chk.app)||{},ob=null;
     if(i>0){var m0=(row&&row.chk&&row.chk[slotOf(d)])||{};if(m0.tin)break}
     try{ob=ap.a_bd?JSON.parse(ap.a_bd):null}catch(e0){}
     if(ob&&(+ob.s>0||+ob.n>0||ob.w)){
-      var L=(Array.isArray(ob.l)&&ob.l.length)?ob.l:[{w:String(ob.w||"비단챌 접속"),t:String(ob.t||"")}],w=dow(d),cls=(w>=1&&w<=4&&cd.indexOf("일월화수목금토".charAt(w))>-1);
-      L.forEach(function(x){var t=String(x.t||""),it={d:d,w:String(x.w||""),t:t,ac:false},tn=((row&&row.chk&&row.chk[slotOf(d)])||{}).tin||"";if(t&&tn&&t>=tn)it.ac=true;if(cls&&t&&t>=cut){it.ac=true;late.push(it)}else ok.push(it)});
+      var L=(Array.isArray(ob.l)&&ob.l.length)?ob.l:[{w:String(ob.w||"비단챌 접속"),t:String(ob.t||"")}],w=dow(d),cls=(w>=1&&w<=4&&cd.indexOf("일월화수목금토".charAt(w))>-1)||w===5,cu=(w===5)?"14:00":cut;
+      L.forEach(function(x){var t=String(x.t||""),it={d:d,w:String(x.w||""),t:t,ac:false},tn=((row&&row.chk&&row.chk[slotOf(d)])||{}).tin||"";if(t&&tn&&t>=tn)it.ac=true;if(cls&&t&&t>=cu){it.ac=true;late.push(it)}else ok.push(it)});
     }
   }
   var ln=function(x,c){return '<div style="margin-top:4px"><span style="font-size:14px;font-weight:700;color:'+c+'">'+esc(x.w)+'</span> <span style="font-size:12px;color:#5b6b62">'+esc(dlabel(x.d)+(x.t?" "+x.t:""))+'</span>'+(x.ac?' <span style="font-size:11px;font-weight:800;color:#fff;background:#8a5a00;border-radius:4px;padding:1px 5px">학원에서</span>':'')+'</div>'};
