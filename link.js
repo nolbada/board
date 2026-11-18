@@ -179,7 +179,7 @@
       var bs=function(){var m={},s={},rc={};
         try{s=JSON.parse(ls.getItem(KB)||"{}")||{}}catch(e){}
         try{rc=JSON.parse(ls.getItem("bc_rec_"+BID)||"{}")||{}}catch(e){}
-        Object.keys(s.m2||{}).forEach(function(b){if(s.m2[b]){var a=+b,z=Math.min(a+9,BMX||a+9);m["m"+b]="비단챌 "+BK+" "+a+"~"+z+"번 완료"}});
+        Object.keys(s.m2||{}).forEach(function(b){if(s.m2[b]){var a=+b,z=Math.min(a+9,BMX||a+9),sc="";try{var qs=((W.BDC.blocks||{})[b]||{}).quiz||[],ok=0;qs.forEach(function(q){var x=(s.q||{})[q.no];if(x&&x.ok===true)ok++});if(qs.length)sc=" · 10문제 "+ok+"/"+qs.length}catch(e){}m["m"+b]="비단챌 "+BK+" "+a+"~"+z+"번 완료"+sc}});
         Object.keys(rc).forEach(function(r){var a=(+r)*10+1;m["r"+r]="비단챌 "+BK+" 보충 "+a+"~"+(a+9)+"번 오답 "+((rc[r]||{}).w||0)+"개"});
         return m};
       var bn=null;try{bn=JSON.parse(ss.getItem(SKB)||"null")}catch(e){}
