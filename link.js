@@ -40,7 +40,7 @@
       dirty=true;if(OPENR)setTimeout(function(){report(false)},1500);
     }).catch(function(){loading=false});
   }
-  var AN={bd:"비단챌",rd:"독해33권",vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩"};
+  var AN={bd:"비단챌",rd:"독해33권",vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",m1:"M1 리딩",m2:"M2 리딩",g2v1:"중2 문법(기출)"};
   function lastRec(o){
     var d=o.d,ok=o.ok,w,nx="",nn=(+d||0)+1,chk=null;
     if(APP==="vk"||APP==="ve"){w=AN[APP]+" Day "+d+(APP==="ve"?" 7문장 완료":(ok?" 통과":" 한번 더")+(o.p!=null?" "+o.p+"%":""));nx=ok?(nn<=64?AN[APP]+" Day "+nn:AN[APP]+" 끝"):AN[APP]+" Day "+d+" 다시"}
@@ -49,6 +49,7 @@
     else if(APP==="vy"){w="V시그널 Y Day "+d+" 7문장 완성";var nd=null;
       try{var ds=DAYS.map(function(x){return x.d}).sort(function(a,b){return a-b}),dn=JSON.parse(ls.getItem("vsig-y-day-v1")||"{}");nd="";for(var i=0;i<ds.length;i++){if(ds[i]>d&&!dn["D"+ds[i]]){nd=ds[i];break}}}catch(e){}
       nx=nd===null?"":(nd?"V시그널 Y Day "+nd:"V시그널 Y 끝")}
+    else if(APP==="g2v1"){w=AN[APP]+" "+d+"단원"+(ok?" 통과":" 다시")+(o.p!=null?" "+o.p+"%":"");nx=ok?"":AN[APP]+" "+d+"단원 다시"}
     else if(APP==="xr"){w=AN[APP]+" "+d+(o.m!=null?" 실수 "+o.m+"개":"");nx=ok?"":d+" 다시"}
     else if(APP==="rd"||APP==="bd"||APP==="vl"||APP==="dv"||APP==="dd"){w=o.w;nx=""}
     else return;
