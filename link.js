@@ -146,15 +146,36 @@
     var BN=(D.title||KV).replace(/\s*Exit Test\s*$/i,"").trim();
     var MT=W.META||{};
     var nm=function(u,pid,no){return((MT.secs&&MT.secs[u])||u||"")+" "+((MT.labs&&MT.labs[pid])||no||"")};
+    if(!EX){
+      var BKK=KV+"bk",SKB2="bl-snap-bk-"+KV,CC="①②③④⑤⑥⑦⑧⑨⑩";
+      var bkIn=function(p){var r=[];(p.qs||[]).forEach(function(s,qi){if(!s.opts||!s.opts.length)return;var n=s.opts.length,mk=s.opts.map(function(o){var m=/^(T|F)\b/.exec(o[3]||"");return m?m[1]:null});
+        if(mk.every(Boolean)){r.push({qi:qi,s:s,kind:"tf",ans:mk});return}
+        if(!(n>=2&&s.opts.every(function(o,k){return o[0]===CC.charAt(k)})))return;
+        var ok=[];s.opts.forEach(function(o,k){var t=o[3]||"";if(!/^오답/.test(t)&&/^정답|^[^.。]{0,10}\(정답/.test(t))ok.push(k)});
+        if(ok.length===1)r.push({qi:qi,s:s,kind:"mc",ans:ok[0]});else if(ok.length>=2&&ok.length<n)r.push({qi:qi,s:s,kind:"ms",ans:ok})});return r};
+      var bkCmp=function(){var all={},res=[];try{all=JSON.parse(ls.getItem(BKK)||"{}")||{}}catch(e){}
+        (W.P||[]).forEach(function(p){var st=all[p.id];if(!st||!st.sub)return;var bi=bkIn(p),tot=bi.length;if(!tot)return;var wr=[],ok=0;
+          bi.forEach(function(it){var v=(st.a||{})[it.qi],g=false;if(v!=null){if(it.kind==="mc")g=v===it.ans;else if(it.kind==="ms")g=Array.isArray(v)&&v.length===it.ans.length&&it.ans.every(function(a){return v.indexOf(a)>=0});else g=it.ans.every(function(a,k){return v[k]===a})}
+            if(g)ok++;else{var m=/(\d+)번/.exec(it.s.at||"");wr.push(m?m[1]:String(it.qi+1))}});
+          res.push([p,ok,tot,wr])});return res};
+      var bs0=null;try{bs0=JSON.parse(ss.getItem(SKB2)||"null")}catch(e){}
+      if(!bs0){try{bs0=bkCmp().map(function(x){return x[0].id})}catch(e){bs0=[]}try{ss.setItem(SKB2,JSON.stringify(bs0))}catch(e){}}
+      setInterval(function(){try{bkCmp().forEach(function(x){if(bs0.indexOf(x[0].id)<0){bs0.push(x[0].id);try{ss.setItem(SKB2,JSON.stringify(bs0))}catch(e){}
+        W.BoardLink.score("rd",{w:BN+" "+nm(x[0].u,x[0].id,x[0].no)+" 책 문제 "+x[1]+"/"+x[2]+(x[3].length?" · 틀림 "+x[3].map(function(n){return "("+n+")"}).join(""):" · 전부 정답")})}})}catch(e){}},2000);
+    }
     if(EX){
-      var seenX={};
+      var seenX=null;
       setInterval(function(){
-        var dn=W.done||{},ps=W.P||[];
+        try{
+        var dn=W.done||{},ps=W.P||[],first=!seenX;if(first)seenX={};
         Object.keys(dn).forEach(function(pid){
-          var r=dn[pid];if(seenX[pid]||!r||typeof r.s!=="number")return;seenX[pid]=1;
+          var r=dn[pid];if(!r||typeof r.s!=="number")return;
+          var sig=r.s+":"+JSON.stringify(r.ok||{});if(seenX[pid]===sig)return;seenX[pid]=sig;if(first)return;
           var p=null;ps.forEach(function(x){if(x.id===pid)p=x});
-          W.BoardLink.score("rd",{w:BN+" "+(p?nm(p.u,pid,p.no):pid)+" Exit test 완료"});
+          var wr=[];if(p&&p.items)p.items.forEach(function(it){if(!(r.ok||{})[it.n])wr.push(it.n)});
+          W.BoardLink.score("rd",{w:BN+" "+(p?nm(p.u,pid,p.no):pid)+" Exit test "+(r.s*10)+"점 ("+r.s+"/10) "+(r.s*10>=70?"통과":"재도전")+(wr.length?" · 틀림 "+wr.map(function(n){return "("+n+")"}).join(""):"")});
         });
+        }catch(e){}
       },1500);
     }else{
       var SKR="bl-snap-rd-"+KV;
