@@ -517,13 +517,14 @@ function bdT(nm,td){try{
 }catch(e){return ""}}
 function carryT(nm,m,td){try{
   if(!TS.wk)return "";
+  if(/조성니|윤여름/.test(nm))return "";
   var c=clsOf(nm),end=(mon(td)===m)?td:dstep(m,7),d,by={},order=[],n=0;
   for(d=m;d<end;d=dstep(d,1)){
     var row=TS.wk[d]&&TS.wk[d][nm];if(!row||!row.chk)continue;
     var card=slotOf(d),mk=row.chk[card]||{},ap=row.chk.app||{};
     if(!mk.tin)continue;
     itemsFor(c,card,nm,d).forEach(function(it){
-      if(it.plus)return;var t=String(it.t||"");if(!KEYRE.test(t)||mk[it.id])return;
+      if(it.plus)return;var t=String(it.t||"");if(!KEYRE.test(t)||/비단챌/.test(t)||mk[it.id])return;
       if(/보카링크/.test(t)&&ap.a_vl)return;if(/데일리보카/.test(t)&&ap.a_dv)return;
       if(!by[d]){by[d]=[];order.push(d)}by[d].push(t.replace(/\s*\(.*$/,""));n++;
     });
