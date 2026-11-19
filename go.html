@@ -166,6 +166,7 @@ function exNext(w,pid){var P=w.P||[],i=-1;P.forEach(function(p,j){if(p.id===pid)
 function rdU(k,pid,ex){return "/via/shared/?a="+k+(ex?"/exit":"")+"/&new=1&r="+encodeURIComponent(pid)}
 var RS={};
 function svRS(k,st){var s=JSON.stringify({sub:st.sub,c:st.c,ex:st.ex});if(s!==st.last){st.last=s;pset("rd|"+k,{sub:st.sub,c:st.c,ex:st.ex})}}
+function exWr(w,pid,d0){try{var p=(w.P||[]).filter(function(x){return x.id===pid})[0];if(!p)return "";var wr=p.items.filter(function(it){return !d0.ok[it.n]}).map(function(it){return "("+it.n+")"});return wr.length?" · 틀림 "+wr.join(""):" · 전 문항 정답"}catch(e){return ""}}
 function rdPoll(){try{
  var all=wins(f.contentWindow,[],0);
  for(var i=0;i<all.length;i++){var w=all[i],k;try{k=w.KEY}catch(e){continue}
@@ -176,7 +177,7 @@ function rdPoll(){try{
    var dn=w.done||{};
    Object.keys(dn).forEach(function(pid){var d0=dn[pid];if(!d0)return;var sig=pid+":"+d0.s;if(st.ex[pid]===sig)return;st.ex[pid]=sig;
     var pass=d0.s*10>=70,nx0=exNext(w,pid);
-    recK("rd_"+k+"_exit","독해33권 "+bn+" "+exLab(w,pid)+" Exit test 응시",pass?(nx0?bn+" "+exLab(w,nx0)+" Exit test":"이 책 Exit test 끝"):bn+" "+exLab(w,pid)+" Exit test 다시",rdU(k,pid,1))});
+    recK("rd_"+k+"_exit","독해33권 "+bn+" "+exLab(w,pid)+" Exit test "+(d0.s*10)+"점 ("+d0.s+"/10) "+(pass?"통과":"재도전")+exWr(w,pid,d0),pass?(nx0?bn+" "+exLab(w,nx0)+" Exit test":"이 책 Exit test 끝"):bn+" "+exLab(w,pid)+" Exit test 다시",rdU(k,pid,1))});
    svRS(k,st);continue}
   var d={},bk={};
   try{d=JSON.parse(w.localStorage.getItem(k+"done")||"{}")||{}}catch(e){}
@@ -186,9 +187,9 @@ function rdPoll(){try{
   var sub={};Object.keys(bk).forEach(function(pid){if(bk[pid]&&bk[pid].sub)sub[pid]=1});
   if(!st.init){st.init=true;st.c=cnt;st.sub=sub;svRS(k,st);continue}
   Object.keys(sub).forEach(function(pid){if(st.sub[pid])return;st.sub[pid]=1;
-   var fp=rdFind(w,pid),ok=0,tot=0;
-   if(fp&&w.bookInputs){try{var BI=w.bookInputs(fp.p);tot=BI.length;BI.forEach(function(it){if(w.bkOk(it,(bk[pid].a||{})[it.qi]))ok++})}catch(e){}}
-   recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 책 문제 제출",bn+" "+rdLab(w,pid)+" 핵심 질문",rdU(k,pid))});
+   var fp=rdFind(w,pid),ok=0,tot=0,wn=[];
+   if(fp&&w.bookInputs){try{var BI=w.bookInputs(fp.p);tot=BI.length;BI.forEach(function(it){if(w.bkOk(it,(bk[pid].a||{})[it.qi]))ok++;else{var mq=/(\d+)\s*번/.exec((it.s&&it.s.at)||"");wn.push(mq?mq[1]:it.qi+1)}})}catch(e){}}
+   recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 책 문제 제출"+(tot?" "+ok+"/"+tot+(wn.length?" · 틀림 "+wn.map(function(n){return "("+n+")"}).join(""):""):""),bn+" "+rdLab(w,pid)+" 핵심 질문",rdU(k,pid))});
   Object.keys(cnt).forEach(function(pid){if(cnt[pid]>(st.c[pid]||0)){st.c[pid]=cnt[pid];
    recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 질문·활동 "+cnt[pid]+"개 정답 확인","",rdU(k,pid))}});
   svRS(k,st);
