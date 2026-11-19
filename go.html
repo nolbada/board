@@ -9,7 +9,7 @@ var SRV="https://script.google.com/macros/s/AKfycbyGjwU2UXP8hoRLn0VThkus7bj_ZnGc
 var Q=new URLSearchParams(location.search),A=Q.get("a")||"",T=Q.get("t")||"",U=Q.get("u")||"";
 var ls=localStorage,ss=sessionStorage;
 function home(){location.replace("/board/?back=1")}
-if(!/^\/via\/[A-Za-z0-9_\-\/.]*$/.test(U)||U.indexOf("..")>=0){home();return}
+if(!/^\/via(-mid)?\/[A-Za-z0-9_\-\/.]*$/.test(U)||U.indexOf("..")>=0){home();return}
 var n=ls.getItem("bd-name")||"",c=ls.getItem("bd-cls")||"",t=+ls.getItem("bd-t")||0;
 if(!n||Date.now()-t>600000){home();return}
 try{ss.setItem("bl-who",JSON.stringify({n:n,c:c}))}catch(e){}

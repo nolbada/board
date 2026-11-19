@@ -176,7 +176,9 @@ var HUB = [
   ,{h:"데일리보카", ac:"#7A45D1", cols:3, items:[
     {n:"M", tt:"데일리보카 M", u:BASE+"daily/m/"}, {n:"B", tt:"데일리보카 B", u:BASE+"daily/b/"}, {n:"H", tt:"데일리보카 H", u:BASE+"daily/h/"}]}
   ,{h:"문법 기출", ac:"#2a6f97", cols:1, items:[
-    {n:"중2 문법(기출) Vol. 1", tt:"중2 문법(기출) Vol. 1", u:BASE+"g2-gichul-1/"}]}
+    {n:"중등 문법 기출", tt:"중등 문법 기출", u:BASE+"g2-gichul-1/"},
+    {n:"G-기출", tt:"G-기출", u:BASE+"giche-grammar/"},
+    {n:"그래머콕", tt:"그래머콕", u:"https://nolbada.github.io/via-mid/m/grammarcock/"}]}
   ,{h:"대화문 기출", ac:"#1F7A5C", cols:2, items:[
     {n:"중1", tt:"대화문 기출 중1", ic:"data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20rx=%2222%22%20fill=%22%23FFE3A6%22/%3E%3Ctext%20x=%2242%22%20y=%2276%22%20font-size=%2260%22%20text-anchor=%22middle%22%3E%F0%9F%91%A8%3C/text%3E%3Ctext%20x=%2276%22%20y=%2238%22%20font-size=%2226%22%20text-anchor=%22middle%22%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E", u:BASE+"gichul/m1/"}, {n:"중2", tt:"대화문 기출 중2", ic:"data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20rx=%2222%22%20fill=%22%23CFE1FF%22/%3E%3Ctext%20x=%2242%22%20y=%2276%22%20font-size=%2260%22%20text-anchor=%22middle%22%3E%F0%9F%91%A9%3C/text%3E%3Ctext%20x=%2276%22%20y=%2238%22%20font-size=%2226%22%20text-anchor=%22middle%22%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E", u:BASE+"gichul/m2/"}]}
 ];
@@ -379,7 +381,7 @@ function iso(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)
 function hm(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
 function stampT(m,id){var v=hm();if(m[id])m["t_"+id]=v;else delete m["t_"+id];m.tlt=v;if(!m.tin)m.tin=v}
 function syncQ(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);post(b).catch(function(){qadd(b)})}
-var AL={vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",rd:"독해33권",bd:"비단챌",m1:"M1 리딩",m2:"M2 리딩",gk1:"대화문 기출 중1",gk2:"대화문 기출 중2",dv:"데일리보카",dd:"더블보카",g2v1:"중2 문법(기출) Vol. 1"};
+var AL={vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",rd:"독해33권",bd:"비단챌",m1:"M1 리딩",m2:"M2 리딩",gk1:"대화문 기출 중1",gk2:"대화문 기출 중2",dv:"데일리보카",dd:"더블보카",g2v1:"중등 문법 기출"};
 function appLine(k,v){var o={};try{o=JSON.parse(v)}catch(e){}var p=[];if(o.d)p.push(((k==="a_m1"||k==="a_m2")?"Reading ":k==="a_xr"?"분석 ":k==="a_g2v1"?"단원 ":"Day ")+o.d);if(o.m!=null)p.push("실수 "+o.m+"개");if(k!=="a_ve"&&k!=="a_rd"){if(o.p!=null)p.push(o.p+"%");if(o.ok!=null)p.push(o.ok?"통과":"한번 더")}if(o.n)p.push(o.n+"회");if(o.s)p.push(Math.max(1,Math.round(o.s/60))+"분");if(o.t)p.push(o.t);/* 261118: 더블보카는 그날 한 일을 차례로 보여 준다(학습 끝, 시험 점수 …) */var ls2="";if(k==="a_dd"&&Array.isArray(o.l)&&o.l.length)ls2=o.l.map(function(x){return '<div style="padding:2px 0 0 10px;font-size:13px;color:#333">'+esc(String(x.w||""))+(x.t?' <span style="color:#888">'+esc(x.t)+'</span>':'')+'</div>'}).join("");return '<div style="padding:6px 0;border-top:1px solid #eee;font-size:14px">'+esc(AL[k.slice(2)]||k.slice(2))+' <span style="color:#555">'+p.join(" · ")+'</span>'+ls2+'</div>'}
 function post(b){return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(b),keepalive:true}).then(function(r){return r.json()}).then(function(j){if(!j||!j.ok)throw 0})}
 function qget(){var a=[];try{a=JSON.parse(ls("bd-q")||"[]")}catch(e){}return a}
@@ -926,7 +928,7 @@ function dayCard(){var w=new Date().getDay();return w===5?"fri":w===6?"sat":"reg
 function startedCard(cls,name){var best="",bt="";try{tabList().forEach(function(x){var id=x.id;if(id==="nae"||!hasCard(cls,id,name))return;var m=chk(name,id),on=false,k;for(k in m){if(k!=="tin"&&k!=="tlt"&&k.indexOf("t_")!==0&&m[k])on=true}if(on){var tt=m.tlt||"";if(!best||tt>bt){best=id;bt=tt}}})}catch(e){}return best}
 function defCard(cls,name){if(name){if(hasCard(cls,"nae",name))return "nae";var s=startedCard(cls,name);if(s)return s}return dayCard()}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","더블보카 코어":"dd","더블보카 프로":"dd","중2 문법(기출) Vol. 1":"g2v1","M":"dm","B":"db","H":"dh"};
+var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","더블보카 코어":"dd","더블보카 프로":"dd","중등 문법 기출":"g2v1","M":"dm","B":"db","H":"dh"};
 function hubHref(g,a,q){
   if(g.h==="말하기 시험")return a.u+(q?(a.u.indexOf("?")<0?"?":"&")+q:"");
   var p=a.u.replace("https://nolbada.github.io","");
