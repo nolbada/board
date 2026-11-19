@@ -30,12 +30,15 @@ var APPS=[
  {g:"rd",p:/^\/via\/reading\//,k:/^(tutorstarter|hackersstarter|tutorjunior|hackersmaster|hackers|1316reading|bricks|readinggraphy|tutorchallenger)\d+/},
  /* 261118: M1·M2 리딩도 이어하기(기기를 바꿔도 푼 기록·오답노트가 따라옴). 앱이 스스로 두는 주인 표시(m1-owner)까지 함께 옮겨야 앱이 지우지 않는다 */
  {g:"m1",p:/^\/via\/m1-reading\//,k:/^m1-/},
- {g:"m2",p:/^\/via\/m2-reading\//,k:/^m2-/}
+ {g:"m2",p:/^\/via\/m2-reading\//,k:/^m2-/},
+ /* 261119: 독해33권(공용 화면) — 기기 저장소 대신 공용 화면의 임시 저장소(__shared_mem)를 이름별로 서버에 저장·복원 */
+ {g:"rs",mem:1,p:/^\/via\/shared\/\?a=(tutorstarter|hackersstarter|tutorjunior|hackersmaster|hackers|1316reading|bricks|readinggraphy|tutorchallenger)\d+/,k:/./}
 ];
+function MEM(){try{return JSON.parse(ss.getItem("__shared_mem")||"{}")||{}}catch(e){return {}}}
 var SD="2000-01-02",CAP=16000,AP=null,CARD={},lastSnap="";
 APPS.forEach(function(a){if(a.p.test(U))AP=a});
-function allKeys(){return Object.keys(ls).filter(function(k){return APPS.some(function(a){return a.k.test(k)})})}
-function myKeys(){return AP?Object.keys(ls).filter(function(k){return AP.k.test(k)}):[]}
+function allKeys(){return Object.keys(ls).filter(function(k){return APPS.some(function(a){return !a.mem&&a.k.test(k)})})}
+function myKeys(){return AP?(AP.mem?Object.keys(MEM()):Object.keys(ls)).filter(function(k){return AP.k.test(k)}):[]}
 try{var ow=ls.getItem("bd-owner");
  if(ow===null)ls.setItem("bd-owner",n);
  else if(ow!==n){allKeys().forEach(function(k){ls.removeItem(k)});ls.setItem("bd-owner",n)}}catch(e){}
@@ -53,7 +56,7 @@ function unpack(z){
 var packed=null,lastFlush=0;
 function refresh(){
  if(!AP||!snapReady)return Promise.resolve();
- var m={},any=false;myKeys().forEach(function(k){m[k]=ls.getItem(k);any=true});
+ var m={},any=false,src=AP.mem?MEM():null;myKeys().forEach(function(k){m[k]=src?src[k]:ls.getItem(k);any=true});
  if(!any)return Promise.resolve();
  var js=JSON.stringify(m);if(js===lastSnap||(packed&&packed.js===js))return Promise.resolve();
  return pack(js).then(function(z){packed={js:js,z:z}}).catch(function(){});
@@ -65,12 +68,24 @@ function flushSnap(keep){
 }
 function snap(keep){flushSnap(keep);refresh().then(function(){flushSnap(keep)})}
 var snapReady=false,started=false;
-function start(){
+function start(keep){
  if(started)return;started=true;
- document.getElementById("f").src=U;
+ document.getElementById("f").src=(AP&&AP.mem&&keep)?U.replace(/&new=1(?=&|$)/,""):U;
+}
+function memRestore(z){
+ var own=null;try{own=ss.getItem("rs-owner")}catch(e){}
+ function fin(){try{ss.setItem("rs-owner",n);ss.setItem("__shared_last",String(Date.now()))}catch(e){}
+  var s={},mm=MEM();myKeys().forEach(function(k){s[k]=mm[k]});lastSnap=JSON.stringify(s);snapReady=true;start(true)}
+ if(own===n&&myKeys().length){fin();return}
+ try{ss.removeItem("__shared_mem")}catch(e){}
+ if(!z){fin();return}
+ unpack(z).then(function(js){var m={},o={};try{m=JSON.parse(js)||{}}catch(e){}
+  Object.keys(m).forEach(function(k){if(typeof m[k]==="string")o[k]=m[k]});
+  ss.setItem("__shared_mem",JSON.stringify(o))}).catch(function(){}).then(fin)
 }
 function restoreThenStart(){
  var z=AP&&CARD["s_"+AP.g];
+ if(AP&&AP.mem){memRestore(z);return}
  if(!z||myKeys().length){snapReady=true;if(AP&&myKeys().length)lastSnap="";start();return}
  unpack(z).then(function(js){
   var m={};try{m=JSON.parse(js)||{}}catch(e){}
@@ -79,9 +94,9 @@ function restoreThenStart(){
  }).catch(function(){}).then(function(){snapReady=true;start()});
 }
 if(AP){
- setTimeout(function(){start()},2500);
+ setTimeout(function(){start()},AP.mem?6000:2500);
  fetch(SRV+"?a=get&date="+SD+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
-  if(!j||!j.ok)throw 0;CARD=(j.chk&&j.chk.app)||{};if(!started)restoreThenStart();else snapReady=true;
+  if(!j||!j.ok)throw 0;CARD=(j.chk&&j.chk.app)||{};if(!started)restoreThenStart();else if(!AP.mem)snapReady=true;
  }).catch(function(){start()});
 }else{snapReady=true;start()}
 setInterval(function(){if(document.visibilityState!=="visible")return;refresh().then(function(){if(Date.now()-lastFlush>=45000)flushSnap(false)})},3000);
