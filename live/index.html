@@ -58,7 +58,7 @@ iframe{position:absolute;left:-9999px;top:0;width:10px;height:10px;border:0}
 <div class="st" id="st"></div>
 <iframe id="df" src="../index.html" tabindex="-1" aria-hidden="true"></iframe>
 <script type="module">
-var F=null,DB=null,DOCS={},SUBS={},STATE="준비 중",TMR=0,STOP=0,MAXH=4,NAMES={},APP=null,AU=null,AUNS=null,ATT=null,ROOM="";try{ROOM=localStorage.getItem("live-room")||""}catch(e){}
+var F=null,DB=null,DOCS={},SUBS={},STATE="준비 중",TMR=0,STOP=0,MAXH=4,NAMES={},AMOD=null,APP=null,AU=null,AUNS=null,ATT=null,ROOM="";try{ROOM=localStorage.getItem("live-room")||""}catch(e){}
 var TD="";
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
@@ -151,8 +151,9 @@ function attTxt(){
 }
 function stat(){
   var e=$("st");
-  e.innerHTML='<a href="/board/hq/" style="color:#8fb0c6;margin-right:10px;text-decoration:none">관리보드</a>'+esc(STATE)+attTxt()+(STOP?'<button id="rs" type="button">다시 시작</button>':'');
+  e.innerHTML='<a href="/board/hq/" style="color:#8fb0c6;margin-right:10px;text-decoration:none">관리보드</a>'+esc(STATE)+attTxt()+(!ATT&&AMOD?'<button id="lg" type="button">출석부 로그인</button>':'')+(STOP?'<button id="rs" type="button">다시 시작</button>':'');
   var b=$("rs");if(b)b.onclick=function(){STOP=0;start()};
+  var lg=$("lg");if(lg)lg.onclick=function(){try{AMOD.signInWithPopup(AU,new AMOD.GoogleAuthProvider()).catch(function(){})}catch(e){}};
 }
 
 var OPEN="";
@@ -186,7 +187,7 @@ async function start(){
     var {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
     var {getFirestore,doc,onSnapshot}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
     if(!DB){APP=initializeApp({apiKey:"AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA",authDomain:"nolbada.github.io",projectId:"h-roadmap",appId:"1:575520405083:web:b9f40b64cb0ae3d1a9317e"});DB=getFirestore(APP)}
-    if(!AU){var A=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js");AU=A.getAuth(APP);A.onAuthStateChanged(AU,function(u){
+    if(!AU){var A=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js");AMOD=A;AU=A.getAuth(APP);A.onAuthStateChanged(AU,function(u){
       if(u){if(!AUNS)AUNS=onSnapshot(doc(DB,"att","d_"+TD),function(s){if(s.metadata.fromCache)return;var o={};if(s.exists()){try{o=JSON.parse(s.data().j)||{}}catch(e){}}ATT=o;later()},function(){ATT=null;AUNS=null;later()})}
       else{ATT=null;if(AUNS){try{AUNS()}catch(e){}AUNS=null}later()}
     })}
