@@ -44,6 +44,9 @@ html,body{margin:0;height:100%;background:#0D1E30;color:#eaf1f6;font-family:"Mal
 .dr em{font-style:normal;font-size:12px;border:1px solid #35566f;border-radius:99px;padding:1px 8px;margin-right:8px;color:#8fa9bb}
 .dr.ok em{border-color:#43d19a;color:#43d19a}
 .ph{font-size:13px;color:#8fa9bb;margin:16px 0 4px;font-weight:700}
+.rm{display:flex;gap:8px}
+.rm button{border:1px solid #35566f;background:#16324a;color:#cfe0ec;border-radius:99px;padding:7px 16px;font-size:16px;font-weight:700}
+.rm button.on{background:#2f6a96;color:#fff;border-color:#5aa0d0}
 .empty{flex:1;display:flex;align-items:center;justify-content:center;color:#7f98aa;font-size:22px}
 .st{position:fixed;right:10px;bottom:6px;font-size:11px;color:#6f8799}
 .st button{border:1px solid #35566f;background:#16324a;color:#cfe0ec;border-radius:99px;padding:4px 10px;font-size:11px;margin-left:6px}
@@ -55,7 +58,7 @@ iframe{position:absolute;left:-9999px;top:0;width:10px;height:10px;border:0}
 <div class="st" id="st"></div>
 <iframe id="df" src="../index.html" tabindex="-1" aria-hidden="true"></iframe>
 <script type="module">
-var F=null,DB=null,DOCS={},SUBS={},STATE="준비 중",TMR=0,STOP=0,MAXH=4;
+var F=null,DB=null,DOCS={},SUBS={},STATE="준비 중",TMR=0,STOP=0,MAXH=4,APP=null,AU=null,AUNS=null,ATT=null,ROOM="";try{ROOM=localStorage.getItem("live-room")||""}catch(e){}
 var TD="";
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
@@ -77,6 +80,8 @@ function build(){
   var slot=F.slotOf(TD),out=[],now=nowM(),nm;
   for(nm in DOCS){
     var chk=DOCS[nm];if(!chk)continue;
+    var grp=slot==="fri"?"금":(slot==="sat"?"토":""),ar=(ATT&&grp)?ATT[grp+"|"+nm]:null;
+    if(ar&&ar.status==="left")continue;
     var cls=F.clsOf(nm)||"",mk=chk[slot]||{},ap=chk.app||{};
     var first=mk.tin||"",last=mk.tlt||mk.tin||"",ts=[],k;
     if(first)ts.push(first);if(last)ts.push(last);
@@ -94,7 +99,7 @@ function build(){
     var nx=req.filter(function(i){return !mk[i.id]})[0];
     var idle=now-tmin(l0);if(idle<0)idle=0;
     var st=(req.length&&n>=req.length)?"d":"g";
-    out.push({nm:nm,last:l0,idle:idle,req:req,n:n,nx:nx?String(nx.t||""):"",st:st,ck:mk});
+    out.push({room:(ar&&ar.teacher)?ar.teacher:"",nm:nm,last:l0,idle:idle,req:req,n:n,nx:nx?String(nx.t||""):"",st:st,ck:mk});
   }
   out.sort(function(a,b){return a.nm<b.nm?-1:a.nm>b.nm?1:0});
   return out;
@@ -119,19 +124,20 @@ function render(){
   var a=$("app");
   if(!ready()){a.innerHTML='<div class="empty">불러오는 중</div>';return}
   var d=new Date(),dw="일월화수목금토";
-  var L=build(),c={g:0,y:0,r:0,d:0};L.forEach(function(s){c[s.st]++});
-  var h='<div class="top"><h1>'+(d.getMonth()+1)+'/'+d.getDate()+'('+dw[d.getDay()]+') '+hm()+'</h1><div class="cnt"><span><b>'+L.length+'</b>명</span><span class="g"><b>'+c.g+'</b>진행</span><span class="d"><b>'+c.d+'</b>완료</span></div></div>';
+  var L0=build(),cn={"":L0.length,"남":0,"여":0};L0.forEach(function(s){if(s.room)cn[s.room]=(cn[s.room]||0)+1});
+  var L=(ATT&&ROOM)?L0.filter(function(s){return s.room===ROOM}):L0,c={g:0,y:0,r:0,d:0};L.forEach(function(s){c[s.st]++});
+  var tabs=ATT?'<div class="rm">'+[["","전체"],["남","남쌤"],["여","여쌤"]].map(function(x){return '<button type="button" data-room="'+x[0]+'" class="'+(ROOM===x[0]?"on":"")+'">'+x[1]+' '+(cn[x[0]]||0)+'</button>'}).join("")+'</div>':'';
+  var h='<div class="top"><h1>'+(d.getMonth()+1)+'/'+d.getDate()+'('+dw[d.getDay()]+') '+hm()+'</h1>'+tabs+'<div class="cnt"><span><b>'+L.length+'</b>명</span><span class="g"><b>'+c.g+'</b>진행</span><span class="d"><b>'+c.d+'</b>완료</span></div></div>';
   if(!L.length){a.innerHTML=h+'<div class="empty">아직 오늘 기록이 없음</div>';return}
   h+='<div class="grid" id="gr">'+L.map(tile).join("")+'</div>';
   a.innerHTML=h;
   var g=$("gr"),W=g.clientWidth,H=g.clientHeight,n=L.length;
-  var cols=Math.max(1,Math.ceil(Math.sqrt(n*W/H))),rows=Math.ceil(n/cols);
-  while(cols>1&&Math.ceil(n/(cols-1))===rows)cols--;
-  g.style.gridTemplateColumns="repeat("+cols+",minmax(0,1fr))";
-  g.style.gridTemplateRows="repeat("+rows+",minmax(0,1fr))";
-  var tw=(W-10*(cols-1))/cols,th=(H-10*(rows-1))/rows;
-  var u=Math.min(tw/11,th/9.5,34);
-  g.style.setProperty("--u",Math.max(8,u)+"px");
+  var u=15,cols=1,rows=n;
+  for(;;){cols=Math.max(1,Math.min(n,Math.floor((W+10)/(14*u+10))));rows=Math.ceil(n/cols);if(rows*(7*u+10)-10<=H||u<=8)break;u--}
+  g.style.gridTemplateColumns="repeat("+cols+","+(14*u)+"px)";
+  g.style.gridTemplateRows="repeat("+rows+","+(7*u)+"px)";
+  g.style.alignContent="start";g.style.justifyContent="start";
+  g.style.setProperty("--u",u+"px");
 }
 
 function stat(){
@@ -161,6 +167,7 @@ function detail(){
   o.innerHTML=h;
 }
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest(".t[data-nm]");if(t){OPEN=t.getAttribute("data-nm");detail()}});
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("button[data-room]");if(b){ROOM=b.getAttribute("data-room");try{localStorage.setItem("live-room",ROOM)}catch(x){}render()}});
 var pend=0;
 function later(){if(pend)return;pend=setTimeout(function(){pend=0;render();if(OPEN)detail()},250)}
 
@@ -169,7 +176,11 @@ async function start(){
     TD=F.iso();
     var {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
     var {getFirestore,doc,onSnapshot}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
-    if(!DB)DB=getFirestore(initializeApp({apiKey:"AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA",projectId:"h-roadmap",appId:"1:575520405083:web:b9f40b64cb0ae3d1a9317e"},"board-live"));
+    if(!DB){APP=initializeApp({apiKey:"AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA",authDomain:"nolbada.github.io",projectId:"h-roadmap",appId:"1:575520405083:web:b9f40b64cb0ae3d1a9317e"});DB=getFirestore(APP)}
+    if(!AU){var A=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js");AU=A.getAuth(APP);A.onAuthStateChanged(AU,function(u){
+      if(u){if(!AUNS)AUNS=onSnapshot(doc(DB,"att","d_"+TD),function(s){if(s.metadata.fromCache)return;var o={};if(s.exists()){try{o=JSON.parse(s.data().j)||{}}catch(e){}}ATT=o;later()},function(){ATT=null;AUNS=null;later()})}
+      else{ATT=null;if(AUNS){try{AUNS()}catch(e){}AUNS=null}later()}
+    })}
     var k;for(k in SUBS){try{SUBS[k]()}catch(e){}}SUBS={};DOCS={};
     names().forEach(function(n){
       SUBS[n]=onSnapshot(doc(DB,"board",TD+"|"+n),function(s){
@@ -183,7 +194,7 @@ async function start(){
     STATE="연결됨 "+hm();stat();render();
     clearTimeout(TMR);
     TMR=setTimeout(function(){
-      var k2;for(k2 in SUBS){try{SUBS[k2]()}catch(e){}}SUBS={};STOP=1;STATE="연결 종료";stat();
+      var k2;for(k2 in SUBS){try{SUBS[k2]()}catch(e){}}SUBS={};if(AUNS){try{AUNS()}catch(e){}AUNS=null}STOP=1;STATE="연결 종료";stat();
     },MAXH*3600*1000);
   }catch(e){STATE="연결 실패";stat();render()}
 }
