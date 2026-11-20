@@ -75,7 +75,7 @@ function ready(){try{return F&&typeof F.itemsFor==="function"&&typeof F.slotOf==
 function names(){
   var out=[],seen={},c;
   for(c in F.ROSTER){
-    if(/중3|고등|관리형/.test(c))continue;
+    if(/고등|관리형/.test(c))continue;
     (F.ROSTER[c]||[]).forEach(function(n){if(n&&!/^(시험|샘플|열람)/.test(n)&&!seen[n]){seen[n]=1;NAMES[n]=1;out.push(n)}});
   }
   return out;
