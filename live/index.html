@@ -147,7 +147,15 @@ function render(){
   g.style.gridTemplateRows="repeat("+rows+","+th+"px)";
   g.style.alignContent="start";g.style.justifyContent="start";
   g.style.setProperty("--u",u+"px");
+  try{paintOver()}catch(e){}
 }
+function paintOver(){
+  var A=ATT;if(!A)return;
+  var slot=F.slotOf(TD),g=slot==="fri"?"금":(slot==="sat"?"토":"");if(!g)return;
+  var lim=(slot==="sat"?120:60)*60000,now=Date.now(),ts=document.querySelectorAll(".t[data-nm]"),i,ar,el;
+  for(i=0;i<ts.length;i++){ar=A[g+"|"+ts[i].getAttribute("data-nm")];el=ts[i].querySelector(".tt");if(!el)continue;if(ar&&ar.arrive&&now-ar.arrive>=lim)el.style.color="#ff4d4d"}
+}
+
 
 function attTxt(){
   if(!ATT)return ' · 출석부 연결 안 됨(로그인 필요)';
