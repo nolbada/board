@@ -56,7 +56,6 @@ iframe{position:absolute;left:-9999px;top:0;width:10px;height:10px;border:0}
 .t .seg{margin:calc(var(--u)*.6) 0 0}
 .t.d .tm{color:#43d19a}
 .t .tt{font-size:calc(var(--u)*1.3);color:#8fa9bb;font-weight:700;margin-top:calc(var(--u)*.2)}
-.t .tt.ov{color:#ff4d4d}
 </style>
 </head>
 <body>
@@ -107,9 +106,9 @@ function build(){
     var n=req.filter(function(i){return mk[i.id]}).length;
     var nx=req.filter(function(i){return !mk[i.id]})[0];
     var idle=now-tmin(l0);if(idle<0)idle=0;
-    var ain="",ov=0;if(ar&&ar.arrive){ov=(Date.now()-ar.arrive>=(slot==="sat"?120:60)*60000)?1:0;var dd=new Date(ar.arrive+32400000);ain=("0"+dd.getUTCHours()).slice(-2)+":"+("0"+dd.getUTCMinutes()).slice(-2)}else if(first)ain=first;
+    var ain="";if(ar&&ar.arrive){var dd=new Date(ar.arrive+32400000);ain=("0"+dd.getUTCHours()).slice(-2)+":"+("0"+dd.getUTCMinutes()).slice(-2)}else if(first)ain=first;
     var st=(req.length&&n>=req.length)?"d":"g";
-    out.push({ov:ov,ain:ain,room:(ar&&ar.teacher)?ar.teacher:"",nm:nm,last:l0,idle:idle,req:req,n:n,nx:nx?String(nx.t||""):"",st:st,ck:mk});
+    out.push({ain:ain,room:(ar&&ar.teacher)?ar.teacher:"",nm:nm,last:l0,idle:idle,req:req,n:n,nx:nx?String(nx.t||""):"",st:st,ck:mk});
   }
   out.sort(function(a,b){return a.nm<b.nm?-1:a.nm>b.nm?1:0});
   return out;
@@ -125,7 +124,7 @@ function agoTxt(s){
 function tile(s){
   var seg="",i;
   for(i=0;i<s.req.length;i++)seg+='<i class="'+(s.ck[s.req[i].id]?"on":"")+'"></i>';
-  return '<div class="t '+s.st+'" data-nm="'+esc(s.nm)+'"><div><div class="nm">'+esc(s.nm)+'</div>'+(s.ain?'<div class="tt'+(s.ov?' ov':'')+'">'+s.ain+'</div>':'')+'<div class="tm">'+(s.req.length?s.n+' / '+s.req.length:'')+'</div></div>'
+  return '<div class="t '+s.st+'" data-nm="'+esc(s.nm)+'"><div><div class="nm">'+esc(s.nm)+'</div>'+(s.ain?'<div class="tt">'+s.ain+'</div>':'')+'<div class="tm">'+(s.req.length?s.n+' / '+s.req.length:'')+'</div></div>'
     +(s.req.length?'<div class="seg">'+seg+'</div>':'<div class="seg"></div>')
     +'</div>';
 }
