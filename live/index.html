@@ -143,9 +143,15 @@ function render(){
   g.style.setProperty("--u",u+"px");
 }
 
+function attTxt(){
+  if(!ATT)return ' · 출석부 연결 안 됨(로그인 필요)';
+  var g=(F&&F.slotOf(TD)==="sat")?"토":"금",c=0,k;
+  for(k in ATT){if(k.indexOf(g+"|")===0&&ATT[k]&&ATT[k].status==="in")c++}
+  return ' · 출석부 연결됨, 등원 '+c+'명';
+}
 function stat(){
   var e=$("st");
-  e.innerHTML='<a href="/board/hq/" style="color:#8fb0c6;margin-right:10px;text-decoration:none">관리보드</a>'+esc(STATE)+(STOP?'<button id="rs" type="button">다시 시작</button>':'');
+  e.innerHTML='<a href="/board/hq/" style="color:#8fb0c6;margin-right:10px;text-decoration:none">관리보드</a>'+esc(STATE)+attTxt()+(STOP?'<button id="rs" type="button">다시 시작</button>':'');
   var b=$("rs");if(b)b.onclick=function(){STOP=0;start()};
 }
 
