@@ -85,7 +85,7 @@ function build(){
   var slot=F.slotOf(TD),out=[],now=nowM(),nm;
   var all={},k0,g0=slot==="fri"?"금":(slot==="sat"?"토":"");
   for(k0 in DOCS)all[k0]=1;
-  if(ATT&&g0)for(k0 in ATT){if(k0.indexOf(g0+"|")===0&&ATT[k0]&&ATT[k0].status==="in"){var an=k0.slice(2);if(NAMES[an])all[an]=1}}
+  if(ATT&&g0)for(k0 in ATT){if(k0.indexOf(g0+"|")===0&&ATT[k0]&&ATT[k0].status==="in"){var an=k0.slice(2);if(an&&!/^(시험|샘플|열람)/.test(an))all[an]=1}}
   for(nm in all){
     var chk=DOCS[nm]||{};
     var grp=slot==="fri"?"금":(slot==="sat"?"토":""),ar=(ATT&&grp)?ATT[grp+"|"+nm]:null;
