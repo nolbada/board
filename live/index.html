@@ -138,9 +138,9 @@ function render(){
   a.innerHTML=h;
   var g=$("gr"),W=g.clientWidth,H=g.clientHeight,n=L.length;
   var rows=3,cols=Math.max(5,Math.ceil(n/3));
-  var u=Math.floor(Math.min(12,((W+10)/cols-10)/14,((H+10)/rows-10)/7));if(u<6)u=6;
-  g.style.gridTemplateColumns="repeat("+cols+","+(14*u)+"px)";
-  g.style.gridTemplateRows="repeat("+rows+","+(7*u)+"px)";
+  var tw=Math.floor((W+10)/cols-10),th=Math.floor((H+10)/rows-10);var u=Math.floor(Math.min(tw/9,th/7.5,60));if(u<5)u=5;
+  g.style.gridTemplateColumns="repeat("+cols+","+tw+"px)";
+  g.style.gridTemplateRows="repeat("+rows+","+th+"px)";
   g.style.alignContent="start";g.style.justifyContent="start";
   g.style.setProperty("--u",u+"px");
 }
