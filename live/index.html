@@ -58,7 +58,7 @@ iframe{position:absolute;left:-9999px;top:0;width:10px;height:10px;border:0}
 <div class="st" id="st"></div>
 <iframe id="df" src="../index.html" tabindex="-1" aria-hidden="true"></iframe>
 <script type="module">
-var F=null,DB=null,DOCS={},SUBS={},STATE="준비 중",TMR=0,STOP=0,MAXH=4,APP=null,AU=null,AUNS=null,ATT=null,ROOM="";try{ROOM=localStorage.getItem("live-room")||""}catch(e){}
+var F=null,DB=null,DOCS={},SUBS={},STATE="준비 중",TMR=0,STOP=0,MAXH=4,NAMES={},APP=null,AU=null,AUNS=null,ATT=null,ROOM="";try{ROOM=localStorage.getItem("live-room")||""}catch(e){}
 var TD="";
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
@@ -71,15 +71,18 @@ function names(){
   var out=[],seen={},c;
   for(c in F.ROSTER){
     if(/중3|고등|관리형/.test(c))continue;
-    (F.ROSTER[c]||[]).forEach(function(n){if(n&&!/^(시험|샘플|열람)/.test(n)&&!seen[n]){seen[n]=1;out.push(n)}});
+    (F.ROSTER[c]||[]).forEach(function(n){if(n&&!/^(시험|샘플|열람)/.test(n)&&!seen[n]){seen[n]=1;NAMES[n]=1;out.push(n)}});
   }
   return out;
 }
 
 function build(){
   var slot=F.slotOf(TD),out=[],now=nowM(),nm;
-  for(nm in DOCS){
-    var chk=DOCS[nm];if(!chk)continue;
+  var all={},k0,g0=slot==="fri"?"금":(slot==="sat"?"토":"");
+  for(k0 in DOCS)all[k0]=1;
+  if(ATT&&g0)for(k0 in ATT){if(k0.indexOf(g0+"|")===0&&ATT[k0]&&ATT[k0].status==="in"){var an=k0.slice(2);if(NAMES[an])all[an]=1}}
+  for(nm in all){
+    var chk=DOCS[nm]||{};
     var grp=slot==="fri"?"금":(slot==="sat"?"토":""),ar=(ATT&&grp)?ATT[grp+"|"+nm]:null;
     if(ar&&ar.status==="left")continue;
     var cls=F.clsOf(nm)||"",mk=chk[slot]||{},ap=chk.app||{};
@@ -90,9 +93,9 @@ function build(){
       var o=null;try{o=JSON.parse(ap[k])}catch(e){}
       if(o&&o.t)ts.push(o.t);
     }
-    if(!ts.length)continue;
+    if(!ts.length&&!(ar&&ar.status==="in"))continue;
     ts.sort(function(a,b){return tmin(a)-tmin(b)});
-    var l0=ts[ts.length-1];
+    var l0=ts.length?ts[ts.length-1]:"";
     var items=[];try{items=F.itemsFor(cls,slot,nm,TD)||[]}catch(e){}
     var req=items.filter(function(i){return !i.plus});
     var n=req.filter(function(i){return mk[i.id]}).length;
