@@ -135,8 +135,8 @@ function render(){
   h+='<div class="grid" id="gr">'+L.map(tile).join("")+'</div>';
   a.innerHTML=h;
   var g=$("gr"),W=g.clientWidth,H=g.clientHeight,n=L.length;
-  var u=15,cols=1,rows=n;
-  for(;;){cols=Math.max(1,Math.min(n,Math.floor((W+10)/(14*u+10))));rows=Math.ceil(n/cols);if(rows*(7*u+10)-10<=H||u<=8)break;u--}
+  var rows=3,cols=Math.max(5,Math.ceil(n/3));
+  var u=Math.floor(Math.min(12,((W+10)/cols-10)/14,((H+10)/rows-10)/7));if(u<6)u=6;
   g.style.gridTemplateColumns="repeat("+cols+","+(14*u)+"px)";
   g.style.gridTemplateRows="repeat("+rows+","+(7*u)+"px)";
   g.style.alignContent="start";g.style.justifyContent="start";
