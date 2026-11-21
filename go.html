@@ -1,5 +1,76 @@
 <!DOCTYPE html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>보드</title>
+<html lang="ko"><head><meta charset="utf-8"><script>/* 261117h: 학생 기록 받기(a=get, a=getm)는 Firebase 에서 바로 답한다(서버를 거치지 않는다).
+   표식 문서(_on)가 없거나 실패·2.5초 초과면 원래 요청을 그대로 서버로 보낸다. 저장(put)과 선생님용 요청(pw 가 붙은 것)은 건드리지 않는다. */
+(function(){try{
+  var W=window;if(W.__bfs||!W.fetch||!W.Response)return;W.__bfs=1;var of=W.fetch;
+  var DB='projects/h-roadmap/databases/(default)/documents/';
+  function dn(smp,key){return DB+(smp?'board_s':'board')+'/'+String(key).replace(/%/g,'%25').replace(/\//g,'%2F')}
+  function chkOf(x){try{return JSON.parse((x.found.fields.chk&&x.found.fields.chk.stringValue)||'{}')}catch(e){return {}}}
+  function ask(names){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},2500):0;
+    return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:batchGet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({documents:names}),signal:ac?ac.signal:undefined})
+      .then(function(r){clearTimeout(tm);return r.ok?r.json():null}).catch(function(){clearTimeout(tm);return null})}
+  var ONX=[0,0];W.__bdn=dn;
+  function resp(o){return new W.Response(JSON.stringify(o),{status:200,headers:{'Content-Type':'application/json'}})}
+  W.fetch=function(u,o){
+    try{
+      if(typeof u==='string'&&!o&&u.indexOf('AKfycbyGjwU2U')>0){
+        var q=u.split('?')[1]||'',p={};q.split('&').forEach(function(kv){var i=kv.indexOf('=');if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1))});
+        if((p.a==='get'||p.a==='getm')&&!p.pw){
+          var name=String(p.name||'').trim(),smp=/^샘플/.test(name),ds=p.a==='get'?[String(p.date||'')]:String(p.dates||'').split(','),okd=/^\d{4}-\d{1,2}-\d{1,2}$/,seen={},dup=false;
+          ds.forEach(function(d){if(seen[d])dup=true;seen[d]=1});
+          if(name&&name.length<=12&&ds.length&&ds.length<=12&&!dup&&ds.every(function(d){return okd.test(d)})){
+            /* 261117 밤: 이 문서를 "바뀌면 알려 주기"로 지켜보는 중이면(아래 __bsnap) 받아 둔 최신 내용으로 바로 답한다. Firebase 를 다시 읽지 않는다 */
+            if(p.a==='get'&&W.__bsnap){var lk=dn(smp,ds[0]+'|'+name),lc=smp?'board_s':'board';
+              if(W.__bsnap.live[lc]&&Object.prototype.hasOwnProperty.call(W.__bsnap.d,lk))return Promise.resolve(resp({ok:true,chk:W.__bsnap.d[lk]||{},fs:2}))}
+            /* 261117 밤: "Firebase 가 원본" 표시(_on)는 한 번 확인하면 10분 동안 다시 읽지 않는다(하루 읽기 횟수를 절반 가까이 줄임) */
+            var sk=smp?1:0,need=!(ONX[sk]>Date.now()),off=need?1:0;
+            var names=(need?[dn(smp,'_on')]:[]).concat(ds.map(function(d){return dn(smp,d+'|'+name)})),self=this,args=arguments;
+            return ask(names).then(function(a){
+              if(!Array.isArray(a)||a.length!==names.length)return of.apply(self,args);
+              var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x;else if(!x.missing)return of.apply(self,args)}
+              if(need){if(!by[names[0]])return of.apply(self,args);ONX[sk]=Date.now()+600000}
+              if(p.a==='get'){var g=by[names[off]];return resp({ok:true,chk:g?chkOf(g):{},fs:1})}
+              var recs={};ds.forEach(function(d,j){var g2=by[names[j+off]];recs[d]=g2?chkOf(g2):{}});return resp({ok:true,recs:recs,fs:1})});
+          }
+        }
+      }
+      /* 261121: 저장(put)도 Firebase 에 바로 쓴다(구글 서버를 거치지 않는다). 표식(_on) 확인·충돌 재시도는 서버와 같은 방식.
+         어느 단계든 실패하면 원래 요청을 그대로 서버로 보낸다. 선생님용(pw)은 건드리지 않는다. */
+      if(typeof u==='string'&&u.indexOf('AKfycbyGjwU2U')>0&&o&&o.method==='POST'&&typeof o.body==='string'&&!W.__bnoput){
+        var pb=null;try{pb=JSON.parse(o.body)}catch(e2){}
+        if(pb&&pb.a==='put'&&!pb.pw){var s2=this,a2=arguments;
+          return fsPut(pb).then(function(ok){return ok?resp({ok:true,fs:1}):of.apply(s2,a2)},function(){return of.apply(s2,a2)})}
+      }
+    }catch(e){}
+    return of.apply(this,arguments);
+  };
+  function p1(m,pl){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},4000):0;
+    return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:'+m,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl),keepalive:true,signal:ac?ac.signal:undefined})
+      .then(function(r){return r.text().then(function(t){clearTimeout(tm);return {c:r.status,b:t}})},function(e){clearTimeout(tm);throw e})}
+  function fsPut(p){
+    var name=String(p.name||'').trim(),date=String(p.date||''),cls=String(p.cls||''),card=String(p.card||'reg');
+    if(!name||name.length>12||!/^\d{4}-\d{1,2}-\d{1,2}$/.test(date))return Promise.resolve(false);
+    var smp=/^샘플/.test(name),sk=smp?1:0,key=dn(smp,date+'|'+name),chk=p.chk||{},tries=0;
+    function once(){
+      var need=!(ONX[sk]>Date.now()),names=(need?[dn(smp,'_on')]:[]).concat([key]);
+      return p1('batchGet',{documents:names}).then(function(r){
+        if(r.c!==200)return false;
+        var a;try{a=JSON.parse(r.b)}catch(e){return false}
+        if(!Array.isArray(a)||a.length!==names.length)return false;
+        var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x.found;else if(!x.missing)return false}
+        if(need){if(!by[names[0]])return false;ONX[sk]=Date.now()+600000}
+        var cur=by[key],c={},seq=Date.now();
+        if(cur){try{c=JSON.parse((cur.fields.chk&&cur.fields.chk.stringValue)||'{}')}catch(e){c={}}if(cur.fields.seq&&cur.fields.seq.integerValue)seq=Number(cur.fields.seq.integerValue)}
+        c[card]=chk;
+        var f={date:{stringValue:date},cls:{stringValue:cls},name:{stringValue:name},chk:{stringValue:JSON.stringify(c)},t:{stringValue:new Date().toISOString()},seq:{integerValue:String(seq)}};
+        return p1('commit',{writes:[{update:{name:key,fields:f},currentDocument:cur?{updateTime:cur.updateTime}:{exists:false}}]}).then(function(r2){
+          if(r2.c===200)return true;
+          if(/FAILED_PRECONDITION|ALREADY_EXISTS|ABORTED/.test(r2.b)&&++tries<8)return new Promise(function(res){setTimeout(res,80+Math.random()*250*tries)}).then(once);
+          return false})
+      })}
+    return once();
+  }
+}catch(e){}})();</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>보드</title>
 <style>html,body{margin:0;height:100%;background:#fff}#bar{position:fixed;top:0;left:0;right:0;height:46px;background:#1d2b36;color:#fff;display:flex;align-items:center;gap:10px;padding:0 10px;font:700 15px sans-serif;z-index:5;box-sizing:border-box}#bar a{color:#fff;text-decoration:none;background:#2f8f6b;padding:9px 16px;border-radius:20px;white-space:nowrap}#bar span{opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}#f{position:fixed;top:46px;left:0;right:0;bottom:0;width:100%;height:calc(100% - 46px);border:0}</style></head><body>
 <div id="bar"><a id="home" href="/board/?back=1">‹ 메인으로</a><span id="ttl"></span></div>
 <iframe id="f" allow="microphone; autoplay; clipboard-write; fullscreen" allowfullscreen></iframe>
