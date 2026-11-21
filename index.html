@@ -492,7 +492,7 @@ function trow(cls,name,card){
   return {name:name,items:items,ck:ck,n:n,t:rq.length,seen:!!row,ap:(row&&row.chk&&row.chk.app)||{}};
 }
 function isdone(r){return r.t>0&&r.n>=r.t}
-function aLine(k,v){var o={};try{o=JSON.parse(v)}catch(e){}var p=[];if(o.d)p.push(((k==="a_m1"||k==="a_m2")?"Reading ":k==="a_xr"?"분석 ":k==="a_g2v1"?"단원 ":"Day ")+o.d);else if(o.w)p.push(o.w);else p.push("7문장 기록 전");if(o.m!=null)p.push("실수 "+o.m+"개");if(k!=="a_ve"&&k!=="a_rd"){if(o.p!=null)p.push(o.p+"%");if(o.ok!=null)p.push(o.ok?"통과":"한번 더")}return '<div style="margin:4px 0;font-size:14px">'+esc(AL[k.slice(2)]||k.slice(2))+' '+p.join(" · ")+'</div>'}
+function aLine(k,v){var o={};try{o=JSON.parse(v)}catch(e){}var p=[];if(o.d)p.push(((k==="a_m1"||k==="a_m2")?"Reading ":k==="a_xr"?"분석 ":k==="a_g2v1"?"단원 ":"Day ")+o.d);else if(o.w)p.push(o.w);else p.push("7문장 기록 전");if(o.m!=null)p.push("실수 "+o.m+"개");if(k!=="a_ve"&&k!=="a_rd"){if(o.p!=null)p.push(o.p+"%");if(o.ok!=null)p.push(o.ok?"통과":"한번 더")}if((k==="a_m1"||k==="a_m2")&&!(+o.n>0)){p.push(Math.max(1,Math.round((+o.s||0)/60))+"분");p.push("미완료")}return '<div style="margin:4px 0;font-size:14px">'+esc(AL[k.slice(2)]||k.slice(2))+' '+p.join(" · ")+'</div>'}
 function oLink(o){return ""}
 function lLine(v){var o={};try{o=JSON.parse(v)}catch(e){}return o.w?'<div style="margin:4px 0;font-size:14px">'+esc(o.w)+oLink(o)+'</div>':""}
 function lastH(nm){
