@@ -36,9 +36,42 @@
           }
         }
       }
+      /* 261121: 저장(put)도 Firebase 에 바로 쓴다(구글 서버를 거치지 않는다). 표식(_on) 확인·충돌 재시도는 서버와 같은 방식.
+         어느 단계든 실패하면 원래 요청을 그대로 서버로 보낸다. 선생님용(pw)은 건드리지 않는다. */
+      if(typeof u==='string'&&u.indexOf('AKfycbyGjwU2U')>0&&o&&o.method==='POST'&&typeof o.body==='string'&&!W.__bnoput){
+        var pb=null;try{pb=JSON.parse(o.body)}catch(e2){}
+        if(pb&&pb.a==='put'&&!pb.pw){var s2=this,a2=arguments;
+          return fsPut(pb).then(function(ok){return ok?resp({ok:true,fs:1}):of.apply(s2,a2)},function(){return of.apply(s2,a2)})}
+      }
     }catch(e){}
     return of.apply(this,arguments);
   };
+  function p1(m,pl){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},4000):0;
+    return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:'+m,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl),keepalive:true,signal:ac?ac.signal:undefined})
+      .then(function(r){return r.text().then(function(t){clearTimeout(tm);return {c:r.status,b:t}})},function(e){clearTimeout(tm);throw e})}
+  function fsPut(p){
+    var name=String(p.name||'').trim(),date=String(p.date||''),cls=String(p.cls||''),card=String(p.card||'reg');
+    if(!name||name.length>12||!/^\d{4}-\d{1,2}-\d{1,2}$/.test(date))return Promise.resolve(false);
+    var smp=/^샘플/.test(name),sk=smp?1:0,key=dn(smp,date+'|'+name),chk=p.chk||{},tries=0;
+    function once(){
+      var need=!(ONX[sk]>Date.now()),names=(need?[dn(smp,'_on')]:[]).concat([key]);
+      return p1('batchGet',{documents:names}).then(function(r){
+        if(r.c!==200)return false;
+        var a;try{a=JSON.parse(r.b)}catch(e){return false}
+        if(!Array.isArray(a)||a.length!==names.length)return false;
+        var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x.found;else if(!x.missing)return false}
+        if(need){if(!by[names[0]])return false;ONX[sk]=Date.now()+600000}
+        var cur=by[key],c={},seq=Date.now();
+        if(cur){try{c=JSON.parse((cur.fields.chk&&cur.fields.chk.stringValue)||'{}')}catch(e){c={}}if(cur.fields.seq&&cur.fields.seq.integerValue)seq=Number(cur.fields.seq.integerValue)}
+        c[card]=chk;
+        var f={date:{stringValue:date},cls:{stringValue:cls},name:{stringValue:name},chk:{stringValue:JSON.stringify(c)},t:{stringValue:new Date().toISOString()},seq:{integerValue:String(seq)}};
+        return p1('commit',{writes:[{update:{name:key,fields:f},currentDocument:cur?{updateTime:cur.updateTime}:{exists:false}}]}).then(function(r2){
+          if(r2.c===200)return true;
+          if(/FAILED_PRECONDITION|ALREADY_EXISTS|ABORTED/.test(r2.b)&&++tries<8)return new Promise(function(res){setTimeout(res,80+Math.random()*250*tries)}).then(once);
+          return false})
+      })}
+    return once();
+  }
 }catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EM보드</title>
