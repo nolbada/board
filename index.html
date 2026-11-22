@@ -465,7 +465,47 @@ function tcard(s){return slotOf(s)}
 function mon(s){var p=s.split("-"),w=new Date(+p[0],+p[1]-1,+p[2]).getDay();return dstep(s,w===0?-6:1-w)}
 function dow(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]).getDay()}
 /* 261117: 여러 날짜를 요청 하나(a=days)로 받는다. 전에는 날짜마다 요청을 따로 보내 모두 올 때까지 기다렸다. 서버가 이 요청을 모르면 예전 방식으로 받는다 */
+/* 261122: 선생님 시간표가 이번 주 기록을 읽을 때 구글 서버 대신 Firebase 에서 바로 읽는다(학생 이름 x 날짜를 100개씩 묶어 한 번에).
+   2026-11-11 이전 날짜이거나 어느 단계든 실패하면 예전 방식(구글 서버)으로 받는다. 구글 서버 결과와 Firebase 결과는 이번 주 200건 전부 같음을 확인했다. */
+var FSD0="2026-11-11";
+function fsDays(ds){
+  try{
+    var names=[],seen={};Object.keys(ROSTER).forEach(function(c){(ROSTER[c]||[]).forEach(function(n){if(!seen[n]&&!/^샘플/.test(n)){seen[n]=1;names.push(n)}})});
+    var DBP="projects/h-roadmap/databases/(default)/documents/board/",docs=[],parts=[],i;
+    ds.forEach(function(d){names.forEach(function(n){docs.push(DBP+d+"|"+n)})});
+    for(i=0;i<docs.length;i+=100)parts.push(docs.slice(i,i+100));
+    var ac=window.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},9000):0;
+    return Promise.all(parts.map(function(pd){
+      return fetch("https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:batchGet",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({documents:pd}),signal:ac?ac.signal:undefined}).then(function(r){return r.ok?r.json():null})
+    })).then(function(arr){
+      clearTimeout(tm);
+      var rows={},bad=false;ds.forEach(function(d){rows[d]=[]});
+      arr.forEach(function(a){
+        if(!Array.isArray(a)){bad=true;return}
+        a.forEach(function(x){
+          if(x.found){
+            var k=x.found.name.split("/board/")[1]||"",p=k.indexOf("|"),d=k.slice(0,p),n=k.slice(p+1),f=x.found.fields||{},c={};
+            try{c=JSON.parse((f.chk&&f.chk.stringValue)||"{}")}catch(e){bad=true;return}
+            if(!rows[d]){bad=true;return}
+            rows[d].push({cls:(f.cls&&f.cls.stringValue)||"",name:n,chk:c,t:(f.t&&f.t.stringValue)||""});
+          }else if(!x.missing)bad=true;
+        });
+      });
+      return bad?null:rows;
+    }).catch(function(){clearTimeout(tm);return null});
+  }catch(e){return Promise.resolve(null)}
+}
 function tdays(ds){
+  var fs=ds.filter(function(d){return d>=FSD0||d==="2000-01-01"}),rest=ds.filter(function(d){return fs.indexOf(d)<0});
+  if(!fs.length)return tdaysApps(ds);
+  return fsDays(fs).then(function(m){
+    if(!m)return tdaysApps(ds);
+    var a=fs.map(function(d){return {d:d,j:{ok:true,rows:m[d]||[]}}});
+    if(!rest.length)return a;
+    return tdaysApps(rest).then(function(b){return a.concat(b)});
+  });
+}
+function tdaysApps(ds){
   var pw=encodeURIComponent(tpw());
   var old=function(){return Promise.all(ds.map(function(d){return fetch(SRV+"?a=day&date="+d+"&pw="+pw).then(function(r){return r.json()}).then(function(j){return {d:d,j:j}})}))};
   return fetch(SRV+"?a=days&dates="+ds.join(",")+"&pw="+pw).then(function(r){return r.json()}).then(function(j){
