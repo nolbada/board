@@ -1200,10 +1200,12 @@ document.addEventListener("click",function(e){
   else if(b.dataset.go==="hub"){S.view="hub";render()}
   else if(b.dataset.go==="switch"||b.dataset.go==="leave"){leave();render()}
 });
+function applyN(){try{var pm=location.search.match(/[?&]n=([^&]+)/);if(T||!PH||!pm)return false;var pn=decodeURIComponent(pm[1]),pc=clsOf(pn);if(!pc||pc==="열람")return false;if(ls("bd-name")!==pn){ls("bd-name",pn);ls("bd-cls",pc);try{cfgReset()}catch(e){}}touch();S.view="hub";return true}catch(e){return false}}
+applyN();
 if(!T&&!PH&&!(/[?&]back=1/.test(location.search)&&who()))leave();
 if(PH&&ls("bd-name")==="열람")leave();
 render();
-cfgFetch(function(ch){if(ch&&!(T&&TS.mode==="m"))render()});
+cfgFetch(function(ch){if(ch&&!(T&&TS.mode==="m")){if(!who())applyN();render()}});
 ttFetch(function(ch){if(ch&&!editing()&&!(T&&TS.mode==="m"))render()});
 if(T){tload();tHook()}else{setInterval(function(){cfgFetch(function(ch){if(ch&&S.view==="names")render()});ttFetch(function(ch){if(ch&&S.view==="names")render()})},180000);if(who())pull(ls("bd-name"),ls("bd-cls"));flush();setInterval(flush,60000)}
 /* 261117 밤: 지켜보던 문서가 바뀌면(아래 모듈이 알려 줌) 주기적으로 하던 확인을 그 자리에서 한 번 돌린다. 내용은 받아 둔 것을 쓰므로 Firebase 를 다시 읽지 않는다 */
