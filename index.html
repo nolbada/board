@@ -557,9 +557,6 @@ function tload(silent){
     TS.rows=TS.wk;render();
   }).catch(function(){if(silent)return;TS.err="불러오지 못함";TS.rows=TS.wk;render()});
 }
-function thist(name){
-  fetch(SRV+"?a=hist&name="+encodeURIComponent(name)+"&pw="+encodeURIComponent(tpw())).then(function(r){return r.json()}).then(function(j){if(j.ok){TS.hist[name]=j.rows;render()}}).catch(function(){});
-}
 function trow(cls,name,card){
   var items=itemsFor(cls,card,name),row=TS.rows&&TS.rows[name],ck=(row&&row.chk&&row.chk[card])||{};
   var rq=items.filter(function(i){return !i.plus}),n=rq.filter(function(i){return ck[i.id]}).length;
