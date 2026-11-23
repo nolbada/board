@@ -152,14 +152,18 @@ try{if(k.length>=24){var sn=await F.getDoc(F.doc(db,'sc_p',k));if(sn.exists())d=
 if(!d){$('out').innerHTML='<div class="box">링크를 확인해 주세요.</div>'}
 else{
   var s=d,h='<div id="ent"></div>',st='';
-  var sc=nums(s,['school','natl'],'s'),ne=nums(s,['nelt'],'p'),mk=nums(s,['mock','acad'],'s');
+  var sc=nums(s,['school'],'s'),nt=nums(s,['natl'],'s'),ne=nums(s,['nelt'],'p'),mk=nums(s,['mock'],'s'),ak=nums(s,['acad'],'s');
   if(sc.length){var pf=sc.filter(function(x){return x>=100}).length;st+=stat(CC.school,avg(sc),'학교 시험 평균',sc.length+'회'+(pf?' · 100점 '+pf+'회':''))}
+  if(nt.length){st+=stat(CC.natl,avg(nt),'전국 모고 평균',nt.length+'회 · 최근 '+nt[nt.length-1])}
   if(ne.length){st+=stat(CC.nelt,'상위 '+ne[ne.length-1]+'%','넬트 최근',ne.length>1?'처음 상위 '+ne[0]+'% · 최고 상위 '+Math.min.apply(null,ne)+'%':'')}
-  if(mk.length){st+=stat(CC.mock,avg(mk),'학원 시험 평균',mk.length+'회 · 최근 '+mk[mk.length-1])}
+  if(mk.length){st+=stat(CC.mock,avg(mk),'학원 모고 평균',mk.length+'회 · 최근 '+mk[mk.length-1])}
+  if(ak.length){st+=stat(CC.acad,avg(ak),'학원 영역별 평균',ak.length+'회 · 최근 '+ak[ak.length-1])}
   h+='<div class="hd"><h2>'+esc(s.name)+'</h2><span class="muted">'+esc(s.school)+'</span></div><div class="muted">'+(span(s.joined)?'함께한 지 '+span(s.joined):'')+'</div>';
-  if(st)h+='<div class="sts" style="grid-template-columns:repeat('+(st.match(/class="st"/g)||[]).length+',1fr)">'+st+'</div>';
-  h+=chart('학교 시험 점수',pts(s,['school','natl'],'s'),{min:0,max:100,grid:[0,50,100],color:'#CF1F4F'});
-  h+=chart('학원 시험 점수',pts(s,['mock','acad'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2E9E6B'});
+  if(st)h+='<div class="sts" style="grid-template-columns:repeat(2,1fr)">'+st+'</div>';
+  h+=chart('학교 시험 점수',pts(s,['school'],'s'),{min:0,max:100,grid:[0,50,100],color:'#CF1F4F'});
+  h+=chart('전국 모고 점수',pts(s,['natl'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2F6FD6'});
+  h+=chart('학원 모고 점수',pts(s,['mock'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2E9E6B'});
+  h+=chart('학원 영역별 점수',pts(s,['acad'],'s'),{min:0,max:100,grid:[0,50,100],color:'#8CB82B'});
   h+=chart('넬트 상위 % (위로 갈수록 좋음)',pts(s,'nelt','p'),{min:0,max:100,grid:[0,25,50,75,100],color:'#7A45D1',inv:true});
   var SG={school:['school'],natl:['natl'],mock:['mock'],acad:['acad'],nelt:['nelt']},SN={all:'전체',school:'학교 시험',natl:'전국 모의고사',mock:'학원 모고',acad:'학원 영역별',nelt:'넬트'};
   function cnt(f){return f==='all'?s.rec.length:s.rec.filter(function(r){return SG[f].indexOf(r.c)>=0}).length}
