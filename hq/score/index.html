@@ -286,7 +286,7 @@ function drawDetail(){
   if(ne.length){st+=stat(CC.nelt,'상위 '+ne[ne.length-1]+'%','넬트 최근',ne.length>1?'처음 상위 '+ne[0]+'% · 최고 상위 '+Math.min.apply(null,ne)+'%':'')}
   if(mk.length){st+=stat(CC.mock,avg(mk),'학원 모고 평균',mk.length+'회 · 최근 '+mk[mk.length-1])}
   if(ak.length){st+=stat(CC.acad,avg(ak),'학원 영역별 평균',ak.length+'회 · 최근 '+ak[ak.length-1])}
-  h+='<div class="bar"><button id="back">목록</button></div><div class="hd"><h2>'+esc(s.name)+'</h2><span class="muted">'+esc(s.cls)+' · '+esc(s.school)+'</span></div><div class="muted">입회 '+fd(s.joined)+(span(s.joined)?' · 함께한 지 '+span(s.joined):'')+'</div>';
+  h+='<div class="bar"><button id="back">목록</button>'+(s.pub?'<button id="lkone">이 학생 링크 복사</button>':'')+'</div><div class="hd"><h2>'+esc(s.name)+'</h2><span class="muted">'+esc(s.cls)+' · '+esc(s.school)+'</span></div><div class="muted">입회 '+fd(s.joined)+(span(s.joined)?' · 함께한 지 '+span(s.joined):'')+'</div>';
   h+='<div class="box" style="margin-top:10px">'+(s.pub?'<div class="muted">학생·학부모 공유 링크 (이 학생 기록만 보임)</div><div style="word-break:break-all;margin:4px 0 8px">'+esc(location.origin+'/board/s/?k='+s.pub)+'</div><button class="sm" id="pubrf">지금 갱신</button> <button class="sm" id="pubof">공유 끄기</button>':'<button class="sm" id="pubmk">공유 링크 만들기</button> <span class="muted">이 학생 기록만 따로 볼 수 있는 링크</span>')+'<span class="muted" id="pubmsg"></span></div>';
   if(st)h+='<div class="sts" style="grid-template-columns:repeat(2,1fr)">'+st+'</div>';
   h+=chart('학교 시험 점수',pts(s,['school'],'s'),{min:0,max:100,grid:[0,50,100],color:'#CF1F4F',note:'속이 빈 점은 날짜가 대략이거나 확인이 필요한 값'});
@@ -300,9 +300,10 @@ function drawDetail(){
   h+='<h3>기록 추가</h3><div class="box"><div class="row"><select id="at">'+TYPES.map(function(t){return '<option>'+esc(t)+'</option>'}).join('')+'</select><input type="date" id="ad" value="'+today()+'"><input id="as" placeholder="점수" style="width:90px"><input id="am" placeholder="메모" style="width:160px"><input id="an" placeholder="시험명(모고) 고1 25년3월" style="width:150px"><button class="pri" id="aadd">추가</button><span id="amsg" class="muted"></span></div></div>';
   $('detail').innerHTML=h;
 }
-$('detail').onclick=function(e){
+$('detail').onclick=async function(e){
   var t=e.target;
   if(t.id==='back'){$('detail').classList.add('hide');$('list').classList.remove('hide');renderList();return}
+  if(t.id==='lkone'){var u=STU_BASE+cur.pub;try{await navigator.clipboard.writeText(u);t.textContent='복사됨'}catch(er){t.textContent=u}return}
   if(t.id==='aadd'){addRec();return}
   if(t.id==='pubmk'||t.id==='pubrf'||t.id==='pubof'){pubAct(t.id);return}
   var act=t.getAttribute&&t.getAttribute('data-act');
