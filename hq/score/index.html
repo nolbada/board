@@ -164,7 +164,7 @@ var SRC={school:{n:'학교 시험',cats:['school','natl']},nelt:{n:'넬트',cats
 var CC={school:'#CF1F4F',natl:'#2F6FD6',mock:'#2E9E6B',acad:'#8CB82B',nelt:'#7A45D1',entry:'#8A9A9D'};
 var CN={school:'학교 시험',natl:'전국 모의고사',mock:'학원 모고',acad:'학원 영역별 시험',nelt:'넬트',entry:'입회 시'};
 var S=[],IN=[],cur=null,delArm='',flt='all',shown=60;
-var FL={all:['school','natl','mock','acad','nelt','entry'],school:['school','natl'],mock:['mock','acad'],nelt:['nelt','entry']};
+var FL={all:['school','natl','mock','acad','nelt','entry'],school:['school'],natl:['natl'],mock:['mock'],acad:['acad'],nelt:['nelt','entry']};
 function val(r){if(!r.v)return null;if(r.c==='nelt'||r.c==='entry')return r.v.p!=null?r.v.p:(r.v.s!=null?r.v.s:null);return r.v.s!=null?r.v.s:null}
 function nl(r){var m=String(r.r||'').match(/레벨\s*\d*\s*((?:초|중|고)\d)(?:~(?:초|중|고)?\d)?(?:\s*수준)?(?:\s+((?:초|중|고)\d))?/);return m?{l:m[1],t:m[2]||''}:{l:'',t:''}}
 document.addEventListener('click',function(e){var c=e.target.closest&&e.target.closest('.rec.nl');if(c&&!e.target.closest('button'))c.classList.toggle('op')});
@@ -290,7 +290,7 @@ function drawDetail(){
   h+=chart('학교 시험 점수',pts(s,['school','natl'],'s'),{min:0,max:100,grid:[0,50,100],color:'#CF1F4F',note:'속이 빈 점은 날짜가 대략이거나 확인이 필요한 값'});
   h+=chart('학원 시험 점수',pts(s,['mock','acad'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2E9E6B'});
   h+=chart('넬트 상위 % (위로 갈수록 좋음)',pts(s,'nelt','p'),{min:0,max:100,grid:[0,25,50,75,100],color:'#7A45D1',inv:true});
-  h+='<h3>기록 (최신순)</h3>'+legend()+'<div class="row" style="margin-bottom:8px">'+[['all','전체'],['school','학교'],['mock','학원 시험'],['nelt','넬트']].map(function(q){return '<button class="sm'+(flt===q[0]?' pri':'')+'" data-act="flt" data-v="'+q[0]+'">'+q[1]+'</button>'}).join('')+'</div>';
+  h+='<h3>기록 (최신순)</h3>'+legend()+'<div class="row" style="margin-bottom:8px">'+[['all','전체'],['school','학교'],['natl','전국 모고'],['mock','학원 모고'],['acad','학원 영역별'],['nelt','넬트']].map(function(q){return '<button class="sm'+(flt===q[0]?' pri':'')+'" data-act="flt" data-v="'+q[0]+'">'+q[1]+'</button>'}).join('')+'</div>';
   var yr='';
   for(var i=s.rec.length-1;i>=0;i--){var r=s.rec[i];if(FL[flt].indexOf(r.c)<0)continue;var y=String(r.d).slice(0,4);if(y!==yr){yr=y;h+='<div class="yr">'+y+'</div>'}h+=recCard(r,i,true)}
   h+='<h3>기록 추가</h3><div class="box"><div class="row"><select id="at">'+TYPES.map(function(t){return '<option>'+esc(t)+'</option>'}).join('')+'</select><input type="date" id="ad" value="'+today()+'"><input id="as" placeholder="점수" style="width:90px"><input id="am" placeholder="메모" style="width:160px"><input id="an" placeholder="시험명(모고) 고1 25년3월" style="width:150px"><button class="pri" id="aadd">추가</button><span id="amsg" class="muted"></span></div></div>';
