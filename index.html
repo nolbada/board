@@ -477,9 +477,9 @@ function dow(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]).getDay()
 /* 261122: 선생님 시간표가 이번 주 기록을 읽을 때 구글 서버 대신 Firebase 에서 바로 읽는다(학생 이름 x 날짜를 100개씩 묶어 한 번에).
    2026-11-11 이전 날짜이거나 어느 단계든 실패하면 예전 방식(구글 서버)으로 받는다. 구글 서버 결과와 Firebase 결과는 이번 주 200건 전부 같음을 확인했다. */
 var FSD0="2026-11-11";
-function fsDays(ds){
+function fsDays(ds,only){
   try{
-    var names=[],seen={};Object.keys(ROSTER).forEach(function(c){(ROSTER[c]||[]).forEach(function(n){if(!seen[n]&&!/^샘플/.test(n)){seen[n]=1;names.push(n)}})});
+    var names=[],seen={};Object.keys(ROSTER).forEach(function(c){(ROSTER[c]||[]).forEach(function(n){if(!seen[n]&&!/^샘플/.test(n)){seen[n]=1;names.push(n)}})});if(only&&only.length)names=names.filter(function(n){return only.indexOf(n)>-1});
     var DBP="projects/h-roadmap/databases/(default)/documents/board/",docs=[],parts=[],i;
     ds.forEach(function(d){names.forEach(function(n){docs.push(DBP+d+"|"+n)})});
     for(i=0;i<docs.length;i+=100)parts.push(docs.slice(i,i+100));
@@ -504,10 +504,10 @@ function fsDays(ds){
     }).catch(function(){clearTimeout(tm);return null});
   }catch(e){return Promise.resolve(null)}
 }
-function tdays(ds){
+function tdays(ds,only){
   var fs=ds.filter(function(d){return d>=FSD0||d==="2000-01-01"}),rest=ds.filter(function(d){return fs.indexOf(d)<0});
   if(!fs.length)return tdaysApps(ds);
-  return fsDays(fs).then(function(m){
+  return fsDays(fs,only).then(function(m){
     if(!m)return tdaysApps(ds);
     var a=fs.map(function(d){return {d:d,j:{ok:true,rows:m[d]||[]}}});
     if(!rest.length)return a;
@@ -554,13 +554,14 @@ function tload(silent){
      학생별 최근 기록(2000-01-01)은 5번에 한 번만. 읽기 횟수를 크게 줄인다. 처음 열 때·주를 바꿀 때는 예전처럼 전부 받는다 */
   var req=ds,part=false;
   if(silent&&TS.wk&&TS.wk["2000-01-01"]){TLN++;req=ds.filter(function(d){return d===td||(d==="2000-01-01"&&TLN%5===0)});part=true;if(!req.length)return}
-  tdays(req).then(function(a){
+  var only=null;try{if(silent&&TS.mode==="r"&&TS.rv==="c"&&TS.cls&&ROSTER[TS.cls]&&ROSTER[TS.cls].length&&mon(TS.date)===mon(td)&&dow(td)>=1&&dow(td)<=4)only=ROSTER[TS.cls].slice()}catch(e0){only=null}
+  tdays(req,only).then(function(a){
     var W=silent?{}:TS.wk,bad=false;
     if(part){for(var k0 in TS.wk)W[k0]=TS.wk[k0]}
     if(!silent)TS.err="";
     a.forEach(function(o){
       if(!o.j.ok){bad=true;if(!silent&&o.j.err==="pw"){ls("bt-pw",null);TS.err="비밀번호가 맞지 않음"}return}
-      var mp={};o.j.rows.forEach(function(x){mp[x.name]=x});W[o.d]=mp;
+      var mp={};o.j.rows.forEach(function(x){mp[x.name]=x});if(only&&TS.wk&&TS.wk[o.d]){var bs=TS.wk[o.d];for(var bk in bs){if(!mp[bk])mp[bk]=bs[bk]}}W[o.d]=mp;
     });
     if(silent){if(bad||JSON.stringify(W)===JSON.stringify(TS.wk))return;TS.wk=W;TS.rows=W;if(!editing())render();return}
     TS.rows=TS.wk;render();
@@ -857,10 +858,10 @@ function ttClick(D){
   if(D.tv){TS.v=D.tv;TS.mo=null;TS.cf=null;if(D.tv==="t")TS.sel={};render();return true}
   if(D.rb){TS.rv="t";render();return true}
   if(D.vd){TS.vd=D.vd;if(D.vt&&mon(TS.date)!==mon(iso())){TS.date=iso();TS.rows=null;tload();return true}render();window.scrollTo(0,0);return true}
-  if(D.rc){TS.cls=D.rc;TS.vd=null;TS.rv="c";render();return true}
+  if(D.rc){TS.cls=D.rc;TS.vd=null;TS.rv="c";render();TLN=4;tload(true);return true}
   if(D.sp!==undefined){var sx=(SLOTS[dayOf(TS.cls)]||[])[+D.sp];if(sx){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.d=t.d||dayOf(TS.cls);t.s=sx[0];t.e=sx[1];ttSave();render()}return true}
   if(D.oc){TS.cls=D.oc;TS.v="c";TS.mo=null;TS.cf=null;TS.sel={};render();return true}
-  if(D.qo&&TS.mode==="r"){var q0=findCls(D.qo);if(q0){TS.cls=q0;TS.vd=null;TS.rv="c";render()}return true}
+  if(D.qo&&TS.mode==="r"){var q0=findCls(D.qo);if(q0){TS.cls=q0;TS.vd=null;TS.rv="c";render();TLN=4;tload(true)}return true}
   if(D.qo){var q=findCls(D.qo);if(q){TS.cls=q;TS.v="c";TS.mo=D.qo;TS.cf=null;TS.sel={};render()}return true}
   if(D.sd){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.d=D.sd;ttSave();render();return true}
   if(D.sc!==undefined){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.c=D.sc==="x"?"":D.sc;ttSave();render();return true}
@@ -952,7 +953,7 @@ document.addEventListener("click",function(e){
   else if(D.nx!==undefined){TS.note="";render()}
   else if(D.tl){var v=document.getElementById("tpw").value.trim();if(v){ls("bt-pw",v);TS.err="";tload()}}
   else if(D.tout){ls("bt-pw",null);TS.rows=null;render()}
-  else if(D.tt){TS.cls=D.tt;TS.open=null;render()}
+  else if(D.tt){TS.cls=D.tt;TS.open=null;render();TLN=4;tload(true)}
   else if(D.td!==undefined){TS.date=D.td==="0"?iso():dstep(TS.date,+D.td*7);TS.vd=null;TS.open=null;TS.rows=null;tload()}
   else if(D.st){TS.open=TS.open===D.st?null:D.st;render()}
 });
