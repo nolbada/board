@@ -138,8 +138,9 @@ svg text{font-family:inherit}
       <div class="row"><button class="pri" id="csave">저장</button><span id="cmsg" class="muted"></span></div>
     </div>
     <div class="box">
-      <div class="muted">학생에게 보낼 링크</div>
-      <div style="word-break:break-all;margin-top:4px" id="clink"></div>
+      <div class="muted">학생 개인 링크 (학생마다 주소 하나, 본인 기록만 보이고 입력 창이 열리면 맨 위에 점수 입력칸이 나옴)</div>
+      <div class="row" style="margin-top:8px"><button class="pri" id="lkmk">없는 학생 링크 만들기</button><button id="lkcp">이름+링크 목록 복사</button><span id="lkmsg" class="muted"></span></div>
+      <textarea id="lkta" class="hide" style="width:100%;height:160px;margin-top:8px" readonly></textarea>
     </div>
   </section>
 </div>
@@ -153,10 +154,10 @@ var F=await import(V+'firebase-firestore.js');
 var app=A.initializeApp({apiKey:'AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA',authDomain:'nolbada.github.io',projectId:'h-roadmap',appId:'1:575520405083:web:b9f40b64cb0ae3d1a9317e'},'hwfs');
 var auth=Au.getAuth(app),db=F.getFirestore(app);
 var OK=['nolbada727@gmail.com','ysbada@gmail.com'];
-var STU_LINK=location.origin+'/board/score/';
+var STU_BASE=location.origin+'/board/s/?k=';
 var WD=['일','월','화','수','목','금','토'];
 var TYPES=[];
-['중 1','중 2','중 3','고 1','고 2','고 3'].forEach(function(g){['1','2'].forEach(function(h){['중간','기말'].forEach(function(k){TYPES.push(g+'-'+h+' '+k)})})});
+['중 1','중 2','중 3','고 1','고 2','고 3'].forEach(function(g){['1','2'].forEach(function(h){if(g==='중 3'&&h==='2'){TYPES.push('중 3-2 학기');return}['중간','기말'].forEach(function(k){TYPES.push(g+'-'+h+' '+k)})})});
 TYPES.push('전국(모고)','학원(모고)','학원','넬트');
 var REV=['불확실','파싱불가','여러값','값이상','날짜확인','점수형식확인','점수없음','대략','같은날중복?'];
 var SRC={school:{n:'학교 시험',cats:['school','natl']},nelt:{n:'넬트',cats:['nelt']},mock:{n:'학원 시험',cats:['mock','acad']}};
@@ -225,7 +226,7 @@ async function loadIn(){
 }
 async function loadCfg(){
   var d=await F.getDoc(F.doc(db,'sc_cfg','cur'));var c=d.exists()?d.data():{};
-  if(c.x)$('cx').value=c.x;$('co').checked=c.open===true;$('clink').textContent=STU_LINK;
+  if(c.x)$('cx').value=c.x;$('co').checked=c.open===true;
 }
 
 /* ---- 학생 목록 ---- */
@@ -347,10 +348,10 @@ function cand(name){var n=norm(name);return S.filter(function(s){return norm(s.n
 function renderIn(){
   if(!IN.length){$('inb').innerHTML='<div class="box muted">대기 중인 제출이 없습니다</div>';return}
   $('inb').innerHTML=IN.map(function(x,k){
-    var c=cand(x.n),d=new Date(x.t||0);
+    var c=x.k?S.filter(function(s){return s.pub===x.k}):cand(x.n),d=new Date(x.t||0);
     var dt=today();if(x.t){var z=function(n){return (n<10?'0':'')+n};dt=d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())}
     var sel='<select data-k="'+k+'" class="who">'+(c.length===1?'':'<option value="">학생 선택</option>')+(c.length?c:S).map(function(s){return '<option value="'+esc(s.id)+'">'+esc(s.name)+' · '+esc(s.cls)+'</option>'}).join('')+'</select>';
-    return '<div class="box"><div class="row"><b>'+esc(x.n)+'</b><span>'+esc(x.x)+'</span><b>'+esc(x.s)+'</b>'+(x.g?'<span>'+esc(x.g)+'등급</span>':'')+'<span class="muted">'+fd(dt)+'</span></div>'+
+    return '<div class="box"><div class="row"><b>'+esc(x.n)+'</b><span>'+esc(x.x)+'</span><b>'+esc(x.s)+'</b>'+(x.k?'<span class="tag g">개인 링크</span>':'')+(x.g?'<span>'+esc(x.g)+'등급</span>':'')+'<span class="muted">'+fd(dt)+'</span></div>'+
       '<div class="row" style="margin-top:8px">'+sel+'<input type="date" data-k="'+k+'" class="dt" value="'+dt+'"><button class="pri sm" data-act="ok" data-k="'+k+'">확인</button><button class="sm" data-act="rm" data-k="'+k+'">삭제</button><span class="muted" id="im'+k+'"></span></div>'+(c.length===0?'<div class="err" style="font-size:13px;margin-top:4px">같은 이름이 없습니다. 직접 골라 주세요.</div>':'')+'</div>';
   }).join('');
 }
@@ -372,6 +373,22 @@ $('inb').onclick=async function(e){
   if(dup&&t.getAttribute('data-w')!=='1'){t.setAttribute('data-w','1');m.textContent='같은 시험 기록이 이미 있습니다. 한 번 더 누르면 추가합니다';return}
   st.rec.push(r);st.rec.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
   await save(st);await F.deleteDoc(F.doc(db,'sc_in',x.id));await loadIn();renderList();
+};
+
+/* ---- 개인 링크 ---- */
+$('lkmk').onclick=async function(){
+  var m=$('lkmsg'),a=S.filter(function(s){return !s.pub});
+  if(!a.length){m.textContent='모든 학생에게 링크가 있습니다';return}
+  $('lkmk').disabled=true;var n=0;
+  try{for(var i=0;i<a.length;i++){var st=a[i],tok=newTok();await F.setDoc(F.doc(db,'sc_p',tok),pubData(st));await F.updateDoc(F.doc(db,'sc',st.id),{pub:tok});st.pub=tok;n++;m.textContent=n+'/'+a.length}m.className='ok';m.textContent=n+'명 링크 생성 완료'}
+  catch(e){m.className='err';m.textContent='중단: '+(e&&e.code||'')+' ('+n+'명 완료)'}
+  $('lkmk').disabled=false;
+};
+$('lkcp').onclick=async function(){
+  var t=S.filter(function(s){return s.pub}).map(function(s){return s.name+'\t'+STU_BASE+s.pub}).join('\n');
+  var ta=$('lkta');ta.value=t;ta.classList.remove('hide');
+  try{await navigator.clipboard.writeText(t);$('lkmsg').className='ok';$('lkmsg').textContent='복사됨 ('+t.split('\n').length+'명)'}
+  catch(e){ta.select();$('lkmsg').className='muted';$('lkmsg').textContent='아래 칸을 직접 복사해 주세요'}
 };
 
 /* ---- 설정 ---- */
