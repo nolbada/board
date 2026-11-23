@@ -178,7 +178,10 @@ function norm(n){return String(n||'').replace(/\s+/g,'')}
 function catOf(t){if(/^(중|고) /.test(t))return 'school';if(t==='전국(모고)')return 'natl';if(t==='학원(모고)')return 'mock';if(t==='학원')return 'acad';if(t==='넬트')return 'nelt';if(t==='입회')return 'entry';return 'school'}
 function needRev(r){if(r.ok)return false;return (r.f||[]).some(function(x){return REV.indexOf(x)>=0})}
 function today(){var d=new Date();function z(n){return (n<10?'0':'')+n}return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())}
-function save(s){return F.updateDoc(F.doc(db,'sc',s.id),{rec:s.rec,upd:Date.now()})}
+function pubOK(r){if(r.ok)return true;return !(r.f||[]).some(function(x){return REV.indexOf(x)>=0||x==='날짜임의?'})}
+function pubData(s){return {name:s.name,school:s.school,joined:s.joined,rec:s.rec.filter(pubOK).map(function(r){var o={t:r.t,c:r.c,d:r.d,r:r.r};if(r.c==='nelt'&&r.m)o.m=r.m;if(r.v)o.v=r.v;return o}),upd:Date.now()}}
+function newTok(){var a=new Uint8Array(32);crypto.getRandomValues(a);var al='abcdefghijklmnopqrstuvwxyz0123456789',t='';for(var i=0;i<a.length;i++)t+=al[a[i]%al.length];return t}
+function save(s){if(s.pub)F.setDoc(F.doc(db,'sc_p',s.pub),pubData(s)).catch(function(){});return F.updateDoc(F.doc(db,'sc',s.id),{rec:s.rec,upd:Date.now()})}
 function lastOf(s,cat){var a=s.rec.filter(function(r){return r.c===cat&&r.v&&(r.v.s!=null||r.v.p!=null)});return a.length?a[a.length-1]:null}
 
 /* ---- 로그인 ---- */
@@ -278,6 +281,7 @@ function drawDetail(){
   if(ne.length){st+=stat(CC.nelt,'상위 '+ne[ne.length-1]+'%','넬트 최근',ne.length>1?'처음 상위 '+ne[0]+'% · 최고 상위 '+Math.min.apply(null,ne)+'%':'')}
   if(mk.length){st+=stat(CC.mock,avg(mk),'학원 모고 평균',mk.length+'회 · 최근 '+mk[mk.length-1])}
   h+='<div class="bar"><button id="back">목록</button></div><div class="hd"><h2>'+esc(s.name)+'</h2><span class="muted">'+esc(s.cls)+' · '+esc(s.school)+'</span></div><div class="muted">입회 '+fd(s.joined)+(span(s.joined)?' · 함께한 지 '+span(s.joined):'')+'</div>';
+  h+='<div class="box" style="margin-top:10px">'+(s.pub?'<div class="muted">학생·학부모 공유 링크 (이 학생 기록만 보임)</div><div style="word-break:break-all;margin:4px 0 8px">'+esc(location.origin+'/board/s/?k='+s.pub)+'</div><button class="sm" id="pubrf">지금 갱신</button> <button class="sm" id="pubof">공유 끄기</button>':'<button class="sm" id="pubmk">공유 링크 만들기</button> <span class="muted">이 학생 기록만 따로 볼 수 있는 링크</span>')+'<span class="muted" id="pubmsg"></span></div>';
   if(st)h+='<div class="sts">'+st+'</div>';
   h+=chart('학교 시험 점수',pts(s,['school','natl'],'s'),{min:0,max:100,grid:[0,50,100],color:'#00A1A7',note:'속이 빈 점은 날짜가 대략이거나 확인이 필요한 값'});
   h+=chart('학원 모의고사 점수',pts(s,['mock','acad'],'s'),{min:0,max:100,grid:[0,50,100],color:'#7A45D1'});
@@ -292,6 +296,7 @@ $('detail').onclick=function(e){
   var t=e.target;
   if(t.id==='back'){$('detail').classList.add('hide');$('list').classList.remove('hide');renderList();return}
   if(t.id==='aadd'){addRec();return}
+  if(t.id==='pubmk'||t.id==='pubrf'||t.id==='pubof'){pubAct(t.id);return}
   var act=t.getAttribute&&t.getAttribute('data-act');
   if(act==='flt'){flt=t.getAttribute('data-v');drawDetail();return}
   if(act==='edit'){editRow(+t.getAttribute('data-i'))}
@@ -299,6 +304,15 @@ $('detail').onclick=function(e){
   if(act==='cancel'){drawDetail()}
   if(act==='del'){delRow(+t.getAttribute('data-i'))}
 };
+async function pubAct(w){
+  var m=$('pubmsg');
+  try{
+    if(w==='pubmk'){var tok=newTok();await F.setDoc(F.doc(db,'sc_p',tok),pubData(cur));await F.updateDoc(F.doc(db,'sc',cur.id),{pub:tok});cur.pub=tok}
+    else if(w==='pubrf'){await F.setDoc(F.doc(db,'sc_p',cur.pub),pubData(cur))}
+    else{await F.deleteDoc(F.doc(db,'sc_p',cur.pub));await F.updateDoc(F.doc(db,'sc',cur.id),{pub:F.deleteField()});cur.pub=null}
+    drawDetail();
+  }catch(e){m.textContent=' 실패: '+(e&&e.code||'')}
+}
 function editRow(i){
   var r=cur.rec[i],tr=document.querySelector('.rec[data-i="'+i+'"]');
   tr.innerHTML='<div class="row" style="width:100%"><span>'+fd(r.d)+' '+esc(r.t)+'</span><input id="er" value="'+esc(r.r)+'" style="width:200px" placeholder="원본 값"><input id="es" value="'+esc(r.v&&r.v.s!=null?r.v.s:'')+'" style="width:80px" placeholder="점수"><input id="ed" type="date" value="'+esc(r.d)+'"><button class="sm pri" data-act="save" data-i="'+i+'">저장</button><button class="sm" data-act="cancel">취소</button><button class="sm" data-act="del" data-i="'+i+'">삭제</button></div>';
