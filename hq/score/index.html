@@ -209,7 +209,7 @@ $('login').onclick=function(){
 async function loadAll(){
   var sn=await F.getDocs(F.collection(db,'sc'));
   S=[];sn.forEach(function(d){var x=d.data();x.id=d.id;x.rec=x.rec||[];S.push(x)});
-  S.sort(function(a,b){return (a.cls||'').localeCompare(b.cls||'','ko')||a.name.localeCompare(b.name,'ko')});
+  S.sort(function(a,b){return a.name.localeCompare(b.name,'ko')});
   var gs=['전체'];S.forEach(function(s){var g=grp(s);if(gs.indexOf(g)<0)gs.push(g)});
   $('fg').innerHTML=gs.map(function(g){return '<option>'+esc(g)+'</option>'}).join('');
   $('cg').innerHTML=$('fg').innerHTML;
