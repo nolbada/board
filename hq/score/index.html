@@ -67,8 +67,8 @@ svg text{font-family:inherit}
 .nd b{display:block;font-size:11.5px;color:#9a6200;font-weight:600}
 .nd span{display:block;font-size:12.5px;color:#3a4a4d;margin:1px 0 4px}
 .nd i{display:block;height:5px;border-radius:3px;background:#f0e2c8;overflow:hidden}
-.nd u{display:block;height:100%;background:#C77A00}
-.nd em{display:block;font-style:normal;font-size:12px;font-weight:700;color:#C77A00;margin-top:3px}
+.nd u{display:block;height:100%;background:#7A45D1}
+.nd em{display:block;font-style:normal;font-size:12px;font-weight:700;color:#7A45D1;margin-top:3px}
 .nt{flex-basis:100%;font-size:12px;color:#8a9a9d}
 @media(max-width:560px){.nd{grid-template-columns:repeat(2,1fr)}}
 .hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -159,13 +159,13 @@ var TYPES=[];
 TYPES.push('전국(모고)','학원(모고)','학원','넬트');
 var REV=['불확실','파싱불가','여러값','값이상','날짜확인','점수형식확인','점수없음','대략','같은날중복?'];
 var SRC={school:{n:'학교 시험',cats:['school','natl']},nelt:{n:'넬트',cats:['nelt']},mock:{n:'학원 시험',cats:['mock','acad']}};
-var CC={school:'#00A1A7',natl:'#2F6FD6',mock:'#7A45D1',acad:'#2E9E6B',nelt:'#C77A00',entry:'#8A9A9D'};
-var CN={school:'학교 시험',natl:'전국 모의고사',mock:'학원 모고',acad:'단어 레벨업 시험',nelt:'넬트',entry:'입회 시'};
+var CC={school:'#CF1F4F',natl:'#2F6FD6',mock:'#2E9E6B',acad:'#8CB82B',nelt:'#7A45D1',entry:'#8A9A9D'};
+var CN={school:'학교 시험',natl:'전국 모의고사',mock:'학원 모고',acad:'학원 영역별 시험',nelt:'넬트',entry:'입회 시'};
 var S=[],IN=[],cur=null,delArm='',flt='all',shown=60;
 var FL={all:['school','natl','mock','acad','nelt','entry'],school:['school','natl'],mock:['mock','acad'],nelt:['nelt','entry']};
 function val(r){if(!r.v)return null;if(r.c==='nelt'||r.c==='entry')return r.v.p!=null?r.v.p:(r.v.s!=null?r.v.s:null);return r.v.s!=null?r.v.s:null}
 function disp(r){var x=val(r);if(r.c==='nelt'||r.c==='entry'){if(r.v&&r.v.p!=null)return '상위 '+r.v.p+'%'+(r.v.lv!=null?' · Lv'+r.v.lv:'');return x!=null?String(x):''}return x!=null?x+'점':(r.v&&r.v.wc!=null?r.v.wc+'개 틀림':'')}
-function legend(){return '<div class="leg">'+['school','natl','mock','acad','nelt'].map(function(k){return '<span><i style="background:'+CC[k]+'"></i>'+CN[k]+'</span>'}).join('')+'</div>'}
+function legend(){var f=function(a){return a.map(function(k){return '<span><i style="background:'+CC[k]+'"></i>'+CN[k]+'</span>'}).join('')};return '<div class="leg" style="margin-bottom:4px">'+f(['school','natl','nelt'])+'</div><div class="leg">'+f(['mock','acad'])+'</div>'}
 function pn(m){if(!m)return null;var o=[],re=/(어휘|문법|듣기|독해)\s+([^/]*?)\s*\(\s*상위\s*(\d+)\s*%\s*\)/g,x;while((x=re.exec(m)))o.push({k:x[1],l:x[2].trim(),p:+x[3]});var tm=m.match(/총\s*([^.]+)$/);return o.length?{o:o,t:tm?tm[1].trim():''}:null}
 function ndHtml(nd){return '<div class="nd">'+nd.o.map(function(q){return '<div><b>'+q.k+'</b><span>'+esc(q.l)+'</span><i><u style="width:'+Math.max(4,100-q.p)+'%"></u></i><em>상위 '+q.p+'%</em></div>'}).join('')+'</div>'+(nd.t?'<div class="nt">소요 시간 '+esc(nd.t)+'</div>':'')}
 function recCard(r,i,edit){var sc=disp(r),nd=r.c==='nelt'?pn(r.m):null,lv=nd?String(r.r||'').replace(/\(\s*상위[^)]*\)/,'').trim():r.t;return '<div class="rec'+(needRev(r)?' rv':'')+(nd?' nl':'')+'" style="--c:'+(CC[r.c]||'#8A9A9D')+'" data-i="'+i+'"><div class="dt">'+fd(r.d)+'</div><div class="mid"><div class="lb">'+esc(CN[r.c]||r.t)+(nd?' · '+esc(lv):(/^(학원|학원\(모고\)|전국\(모고\)|넬트|입회)$/.test(r.t)?'':' · '+esc(r.t)))+(r.n?' · '+esc(r.n):'')+(r.src==="student"?'<span class="tag g">학생 입력</span>':'')+(needRev(r)?'<span class="tag">확인 필요</span>':'')+'</div>'+(!nd&&r.r&&r.r!==sc?'<div class="raw">'+esc(r.r)+'</div>':'')+(r.m&&!nd?'<div class="raw">'+esc(r.m)+'</div>':'')+'</div><div class="sc">'+esc(sc||r.r)+'</div>'+(edit?'<button class="sm" data-act="edit" data-i="'+i+'">수정</button>':'')+(nd?ndHtml(nd):'')+'</div>'}
@@ -283,9 +283,9 @@ function drawDetail(){
   h+='<div class="bar"><button id="back">목록</button></div><div class="hd"><h2>'+esc(s.name)+'</h2><span class="muted">'+esc(s.cls)+' · '+esc(s.school)+'</span></div><div class="muted">입회 '+fd(s.joined)+(span(s.joined)?' · 함께한 지 '+span(s.joined):'')+'</div>';
   h+='<div class="box" style="margin-top:10px">'+(s.pub?'<div class="muted">학생·학부모 공유 링크 (이 학생 기록만 보임)</div><div style="word-break:break-all;margin:4px 0 8px">'+esc(location.origin+'/board/s/?k='+s.pub)+'</div><button class="sm" id="pubrf">지금 갱신</button> <button class="sm" id="pubof">공유 끄기</button>':'<button class="sm" id="pubmk">공유 링크 만들기</button> <span class="muted">이 학생 기록만 따로 볼 수 있는 링크</span>')+'<span class="muted" id="pubmsg"></span></div>';
   if(st)h+='<div class="sts">'+st+'</div>';
-  h+=chart('학교 시험 점수',pts(s,['school','natl'],'s'),{min:0,max:100,grid:[0,50,100],color:'#00A1A7',note:'속이 빈 점은 날짜가 대략이거나 확인이 필요한 값'});
-  h+=chart('학원 시험 점수',pts(s,['mock','acad'],'s'),{min:0,max:100,grid:[0,50,100],color:'#7A45D1'});
-  h+=chart('넬트 상위 % (위로 갈수록 좋음)',pts(s,'nelt','p'),{min:0,max:100,grid:[0,25,50,75,100],color:'#C77A00',inv:true});
+  h+=chart('학교 시험 점수',pts(s,['school','natl'],'s'),{min:0,max:100,grid:[0,50,100],color:'#CF1F4F',note:'속이 빈 점은 날짜가 대략이거나 확인이 필요한 값'});
+  h+=chart('학원 시험 점수',pts(s,['mock','acad'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2E9E6B'});
+  h+=chart('넬트 상위 % (위로 갈수록 좋음)',pts(s,'nelt','p'),{min:0,max:100,grid:[0,25,50,75,100],color:'#7A45D1',inv:true});
   h+='<h3>기록 (최신순)</h3>'+legend()+'<div class="row" style="margin-bottom:8px">'+[['all','전체'],['school','학교'],['mock','학원 시험'],['nelt','넬트']].map(function(q){return '<button class="sm'+(flt===q[0]?' pri':'')+'" data-act="flt" data-v="'+q[0]+'">'+q[1]+'</button>'}).join('')+'</div>';
   var yr='';
   for(var i=s.rec.length-1;i>=0;i--){var r=s.rec[i];if(FL[flt].indexOf(r.c)<0)continue;var y=String(r.d).slice(0,4);if(y!==yr){yr=y;h+='<div class="yr">'+y+'</div>'}h+=recCard(r,i,true)}
