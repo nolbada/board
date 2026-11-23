@@ -1116,13 +1116,15 @@ function hubHtml(c1){
 /* ---------- 화면 ---------- */
 function render(){
   if(T){renderT();tHome();return}
+  if(TYPE&&!who()&&!S.conf&&!S.pin){var ex0=document.getElementById("nmin");if(ex0&&(document.activeElement===ex0||ex0.value))return}
   var app=document.getElementById("app"),h="",name=who();
-  if(!name&&S.conf){app.innerHTML='<div class="top"><div class="who">'+esc(S.conf.n)+' 맞나요?</div></div><div class="names"><button class="name" data-conf="ok">맞아요</button><button class="name" data-conf="no">다시 고를게요</button></div>';return}
+  if(!name&&S.conf){app.innerHTML='<div class="top"><div class="who">'+esc(S.conf.n)+' 맞나요?</div></div><div class="names"><button class="name" data-conf="ok">맞아요</button><button class="name" data-conf="no">'+(TYPE?"다시 입력할게요":"다시 고를게요")+'</button></div>';return}
   if(!name){
     var GA=groupsAll(),grp=(S.cls&&GA[S.cls])?S.cls:Object.keys(GA)[0],list=[];
     GA[grp].forEach(function(c){ROSTER[c].forEach(function(n){list.push({n:n,c:c})})});
     list.sort(function(a,b){return a.n.localeCompare(b.n,"ko")});
-    h+='<div class="top"><div class="who">이름을 눌러 주세요<small>'+dstr()+'</small></div></div>';
+    h+='<div class="top"><div class="who">'+(TYPE?"이름을 입력해 주세요":"이름을 눌러 주세요")+'<small>'+dstr()+'</small></div></div>';
+    if(TYPE){GA={};list=[];h+='<div class="card" style="display:flex;gap:8px;align-items:center"><input id="nmin" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="이름" style="flex:1;font-size:22px;padding:12px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-nmok="1" style="padding:14px 20px;font-size:17px">확인</button></div><div id="nmerr" style="color:#c0392b;text-align:center;margin-top:10px;min-height:20px"></div>'}
     h+='<div class="chips">'+Object.keys(GA).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
     h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
     if(S.pin)h+='<div class="card" style="margin-top:14px;display:flex;gap:8px;align-items:center"><input id="pinin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="flex:1;font-size:20px;padding:10px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-pinok="1" style="padding:12px 18px;font-size:16px">확인</button></div>';
@@ -1182,10 +1184,11 @@ function tryPin(){
     else{if(pi){pi.value="";pi.focus()}}
   });
 }
-document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="pinin")tryPin()});
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="pinin")tryPin();if(e.key==="Enter"&&e.target&&e.target.id==="nmin")tryName()});
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
   if(b.dataset.view){S.pin=true;render();var pi=document.getElementById("pinin");if(pi)pi.focus()}
+  else if(b.dataset.nmok){tryName()}
   else if(b.dataset.pinok){tryPin()}
   else if(b.dataset.cls){S.pin=false;S.cls=b.dataset.cls;render()}
   else if(b.dataset.conf==="no"){S.conf=null;render()}
@@ -1200,6 +1203,8 @@ document.addEventListener("click",function(e){
   else if(b.dataset.go==="hub"){S.view="hub";render()}
   else if(b.dataset.go==="switch"||b.dataset.go==="leave"){leave();render()}
 });
+var TYPE=!T&&!PH&&!SMP&&!/[?&]list=1/.test(location.search);
+function tryName(){var el=document.getElementById("nmin"),v=el?el.value.replace(/\s+/g,""):"";if(!v)return;var hit=null,c;for(c in ROSTER)ROSTER[c].forEach(function(n){if(!hit&&n!=="열람"&&n.replace(/\s+/g,"")===v)hit={n:n,c:c}});if(!hit){var er=document.getElementById("nmerr");if(er)er.textContent="이름을 다시 확인해 주세요";el.value="";el.focus();return}S.conf={n:hit.n,c:hit.c};render()}
 function applyN(){try{var pm=location.search.match(/[?&]n=([^&]+)/);if(T||!PH||!pm)return false;var pn=decodeURIComponent(pm[1]),pc=clsOf(pn);if(!pc||pc==="열람")return false;if(ls("bd-name")!==pn){ls("bd-name",pn);ls("bd-cls",pc);try{cfgReset()}catch(e){}}touch();S.view="hub";return true}catch(e){return false}}
 applyN();
 if(!T&&!PH&&!(/[?&]back=1/.test(location.search)&&who()))leave();
