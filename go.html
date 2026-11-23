@@ -295,6 +295,21 @@ function resPoll(){try{
 }catch(e){}}
 if(A==="rd")setInterval(rdPoll,2000);
 if(A==="m1"||A==="m2")setInterval(resPoll,2000);
+var SCI=/switch-mission-h/.test(U)?"h":(/switch-mission-s/.test(U)?"s":(/wama2000/.test(U)?"w":"")),SCK=null;
+function scPoll(){try{
+ if(typeof snapReady!=="undefined"&&!snapReady)return;
+ var now={};
+ if(SCI==="w"){var o=JSON.parse(ls.getItem("wama2000_app_v1")||"{}")||{},Q=o.QZ||{};
+  Object.keys(Q).forEach(function(d){var z=Q[d];if(!z||!z.res)return;[0,1].forEach(function(r){var x=z.res[r];if(x)now["w"+d+"_"+r]=x.s+"/"+x.n})})}
+ else{var a=JSON.parse(ls.getItem("vs_recs_"+SCI+"_v1")||"[]")||[];
+  a.forEach(function(x){now["u"+x.unit]=x.ok+"/"+x.total+"|"+x.t})}
+ if(SCK===null){var sv=pget("sc|"+SCI);if(sv){SCK=sv}else{SCK=now;pset("sc|"+SCI,now);return}}
+ Object.keys(now).forEach(function(k){if(SCK[k]===now[k])return;SCK[k]=now[k];
+  if(SCI==="w"){var m=/^w(\d+)_(\d)$/.exec(k);recK("wmq"+m[1]+"_"+m[2],"워마2000 DAY "+m[1]+" 유·반의어 퀴즈 "+(+m[2]+1)+"회차 "+now[k]+" 맞힘","",U)}
+  else{var u=k.slice(1);recK("vsq"+SCI+"_"+u,"보카스위치 "+(SCI==="h"?"고교":"수능")+" UNIT "+u+" 첫 시도 정답 "+now[k].split("|")[0],"",U)}});
+ pset("sc|"+SCI,SCK);
+}catch(e){}}
+if(SCI)setInterval(scPoll,2500);
 /* 그 외 앱(비단챌·어휘 등): 어디서 얼마나 썼는지 */
 var XM=[[/bidanchael\/gibon/,"비단챌 기본"],[/bidanchael\/baljeon/,"비단챌 발전"],[/bidanchael\/simhwa/,"비단챌 심화"],[/bidanchael\/gogyo/,"비단챌 고교"],[/bidanchael\/bochung/,"비단챌 보충"],[/switch-mission-h/,"보카스위치 고교"],[/switch-mission-s/,"보카스위치 수능"],[/wama2000/,"워마"],[/vocalink/,"보카링크"]];
 var XID=null,XN="";
