@@ -208,6 +208,7 @@ async function loadAll(){
   $('cg').innerHTML=$('fg').innerHTML;
   $('cx').innerHTML=TYPES.map(function(t){return '<option>'+esc(t)+'</option>'}).join('');
   renderList();await loadIn();await loadCfg();
+  var q0=new URLSearchParams(location.search).get('s');if(q0)openDetail(q0);
 }
 async function loadIn(){
   var sn=await F.getDocs(F.collection(db,'sc_in'));
