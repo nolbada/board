@@ -163,7 +163,9 @@ else{
   h+=chart('넬트 상위 % (위로 갈수록 좋음)',pts(s,'nelt','p'),{min:0,max:100,grid:[0,25,50,75,100],color:'#7A45D1',inv:true});
   var SG={school:['school'],natl:['natl'],mock:['mock'],acad:['acad'],nelt:['nelt']},SN={all:'전체',school:'학교 시험',natl:'전국 모의고사',mock:'학원 모고',acad:'학원 영역별',nelt:'넬트'};
   function cnt(f){return f==='all'?s.rec.length:s.rec.filter(function(r){return SG[f].indexOf(r.c)>=0}).length}
-  var bt=['all','school','natl','mock','acad','nelt'].map(function(f){return '<button class="sm'+(f==='all'?' on':'')+'" data-f="'+f+'">'+SN[f]+(f==='all'||cnt(f)>0?' '+cnt(f):'')+'</button>'}).join(' ');
+  var hi=/고/.test(s.school||''),B=function(f){return '<button class="sm'+(f==='all'?' on':'')+'" data-f="'+f+'">'+SN[f]+(f==='all'||cnt(f)>0?' '+cnt(f):'')+'</button>'};
+  var r1=['all','school'].concat(hi||cnt('natl')>0?['natl']:[],['nelt']),r2=(hi||cnt('mock')>0?['mock']:[]).concat(['acad']);
+  var bt=r1.map(B).join(' ')+'<div style="margin-top:6px">'+r2.map(B).join(' ')+'</div>';
   h+='<h3>기록 (최신순)</h3>'+legend()+'<div id="flt" style="margin:0 0 10px">'+bt+'</div><div id="lst"></div>';
   $('out').innerHTML=h;
   function drawList(f){var o='',yr='';for(var i=s.rec.length-1;i>=0;i--){var r=s.rec[i];if(f!=='all'&&SG[f].indexOf(r.c)<0)continue;var y=String(r.d).slice(0,4);if(y!==yr){yr=y;o+='<div class="yr">'+y+'</div>'}o+=recCard(r,i,false)}$('lst').innerHTML=o}
