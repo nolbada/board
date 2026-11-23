@@ -79,7 +79,6 @@ svg text{font-family:inherit}
 .st b{display:block;font-size:24px;color:var(--c)}
 .st span{display:block;font-size:12.5px;color:#5b6b6e}
 .st em{display:block;font-style:normal;font-size:12px;color:#8a9a9d;margin-top:2px}
-.sts>.st:last-child:nth-child(odd){grid-column:1/-1}
 .yr{font-size:13px;font-weight:700;color:#5b6b6e;margin:16px 0 6px;padding-left:2px}
 .ok{color:#1f7a5c}
 .err{color:#b3261e}
@@ -275,6 +274,7 @@ function openDetail(id){
   cur=S.filter(function(s){return s.id===id})[0];if(!cur)return;
   $('list').classList.add('hide');$('detail').classList.remove('hide');drawDetail();window.scrollTo(0,0);
 }
+function recentTiles(s){var best={};s.rec.forEach(function(r){var k=r.c;if(!r.v)return;var ok=k==='nelt'?r.v.p!=null:(k==='school'||k==='natl')&&r.v.s!=null;if(!ok)return;if(!best[k]||r.d>=best[k].d)best[k]=r});var ks=Object.keys(best).sort(function(a,b){return best[a].d<best[b].d?1:-1});if(!ks.length)return '';var first=best[ks[0]],p=[];if(ks.length>1){var gap=(new Date(first.d)-new Date(best[ks[1]].d))/864e5;if(gap<=365)p=[first,best[ks[1]]]}if(!p.length){p=s.rec.filter(function(r){return r.c===ks[0]&&r.v&&(ks[0]==='nelt'?r.v.p!=null:r.v.s!=null)}).sort(function(a,b){return a.d<b.d?1:-1}).slice(0,2)}p.sort(function(a,b){return (a.c==='school'?0:1)-(b.c==='school'?0:1)||(a.d<b.d?1:-1)});return p.map(function(r){if(r.c==='nelt')return stat(CC.nelt,'상위 '+r.v.p+'%','넬트'+(r.v.tg?' · '+esc(r.v.tg)+' 응시':''),fd(r.d)+(r.v.lv?' · LV'+esc(r.v.lv):''));if(r.c==='natl')return stat(CC.natl,r.v.s,'전국 모고'+(r.n?' · '+esc(r.n):''),fd(r.d));return stat(CC.school,r.v.s,'학교 시험 · '+esc(r.t),fd(r.d))}).join('')}
 function stat(c,v,l,sub){return '<div class="st" style="--c:'+c+'"><b>'+v+'</b><span>'+l+'</span>'+(sub?'<em>'+sub+'</em>':'')+'</div>'}
 function span(from){var a=String(from||'').split('-');if(a.length<2)return '';var n=new Date(),m=(n.getFullYear()-(+a[0]))*12+n.getMonth()+1-(+a[1]);if(m<1)return '';var y=Math.floor(m/12),mo=m%12;return (y?y+'년 ':'')+(mo?mo+'개월':'')}
 function nums(s,cats,key){return s.rec.filter(function(r){return cats.indexOf(r.c)>=0&&r.v&&r.v[key]!=null}).map(function(r){return r.v[key]})}
@@ -289,7 +289,7 @@ function drawDetail(){
   if(ak.length){st+=stat(CC.acad,avg(ak),'학원 영역별 평균',ak.length+'회 · 최근 '+ak[ak.length-1])}
   h+='<div class="bar"><button id="back">목록</button>'+(s.pub?'<button id="lkone">이 학생 링크 복사</button>':'')+'</div><div class="hd"><h2>'+esc(s.name)+'</h2><span class="muted">'+esc(s.cls)+' · '+esc(s.school)+'</span></div><div class="muted">입회 '+fd(s.joined)+(span(s.joined)?' · 함께한 지 '+span(s.joined):'')+'</div>';
   h+='<div class="box" style="margin-top:10px">'+(s.pub?'<div class="muted">학생·학부모 공유 링크 (이 학생 기록만 보임)</div><div style="word-break:break-all;margin:4px 0 8px">'+esc(location.origin+'/board/s/?k='+s.pub)+'</div><button class="sm" id="pubrf">지금 갱신</button> <button class="sm" id="pubof">공유 끄기</button>':'<button class="sm" id="pubmk">공유 링크 만들기</button> <span class="muted">이 학생 기록만 따로 볼 수 있는 링크</span>')+'<span class="muted" id="pubmsg"></span></div>';
-  if(st)h+='<div class="sts" style="grid-template-columns:repeat(2,1fr)">'+st+'</div>';
+  st=recentTiles(s);if(st)h+='<div class="sts" style="grid-template-columns:repeat(2,1fr)">'+st+'</div>';
   h+=chart('학교 시험 점수',pts(s,['school'],'s'),{min:0,max:100,grid:[0,50,100],color:'#CF1F4F',note:'속이 빈 점은 날짜가 대략이거나 확인이 필요한 값'});
   h+=chart('전국 모고 점수',pts(s,['natl'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2F6FD6'});
   h+=chart('학원 모고 점수',pts(s,['mock'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2E9E6B'});
