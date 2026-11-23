@@ -86,6 +86,13 @@ svg text{font-family:inherit}
 .err{color:#b3261e}
 
 .rec .raw{word-break:keep-all}
+
+.ent{background:#fff;border:2px solid #0d3b44;border-radius:14px;padding:14px 16px;margin:0 0 16px}
+.ent b{font-size:17px;display:block;margin-bottom:8px}
+.ent .r{display:flex;gap:8px}
+.ent input{flex:1;min-width:0;font-size:18px;padding:10px 12px}
+.ent button{font-weight:700;padding:10px 18px}
+.ent .w{color:#5b6b6e;font-size:14px}
 </style>
 </head>
 <body>
@@ -138,12 +145,13 @@ function pts(s,cat,key){
 }
 
 
+var CFG=null;try{var cs=await F.getDoc(F.doc(db,'sc_cfg','cur'));if(cs.exists())CFG=cs.data()}catch(e){}
 var k=new URLSearchParams(location.search).get('k')||'';
 var d=null;
 try{if(k.length>=24){var sn=await F.getDoc(F.doc(db,'sc_p',k));if(sn.exists())d=sn.data()}}catch(e){}
 if(!d){$('out').innerHTML='<div class="box">링크를 확인해 주세요.</div>'}
 else{
-  var s=d,h='',st='';
+  var s=d,h='<div id="ent"></div>',st='';
   var sc=nums(s,['school','natl'],'s'),ne=nums(s,['nelt'],'p'),mk=nums(s,['mock','acad'],'s');
   if(sc.length){var pf=sc.filter(function(x){return x>=100}).length;st+=stat(CC.school,avg(sc),'학교 시험 평균',sc.length+'회'+(pf?' · 100점 '+pf+'회':''))}
   if(ne.length){st+=stat(CC.nelt,'상위 '+ne[ne.length-1]+'%','넬트 최근',ne.length>1?'처음 상위 '+ne[0]+'% · 최고 상위 '+Math.min.apply(null,ne)+'%':'')}
@@ -160,6 +168,28 @@ else{
   $('out').innerHTML=h;
   function drawList(f){var o='',yr='';for(var i=s.rec.length-1;i>=0;i--){var r=s.rec[i];if(f!=='all'&&SG[f].indexOf(r.c)<0)continue;var y=String(r.d).slice(0,4);if(y!==yr){yr=y;o+='<div class="yr">'+y+'</div>'}o+=recCard(r,i,false)}$('lst').innerHTML=o}
   drawList('all');
+  (function(){
+    var box=$('ent');if(!CFG||CFG.open!==true||!CFG.x){box.style.display='none';return}
+    var X=String(CFG.x),key='scsub:'+k+':'+X,done=false;
+    try{done=localStorage.getItem(key)==='1'}catch(e){}
+    function pend(){box.className='ent';box.innerHTML='<b>'+esc(X)+' 점수</b><div class="w">제출했습니다. 선생님 승인을 기다리는 중입니다.</div>'}
+    if(done){pend();return}
+    box.className='ent';
+    box.innerHTML='<b>'+esc(X)+' 점수 입력</b><div class="r"><input id="esc" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="점수"><button class="pri" id="ego">제출</button></div><div class="err" id="eer" style="margin-top:6px;font-size:14px"></div>';
+    $('ego').onclick=async function(){
+      var v=parseFloat($('esc').value);$('eer').textContent='';
+      if(isNaN(v)||v<0||v>100){$('eer').textContent='점수를 0에서 100 사이로 넣어 주세요';return}
+      $('ego').disabled=true;
+      var a=new Uint8Array(0);
+      try{
+        await F.setDoc(F.doc(db,'sc_in','p'+k),{n:s.name,x:X,s:String(v),t:Date.now(),k:k});
+        try{localStorage.setItem(key,'1')}catch(e){}
+        pend();
+      }catch(e){
+        $('ego').disabled=false;$('eer').textContent='제출하지 못했습니다. 이미 제출했거나 입력 기간이 끝났을 수 있습니다.';
+      }
+    };
+  })();
   $('flt').addEventListener('click',function(e){var f=e.target.getAttribute&&e.target.getAttribute('data-f');if(!f)return;[].forEach.call($('flt').querySelectorAll('button'),function(x){x.className='sm'+(x===e.target?' on':'')});drawList(f)});
 }
 </script>
