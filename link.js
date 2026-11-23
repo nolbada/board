@@ -202,9 +202,37 @@
     var resChk=function(){
       if(stopped)return;var r=resNow(),ch=false;
       Object.keys(r.now).sort(function(x,y){return x-y}).forEach(function(k){if(rep.m[k]!==r.now[k]){var o=r.cur[k]||{};rep.m[k]=r.now[k];ch=true;W.BoardLink.score(APP,{p:o.p,ok:o.ok,d:+k,secs:o.t})}});
-      if(ch){try{ls.setItem(RK,JSON.stringify(rep))}catch(e){}}
+      if(ch){try{ls.setItem(RK,JSON.stringify(rep))}catch(e){}setTimeout(function(){srvPut(resNow().cur)},1500)}
     };
     resChk();try{ls.setItem(RK,JSON.stringify(rep))}catch(e){}
+    /* 261123: 통과 기록을 이름 기준으로 서버(2000-01-01 문서 r_<앱>)에 쌓고, 이 기기에 없으면 되살린다. 서버 기록은 줄지 않는다 */
+    var RP="r_"+APP,STK=APP+"-st",LSK=APP+"-last",GU=function(){return SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(who.n)};
+    var mergeRes=function(a,b){var o={};[a,b].forEach(function(s){Object.keys(s||{}).forEach(function(k){var y=s[k],x=o[k];if(!y||typeof y!=="object")return;if(!x||(y.ok&&!x.ok)||(!!y.ok===!!x.ok&&(+y.p||0)>(+x.p||0)))o[k]=y})});return o};
+    var srvPut=function(res){
+      if(stopped||!res||!Object.keys(res).length)return;
+      return fetch(GU()).then(function(r){return r.json()}).then(function(j){
+        if(!j||!j.ok)return;var cd=(j.chk&&j.chk.app)||{},old={};try{old=JSON.parse(cd[RP]||"{}")||{}}catch(e){}
+        var s=JSON.stringify(mergeRes(old,res));if(s===cd[RP])return;cd[RP]=s;
+        return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({a:"put",date:"2000-01-01",cls:who.c,name:who.n,card:"app",chk:cd})})
+      }).catch(function(){})
+    };
+    var restore=function(){
+      fetch(GU()).then(function(r){return r.json()}).then(function(j){
+        if(!j||!j.ok||stopped)return;var cd=(j.chk&&j.chk.app)||{},rem={};try{rem=JSON.parse(cd[RP]||"{}")||{}}catch(e){}
+        var loc=resNow().cur,m=mergeRes(rem,loc);
+        var add=Object.keys(m).filter(function(k){return JSON.stringify(m[k])!==JSON.stringify(loc[k])});
+        if(add.length){
+          ls.setItem(RESK,JSON.stringify(m));
+          var sv={};try{sv=JSON.parse(ls.getItem(STK)||"{}")||{}}catch(e){}
+          add.forEach(function(k){if(m[k].ok)sv[k]=3;rep.m[k]=[m[k].p,m[k].ok?1:0,m[k].t||0].join("|")});
+          ls.setItem(STK,JSON.stringify(sv));ls.setItem(RK,JSON.stringify(rep));
+          if(!ls.getItem(LSK)){var mx=0;Object.keys(m).forEach(function(k){if(m[k].ok&&+k>mx)mx=+k});if(mx)ls.setItem(LSK,String(mx))}
+          var fk="bl-rst2-"+APP;if(!ss.getItem(fk)){ss.setItem(fk,"1");location.reload();return}
+        }
+        srvPut(m)
+      }).catch(function(){})
+    };
+    restore();
     setInterval(resChk,2000);
   }
   if(APP==="vy"){
