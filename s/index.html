@@ -164,7 +164,7 @@ else{
   h+=chart('전국 모고 점수',pts(s,['natl'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2F6FD6'});
   h+=chart('학원 모고 점수',pts(s,['mock'],'s'),{min:0,max:100,grid:[0,50,100],color:'#2E9E6B'});
   h+=chart('학원 영역별 점수',pts(s,['acad'],'s'),{min:0,max:100,grid:[0,50,100],color:'#8CB82B'});
-  h+=chart('넬트 상위 % (위로 갈수록 좋음)',pts(s,'nelt','p'),{min:0,max:100,grid:[0,25,50,75,100],color:'#7A45D1',inv:true});
+  h+=chart('넬트 상위 %',pts(s,'nelt','p'),{min:0,max:100,grid:[0,25,50,75,100],color:'#7A45D1',inv:true});
   var SG={school:['school'],natl:['natl'],mock:['mock'],acad:['acad'],nelt:['nelt']},SN={all:'전체',school:'학교 시험',natl:'전국 모의고사',mock:'학원 모고',acad:'학원 영역별',nelt:'넬트'};
   function cnt(f){return f==='all'?s.rec.length:s.rec.filter(function(r){return SG[f].indexOf(r.c)>=0}).length}
   var hi=/고/.test(s.school||''),B=function(f){return '<button class="sm'+(f==='all'?' on':'')+'" data-f="'+f+'">'+SN[f]+(f==='all'||cnt(f)>0?' '+cnt(f):'')+'</button>'};
