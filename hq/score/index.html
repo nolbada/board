@@ -107,7 +107,8 @@ var TYPES=[];
 ['중 1','중 2','중 3','고 1','고 2','고 3'].forEach(function(g){['1','2'].forEach(function(h){['중간','기말'].forEach(function(k){TYPES.push(g+'-'+h+' '+k)})})});
 TYPES.push('전국(모고)','학원(모고)','학원','넬트');
 var REV=['불확실','파싱불가','여러값','값이상','날짜확인','점수형식확인','점수없음','대략','같은날중복?'];
-var S=[],IN=[],cur=null,delArm='';
+var S=[],IN=[],cur=null,delArm='',flt='all';
+var FL={all:['school','natl','mock','acad','nelt','entry'],school:['school','natl'],mock:['mock','acad'],nelt:['nelt','entry']};
 
 function $(i){return document.getElementById(i)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -167,8 +168,9 @@ function renderList(){
   $('grid').innerHTML=a.map(function(s){
     var sc=lastOf(s,'school'),ne=lastOf(s,'nelt');
     var n=s.rec.filter(needRev).length;
-    var k1=sc?('학교 '+esc(sc.t)+' '+esc(sc.v.s!=null?sc.v.s:sc.r)):'학교 점수 없음';
-    var k2=ne?('넬트 상위 '+esc(ne.v.p)+'%'):'';
+    var rs=s.rec.filter(function(r){return r.c==='school'&&r.v&&r.v.s!=null}).slice(-3).map(function(r){return r.v.s}).join(' → ');
+    var k1=rs?('학교 '+esc(rs)):'학교 점수 없음';
+    var k2=(ne?'넬트 상위 '+esc(ne.v.p)+'% · ':'')+'기록 '+s.rec.length+'건';
     return '<div class="card" data-id="'+esc(s.id)+'"><b>'+esc(s.name)+'</b>'+(n?'<span class="tag">확인 '+n+'</span>':'')+
       '<div class="m">'+esc(s.cls)+' · '+esc(s.school)+'</div><div class="k">'+k1+'</div><div class="k muted">'+k2+'</div></div>';
   }).join('');
@@ -210,11 +212,11 @@ function drawDetail(){
   h+=chart('학교 시험 점수',pts(s,'school','s'),{min:0,max:100,grid:[0,50,100],color:'#00A1A7',note:'속이 빈 점은 날짜가 대략이거나 확인이 필요한 값'});
   h+=chart('학원 모의고사 점수',pts(s,'mock','s'),{min:0,max:100,grid:[0,50,100],color:'#7A45D1'});
   h+=chart('넬트 상위 % (위로 갈수록 좋음)',pts(s,'nelt','p'),{min:0,max:100,grid:[0,25,50,75,100],color:'#C77A00',inv:true});
-  h+='<h3>모든 기록</h3><div class="box" style="overflow-x:auto"><table><thead><tr><th>날짜</th><th>종류</th><th>원본</th><th>메모</th><th></th></tr></thead><tbody>';
-  s.rec.forEach(function(r,i){
+  h+='<h3>모든 기록 (최신순)</h3><div class="row" style="margin-bottom:8px">'+[['all','전체'],['school','학교'],['mock','학원 모고'],['nelt','넬트']].map(function(q){return '<button class="sm'+(flt===q[0]?' pri':'')+'" data-act="flt" data-v="'+q[0]+'">'+q[1]+'</button>'}).join('')+'</div><div class="box" style="overflow-x:auto"><table><thead><tr><th>날짜</th><th>종류</th><th>원본</th><th>메모</th><th></th></tr></thead><tbody>';
+  for(var i=s.rec.length-1;i>=0;i--){var r=s.rec[i];if(FL[flt].indexOf(r.c)<0)continue;
     var f=(r.f||[]).filter(function(x){return x!=='날짜임의?'||true});
     h+='<tr class="'+(needRev(r)?'rv':'')+'" data-i="'+i+'"><td>'+fd(r.d)+((r.f||[]).indexOf('날짜임의?')>=0?'<div class="muted">날짜 미정</div>':'')+'</td><td>'+esc(r.t)+'</td><td>'+esc(r.r)+(r.src==='student'?'<span class="tag g">학생 입력</span>':'')+'</td><td>'+esc(r.m||'')+(f.length?'<div class="muted">'+esc(f.join(', '))+'</div>':'')+'</td><td><button class="sm" data-act="edit" data-i="'+i+'">수정</button></td></tr>';
-  });
+  }
   h+='</tbody></table></div>';
   h+='<h3>기록 추가</h3><div class="box"><div class="row"><select id="at">'+TYPES.map(function(t){return '<option>'+esc(t)+'</option>'}).join('')+'</select><input type="date" id="ad" value="'+today()+'"><input id="as" placeholder="점수" style="width:90px"><input id="am" placeholder="메모" style="width:160px"><button class="pri" id="aadd">추가</button><span id="amsg" class="muted"></span></div></div>';
   $('detail').innerHTML=h;
@@ -224,6 +226,7 @@ $('detail').onclick=function(e){
   if(t.id==='back'){$('detail').classList.add('hide');$('list').classList.remove('hide');renderList();return}
   if(t.id==='aadd'){addRec();return}
   var act=t.getAttribute&&t.getAttribute('data-act');
+  if(act==='flt'){flt=t.getAttribute('data-v');drawDetail();return}
   if(act==='edit'){editRow(+t.getAttribute('data-i'))}
   if(act==='save'){saveRow(+t.getAttribute('data-i'))}
   if(act==='cancel'){drawDetail()}
