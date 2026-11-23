@@ -62,6 +62,7 @@ svg text{font-family:inherit}
 .rk .v{width:84px;text-align:right;font-weight:700}
 .rk .d{width:78px;text-align:right;font-size:12px;color:#8a9a9d}
 .rec.nl{flex-wrap:wrap}
+.rec.nl{cursor:pointer}.rec.nl .nd,.rec.nl .nt{display:none}.rec.nl.op .nd{display:grid}.rec.nl.op .nt{display:block}.rec.nl .lb::after{content:' \25BE';color:#8A9A9D}.rec.nl.op .lb::after{content:' \25B4'}
 .nd{flex-basis:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px;padding-top:9px;border-top:1px dashed #eadfc9}
 .nd>div{background:#fff8ec;border-radius:8px;padding:6px 9px}
 .nd b{display:block;font-size:11.5px;color:#9a6200;font-weight:600}
@@ -165,6 +166,7 @@ var S=[],IN=[],cur=null,delArm='',flt='all',shown=60;
 var FL={all:['school','natl','mock','acad','nelt','entry'],school:['school','natl'],mock:['mock','acad'],nelt:['nelt','entry']};
 function val(r){if(!r.v)return null;if(r.c==='nelt'||r.c==='entry')return r.v.p!=null?r.v.p:(r.v.s!=null?r.v.s:null);return r.v.s!=null?r.v.s:null}
 function nl(r){var m=String(r.r||'').match(/레벨\s*\d*\s*((?:초|중|고)\d)(?:~(?:초|중|고)?\d)?(?:\s*수준)?(?:\s+((?:초|중|고)\d))?/);return m?{l:m[1],t:m[2]||''}:{l:'',t:''}}
+document.addEventListener('click',function(e){var c=e.target.closest&&e.target.closest('.rec.nl');if(c&&!e.target.closest('button'))c.classList.toggle('op')});
 function disp(r){var x=val(r);if(r.c==='nelt'||r.c==='entry'){if(r.v&&r.v.p!=null)return '상위 '+r.v.p+'%';return x!=null?String(x):''}return x!=null?x+'점':(r.v&&r.v.wc!=null?r.v.wc+'개 틀림':'')}
 function legend(){var f=function(a){return a.map(function(k){return '<span><i style="background:'+CC[k]+'"></i>'+CN[k]+'</span>'}).join('')};return '<div class="leg" style="margin-bottom:4px">'+f(['school','natl','nelt'])+'</div><div class="leg">'+f(['mock','acad'])+'</div>'}
 function pn(m){if(!m)return null;var o=[],re=/(어휘|문법|듣기|독해)\s+([^/]*?)\s*\(\s*상위\s*(\d+)\s*%\s*\)/g,x;while((x=re.exec(m)))o.push({k:x[1],l:x[2].trim(),p:+x[3]});var tm=m.match(/총\s*([^.]+)$/);return o.length?{o:o,t:tm?tm[1].trim():''}:null}
