@@ -277,8 +277,7 @@ function rdPoll(){try{
    var fp=rdFind(w,pid),ok=0,tot=0,wn=[];
    if(fp&&w.bookInputs){try{var BI=w.bookInputs(fp.p);tot=BI.length;BI.forEach(function(it){if(w.bkOk(it,(bk[pid].a||{})[it.qi]))ok++;else{var mq=/(\d+)\s*번/.exec((it.s&&it.s.at)||"");wn.push(mq?mq[1]:it.qi+1)}})}catch(e){}}
    recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 책 문제 제출"+(tot?" "+ok+"/"+tot+(wn.length?" · 틀림 "+wn.map(function(n){return "("+n+")"}).join(""):""):""),bn+" "+rdLab(w,pid)+" 핵심 질문",rdU(k,pid))});
-  Object.keys(cnt).forEach(function(pid){if(cnt[pid]>(st.c[pid]||0)){st.c[pid]=cnt[pid];
-   recK("rd_"+k,"독해33권 "+bn+" "+rdLab(w,pid)+" 질문·활동 "+cnt[pid]+"개 정답 확인","",rdU(k,pid))}});
+  Object.keys(cnt).forEach(function(pid){if(cnt[pid]>(st.c[pid]||0)){st.c[pid]=cnt[pid]}});
   svRS(k,st);
  }
 }catch(e){}}
