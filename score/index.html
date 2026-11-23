@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>시험 점수 입력</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6f7;color:#1c2b2d;font-family:"Malgun Gothic","Noto Sans KR",system-ui,sans-serif;font-size:17px}
+.wrap{max-width:460px;margin:0 auto;padding:26px 16px 60px}
+h1{font-size:22px;margin:0 0 6px}
+.sub{color:#5b6b6e;font-size:15px;margin-bottom:18px}
+.box{background:#fff;border:1px solid #dde3e5;border-radius:14px;padding:18px}
+label{display:block;font-size:14px;color:#5b6b6e;margin:14px 0 5px}
+label:first-child{margin-top:0}
+input,select{width:100%;font:inherit;border:1px solid #b9c4c6;border-radius:10px;padding:11px 12px;background:#fff}
+button{width:100%;margin-top:20px;font:inherit;font-weight:700;border:0;border-radius:12px;padding:14px;background:#0d3b44;color:#fff;cursor:pointer}
+button:disabled{opacity:.5}
+.done{text-align:center;padding:24px 8px}
+.done b{font-size:22px;display:block;margin-bottom:8px}
+.err{color:#b3261e;font-size:14px;margin-top:10px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>시험 점수 입력</h1>
+<div class="sub" id="sub"></div>
+
+<div class="box hide" id="closed">지금은 점수를 입력받는 기간이 아닙니다.</div>
+
+<div class="box hide" id="form">
+  <label for="n">이름</label>
+  <input id="n" maxlength="12" autocomplete="off">
+  <label for="s">점수</label>
+  <input id="s" type="number" inputmode="decimal" min="0" max="100" step="0.1">
+  <label for="g">등급 (모르면 비워 두세요)</label>
+  <select id="g"><option value="">선택 안 함</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select>
+  <button id="go">제출</button>
+  <div class="err" id="err"></div>
+</div>
+
+<div class="box done hide" id="done"><b>제출 완료</b><div>선생님이 확인하면 기록됩니다.</div></div>
+</div>
+
+<script type="module">
+var V='https://www.gstatic.com/firebasejs/10.14.1/';
+var A=await import(V+'firebase-app.js');
+var F=await import(V+'firebase-firestore.js');
+var app=A.initializeApp({apiKey:'AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA',authDomain:'nolbada.github.io',projectId:'h-roadmap',appId:'1:575520405083:web:b9f40b64cb0ae3d1a9317e'},'scin');
+var db=F.getFirestore(app);
+function $(i){return document.getElementById(i)}
+var X='';
+try{
+  var d=await F.getDoc(F.doc(db,'sc_cfg','cur'));var c=d.exists()?d.data():{};
+  if(c.open===true&&c.x){X=String(c.x);$('sub').textContent=X;$('form').classList.remove('hide')}
+  else{$('closed').classList.remove('hide')}
+}catch(e){$('closed').classList.remove('hide')}
+
+function rid(){var a=new Uint8Array(18);crypto.getRandomValues(a);var s='';var al='abcdefghijklmnopqrstuvwxyz0123456789';for(var i=0;i<a.length;i++)s+=al[a[i]%al.length];return 'in'+s}
+$('go').onclick=async function(){
+  var n=$('n').value.trim(),s=$('s').value.trim(),g=$('g').value;$('err').textContent='';
+  var v=parseFloat(s);
+  if(!n||n.length>12){$('err').textContent='이름을 확인해 주세요';return}
+  if(s===''||isNaN(v)||v<0||v>100){$('err').textContent='점수를 0에서 100 사이로 넣어 주세요';return}
+  $('go').disabled=true;
+  try{
+    await F.setDoc(F.doc(db,'sc_in',rid()),{n:n,x:X,s:String(v),g:g,t:Date.now()});
+    $('form').classList.add('hide');$('done').classList.remove('hide');
+  }catch(e){
+    $('go').disabled=false;$('err').textContent='제출하지 못했습니다. 입력 기간이 끝났을 수 있습니다.';
+  }
+};
+</script>
+</body>
+</html>
