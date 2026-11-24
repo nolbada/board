@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="ko" translate="no">
+<head>
+<meta charset="utf-8"><script>/* 261117h: 학생 기록 받기(a=get, a=getm)는 Firebase 에서 바로 답한다(서버를 거치지 않는다).
+   표식 문서(_on)가 없거나 실패·2.5초 초과면 원래 요청을 그대로 서버로 보낸다. 저장(put)과 선생님용 요청(pw 가 붙은 것)은 건드리지 않는다. */
+(function(){try{
+  var W=window;if(W.__bfs||!W.fetch||!W.Response)return;W.__bfs=1;var of=W.fetch;
+  var DB='projects/h-roadmap/databases/(default)/documents/';
+  function dn(smp,key){return DB+(smp?'board_s':'board')+'/'+String(key).replace(/%/g,'%25').replace(/\//g,'%2F')}
+  function chkOf(x){try{return JSON.parse((x.found.fields.chk&&x.found.fields.chk.stringValue)||'{}')}catch(e){return {}}}
+  function ask(names){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},2500):0;
+    return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:batchGet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({documents:names}),signal:ac?ac.signal:undefined})
+      .then(function(r){clearTimeout(tm);return r.ok?r.json():null}).catch(function(){clearTimeout(tm);return null})}
+  var ONX=[0,0];W.__bdn=dn;
+  function resp(o){return new W.Response(JSON.stringify(o),{status:200,headers:{'Content-Type':'application/json'}})}
+  W.fetch=function(u,o){
+    try{
+      if(typeof u==='string'&&!o&&u.indexOf('AKfycbyGjwU2U')>0){
+        var q=u.split('?')[1]||'',p={};q.split('&').forEach(function(kv){var i=kv.indexOf('=');if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1))});
+        if((p.a==='get'||p.a==='getm')&&!p.pw){
+          var name=String(p.name||'').trim(),smp=/^샘플/.test(name),ds=p.a==='get'?[String(p.date||'')]:String(p.dates||'').split(','),okd=/^\d{4}-\d{1,2}-\d{1,2}$/,seen={},dup=false;
+          ds.forEach(function(d){if(seen[d])dup=true;seen[d]=1});
+          if(name&&name.length<=12&&ds.length&&ds.length<=12&&!dup&&ds.every(function(d){return okd.test(d)})){
+            /* 261117 밤: 이 문서를 "바뀌면 알려 주기"로 지켜보는 중이면(아래 __bsnap) 받아 둔 최신 내용으로 바로 답한다. Firebase 를 다시 읽지 않는다 */
+            if(p.a==='get'&&W.__bsnap){var lk=dn(smp,ds[0]+'|'+name),lc=smp?'board_s':'board';
+              if(W.__bsnap.live[lc]&&Object.prototype.hasOwnProperty.call(W.__bsnap.d,lk))return Promise.resolve(resp({ok:true,chk:W.__bsnap.d[lk]||{},fs:2}))}
+            /* 261117 밤: "Firebase 가 원본" 표시(_on)는 한 번 확인하면 10분 동안 다시 읽지 않는다(하루 읽기 횟수를 절반 가까이 줄임) */
+            var sk=smp?1:0,need=!(ONX[sk]>Date.now()),off=need?1:0;
+            var names=(need?[dn(smp,'_on')]:[]).concat(ds.map(function(d){return dn(smp,d+'|'+name)})),self=this,args=arguments;
+            return ask(names).then(function(a){
+              if(!Array.isArray(a)||a.length!==names.length)return of.apply(self,args);
+              var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x;else if(!x.missing)return of.apply(self,args)}
+              if(need){if(!by[names[0]])return of.apply(self,args);ONX[sk]=Date.now()+600000}
+              if(p.a==='get'){var g=by[names[off]];return resp({ok:true,chk:g?chkOf(g):{},fs:1})}
+              var recs={};ds.forEach(function(d,j){var g2=by[names[j+off]];recs[d]=g2?chkOf(g2):{}});return resp({ok:true,recs:recs,fs:1})});
+          }
+        }
+      }
+      /* 261121: 저장(put)도 Firebase 에 바로 쓴다(구글 서버를 거치지 않는다). 표식(_on) 확인·충돌 재시도는 서버와 같은 방식.
+         어느 단계든 실패하면 원래 요청을 그대로 서버로 보낸다. 선생님용(pw)은 건드리지 않는다. */
+      if(typeof u==='string'&&u.indexOf('AKfycbyGjwU2U')>0&&o&&o.method==='POST'&&typeof o.body==='string'&&!W.__bnoput){
+        var pb=null;try{pb=JSON.parse(o.body)}catch(e2){}
+        if(pb&&pb.a==='put'&&!pb.pw){var s2=this,a2=arguments;
+          return fsPut(pb).then(function(ok){return ok?resp({ok:true,fs:1}):of.apply(s2,a2)},function(){return of.apply(s2,a2)})}
+      }
+    }catch(e){}
+    return of.apply(this,arguments);
+  };
+  function p1(m,pl){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},4000):0;
+    return (W.__au&&W.__au.tok?W.__au.tok():Promise.resolve('')).then(function(tk){var hd={'Content-Type':'application/json'};if(tk)hd.Authorization='Bearer '+tk;
+    return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:'+m,{method:'POST',headers:hd,body:JSON.stringify(pl),keepalive:true,signal:ac?ac.signal:undefined})})
+      .then(function(r){return r.text().then(function(t){clearTimeout(tm);return {c:r.status,b:t}})},function(e){clearTimeout(tm);throw e})}
+  function fsPut(p){
+    var name=String(p.name||'').trim(),date=String(p.date||''),cls=String(p.cls||''),card=String(p.card||'reg');
+    if(!name||name.length>12||!/^\d{4}-\d{1,2}-\d{1,2}$/.test(date))return Promise.resolve(false);
+    var smp=/^샘플/.test(name),sk=smp?1:0,key=dn(smp,date+'|'+name),chk=p.chk||{},tries=0;
+    function once(){
+      var need=!(ONX[sk]>Date.now()),names=(need?[dn(smp,'_on')]:[]).concat([key]);
+      return p1('batchGet',{documents:names}).then(function(r){
+        if(r.c!==200)return false;
+        var a;try{a=JSON.parse(r.b)}catch(e){return false}
+        if(!Array.isArray(a)||a.length!==names.length)return false;
+        var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x.found;else if(!x.missing)return false}
+        if(need){if(!by[names[0]])return false;ONX[sk]=Date.now()+600000}
+        var cur=by[key],c={},seq=Date.now();
+        if(cur){try{c=JSON.parse((cur.fields.chk&&cur.fields.chk.stringValue)||'{}')}catch(e){c={}}if(cur.fields.seq&&cur.fields.seq.integerValue)seq=Number(cur.fields.seq.integerValue)}
+        c[card]=chk;
+        var f={date:{stringValue:date},cls:{stringValue:cls},name:{stringValue:name},chk:{stringValue:JSON.stringify(c)},t:{stringValue:new Date().toISOString()},seq:{integerValue:String(seq)}};
+        return p1('commit',{writes:[{update:{name:key,fields:f},currentDocument:cur?{updateTime:cur.updateTime}:{exists:false}}]}).then(function(r2){
+          if(r2.c===200)return true;
+          if(/FAILED_PRECONDITION|ALREADY_EXISTS|ABORTED/.test(r2.b)&&++tries<8)return new Promise(function(res){setTimeout(res,80+Math.random()*250*tries)}).then(once);
+          return false})
+      })}
+    return once();
+  }
+}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EM보드</title>
+<meta name="google" content="notranslate">
+<meta property="og:type" content="website">
+<meta property="og:title" content="오늘의 학습">
+<meta property="og:description" content="오늘 할 일을 체크해요">
+<meta property="og:image" content="https://nolbada.github.io/board/og.png">
+<meta property="og:url" content="https://nolbada.github.io/board/">
+<meta name="application-name" content="EM보드">
+<meta name="apple-mobile-web-app-title" content="EM보드">
+<meta name="theme-color" content="#D6336C">
+<link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,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">
+<link rel="apple-touch-icon" sizes="192x192" href="data:image/png;base64,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">
+<script>if(/[?&]t=1/.test(location.search)){var u="data:image/png;base64,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";["icon","apple-touch-icon"].forEach(function(r){var l=document.querySelector('link[rel="'+r+'"]');if(l)l.href=u});var mf=document.createElement("link");mf.rel="manifest";mf.href="manifest-t.webmanifest";document.head.appendChild(mf)}</script>
+<style>
+:root{--bg:#F1F3F0;--sf:#fff;--sf2:#E9EDE9;--ink:#182420;--soft:#5B6B62;--bd:#DCE3DC;--o:#1F7A5C;--os:#DCEFE6;--b:#2F6FD6;--r:#C22E1C;--sh:0 1px 2px rgba(24,36,32,.06),0 8px 24px -12px rgba(24,36,32,.18)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased}
+#app{max-width:560px;margin:0 auto;padding:20px 16px 56px;display:flex;flex-direction:column;gap:14px}
+button{font-family:inherit;color:inherit;cursor:pointer}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.who{font-size:26px;font-weight:700;line-height:1.1}
+.who small{display:block;font-size:12.5px;font-weight:500;color:var(--soft);margin-top:4px}
+.ghost{border:1px solid var(--bd);background:var(--sf);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:16px;box-shadow:var(--sh)}
+.h{font-size:13px;font-weight:700;color:var(--soft);margin:8px 2px 0;letter-spacing:.02em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--bd);background:var(--sf);border-radius:12px;padding:11px 15px;font-size:15px;font-weight:700;border-left:5px solid var(--o)}
+.chip.mid{border-left-color:var(--b)}
+.chip.on{background:var(--o);color:#fff;border-color:var(--o)}
+.chip.mid.on{background:var(--b);border-color:var(--b)}
+.names{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.name{border:1px solid var(--bd);background:var(--sf);border-radius:16px;padding:22px 10px;font-size:19px;font-weight:700;box-shadow:var(--sh)}
+.today{width:100%;text-align:left;border:0;background:var(--o);color:#fff;border-radius:18px;padding:18px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh)}
+.today b{font-size:20px}.today span{font-size:13px;opacity:.9}
+.today .n{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tile{display:block;text-decoration:none;color:var(--ink);background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:16px 14px;box-shadow:var(--sh);font-size:15.5px;font-weight:700;line-height:1.3}
+.tile small{display:block;font-size:12px;font-weight:500;color:var(--soft);margin-top:5px}
+.tile.test{border-left:5px solid var(--r)}
+.tile.off{opacity:.45;pointer-events:none}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tab{flex:0 0 auto;border:1px solid var(--bd);background:var(--sf);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;color:var(--soft)}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.item{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--bd);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+.item:last-child{border-bottom:0}
+.box{width:30px;height:30px;border-radius:50%;border:2px dashed var(--bd);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--soft)}
+.item.plus{background:#fff6cc;border-radius:10px;padding-left:10px;padding-right:10px}
+.plh{font-size:12px;font-weight:700;color:#8a6d00;margin:16px 4px 2px}
+.card.pen{background:#ffe3ec;border:1px solid #f3b3c6}.h.pk{color:#b0305f}.card.pen .item.done{opacity:.6}.pwhy{font-size:13px;font-weight:800;color:#b0305f;padding:10px 4px 0}.pwhy+.item{padding-top:8px}
+.item.done .box{border:3px solid var(--o);background:var(--os);color:var(--o);font-size:16px}
+.item.done .t{color:var(--soft);text-decoration:line-through}
+.t{font-size:16px;font-weight:700;flex:1}
+.t small{display:block;font-size:12px;font-weight:500;color:var(--soft);text-decoration:none;margin-top:3px}
+.tag{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 8px;background:var(--sf2);color:var(--soft)}
+.tag.auto{background:var(--os);color:var(--o)}
+.empty{padding:22px 4px;color:var(--soft);font-size:14px}
+.score{width:84px;border:1px solid var(--bd);border-radius:10px;padding:10px;font-size:16px;font-weight:700;font-family:inherit;text-align:center}
+#sv{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#222;color:#fff;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.leave{border:0;background:var(--ink);color:#fff;border-radius:14px;padding:15px;font-size:15px;font-weight:700;width:100%}
+.back{border:0;background:none;font-size:14px;font-weight:700;color:var(--soft);padding:4px 0;text-align:left}
+.gc{background:var(--sf);border:1px solid var(--bd);border-top:4px solid var(--ac);border-radius:18px;padding:12px 12px 14px;box-shadow:var(--sh)}
+.gh{font-size:13px;font-weight:700;color:var(--ac);margin:0 2px 10px;letter-spacing:.02em}
+.gg{display:grid;grid-template-columns:repeat(var(--c),1fr);gap:8px}
+.t2{display:flex;align-items:center;justify-content:center;text-align:center;min-height:56px;padding:8px 6px;border-radius:12px;background:var(--sf2);color:var(--ink);text-decoration:none;font-size:15px;font-weight:700;line-height:1.25}
+.t2:active{background:var(--ac);color:#fff}
+.t2.off{opacity:.45}
+.t2 img.ic{width:30px;height:30px;margin-right:8px;border-radius:7px;flex:none}
+.ts{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--bd);background:var(--sf);border-radius:14px;padding:13px 14px;margin:0}
+.ts .nm{font-weight:700;font-size:17px;flex:1}
+.ts small{color:var(--soft);font-weight:500;margin-left:6px}
+.ts.dn{background:var(--os);border-color:var(--o)}
+.ts.dn .pl{background:var(--o);color:#fff}
+.pl{font-size:13px;border-radius:999px;padding:3px 11px;background:#e8effb;color:#2b62c4;font-weight:700;white-space:nowrap}
+.pl.z{background:transparent;border:1px solid var(--bd);color:var(--soft);font-weight:500}
+.tlist{display:flex;flex-direction:column;gap:8px}
+.hc{display:inline-block;font-size:12.5px;border:1px solid var(--bd);border-radius:999px;padding:3px 9px;margin:4px 4px 0 0;color:var(--soft)}
+.dnav{display:flex;align-items:center;gap:8px}
+.dnav .lb{flex:1;text-align:center;font-weight:700;font-size:15px}
+.sum{font-size:13px;color:var(--soft);margin:2px 2px 0}
+.tt{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tth{font-size:12.5px;font-weight:700;color:var(--soft);text-align:center}
+.cell{display:flex;flex-direction:column;gap:6px;min-height:8px}
+.blk{width:100%;text-align:left;border:1px solid var(--bd);border-left:6px solid var(--bc);background:var(--bb);border-radius:12px;padding:9px 10px;line-height:1.25}
+.blk b{display:block;font-size:15px}
+.blk span{font-size:12.5px;color:var(--soft);font-weight:700}
+.blk small{display:block;font-size:11.5px;color:var(--soft);margin-top:2px}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--bd);padding:0}
+.sw.on{box-shadow:0 0 0 3px var(--ink)}
+.wk{display:grid;grid-template-columns:26px repeat(2,1fr);background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.wkh{font-size:13px;font-weight:700;text-align:center;padding:7px 0;border-bottom:1px solid var(--bd);border-left:1px solid var(--bd);background:#fafaf8}
+.wkt{position:relative}
+.wkt i{position:absolute;right:4px;font-style:normal;font-size:11px;color:var(--soft);transform:translateY(-50%)}
+.wkc{position:relative;border-left:1px solid var(--bd)}
+.wb{position:absolute;box-sizing:border-box;background:var(--bc);color:#fff;border:2px solid #fff;border-radius:9px;padding:4px 5px;text-align:left;overflow:hidden;line-height:1.2;font-size:12px}
+.wb b{display:block;font-size:12px;overflow-wrap:anywhere}
+.wb span{font-size:11px;opacity:.9}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ---------- 설정: 선생님이 고치는 부분 ---------- */
+var SMP=/[?&]s=1(&|$)/.test(location.search);
+var ROSTER = {
+  "M초6A":["윤여름","조서인"],
+  "M초6C":["김동권","김은찬","김이한","민윤찬","박윤수","신도건","이상윤"],
+  "T초6B":["김지율","김태율","노지훈","이재빈","연휘건"],
+  "T초6C":["김예슬","노예린","류이안","이연서","이재인","조은유","연다혜"],
+  "M중1B":["김시원","김윤슬","류아인","박대환","이지성","임건호","정해윤"],
+  "T중1A":["김태건","장도율","조이준","최민준","홍윤제"]
+};
+/* 학생에게는 반 이름 대신 요일 묶음만 보임. 반 이름은 내부 구분용 */
+var GROUPS = {
+  "월·수·금":["M초6A","M초6C","M중1B"],
+  "화·목·금":["T초6B","T초6C","T중1A"]
+};
+var BASE = "https://nolbada.github.io/via/";
+var TESTS = [
+  {n:"비단챌 말하기", u:BASE+"shared/?a=index.html&new=1"},
+  {n:"보카스위치 고교", u:BASE+"shared/?a=vocaswitch-speak/h/&new=1"},
+  {n:"보카스위치 수능", u:BASE+"shared/?a=vocaswitch-speak/s/&new=1"}
+];
+/* 메인 화면 묶음: 이름, 강조색, 한 줄 칸 수, 항목 */
+var HUB = [
+  {h:"V시그널", ac:"#1F7A5C", cols:4, items:[
+    {n:"K", u:BASE+"vsignal-k/"}, {n:"E", u:BASE+"vsignal-e/"}, {n:"Y", u:BASE+"vsignal-y/"}, {n:"X-ray", tt:"V시그널 X-ray", u:BASE+"xray/"}]},
+  {h:"독해", ac:"#2F6FD6", cols:3, items:[
+    {n:"독해33권", u:BASE+"reading/tablet/", not:["M초6A"]}, {n:"M1 리딩", u:BASE+"m1-reading/"}, {n:"M2 리딩", u:BASE+"m2-reading/"}]},
+  {h:"비단챌", ac:"#D6336C", cols:5, items:[
+    {n:"기본", u:BASE+"bidanchael/gibon/"}, {n:"발전", u:BASE+"bidanchael/baljeon/"}, {n:"심화", u:BASE+"bidanchael/simhwa/"}, {n:"고교", u:BASE+"bidanchael/gogyo/"}]},
+  {h:"어휘", ac:"#C77A00", cols:2, items:[
+    {n:"보카스위치 고교", u:BASE+"switch-mission-h.html"}, {n:"보카스위치 수능", u:BASE+"switch-mission-s.html"}, {n:"워마 2000", u:BASE+"wama2000/"}, {n:"보카링크", u:BASE+"vocalink/"}, {n:"더블보카 코어", u:BASE+"dvcore/"}, {n:"더블보카 프로", u:BASE+"dvpro/"}]}
+  ,{h:"데일리보카", ac:"#7A45D1", cols:3, items:[
+    {n:"M", tt:"데일리보카 M", u:BASE+"daily/m/"}, {n:"B", tt:"데일리보카 B", u:BASE+"daily/b/"}, {n:"H", tt:"데일리보카 H", u:BASE+"daily/h/"}]}
+  ,{h:"개념 학습", ac:"#2a9d8f", cols:1, items:[
+    {n:"그래머콕", tt:"그래머콕", u:"https://nolbada.github.io/via-mid/m/grammarcock/"}]}
+  ,{h:"문법교재 도우미", ac:"#2a6f97", cols:2, items:[
+    {n:"그래머인사이드 L1", tt:"그래머인사이드 L1 힌트", u:BASE+"grammar-inside/l1/", hl:["고"]},
+    {n:"Link2(교재)", tt:"Link2(교재)", u:BASE+"link2-sb/", hl:["고"]},
+    {n:"Link2(WB)", tt:"Link2(WB)", u:BASE+"link2-wb/", hl:["고"]},
+    {n:"바푸문 2 도우미", tt:"바푸문 2 도우미", u:BASE+"bapumun2/", hl:["고"]},
+    {n:"바푸문 3 도우미", tt:"바푸문 3 도우미", u:BASE+"bapumun3/", hl:["고"]}]}
+  ,{h:"어법 도우미", ac:"#4a62b8", cols:1, items:[
+    {n:"어법제대로 분석", tt:"어법제대로 분석", u:BASE+"eobeop-sentence/"},
+    {n:"어법제대로 변형_해설", tt:"어법제대로 변형_해설", u:BASE+"eobeop-jedaero/"},
+    {n:"제대로 어법 추가문제", tt:"제대로 어법 추가문제", u:BASE+"eobeop-jedaero/add/"}]}
+  ,{h:"실전문제 (중등)", ac:"#3a8f5e", cols:2, items:[
+    {n:"중등 문법 기출", tt:"중등 문법 기출", u:BASE+"g2-gichul-1/", hl:["고"]},
+    {n:"G-기출", tt:"G-기출", u:BASE+"giche-grammar/", hl:["고"]}]}
+  ,{h:"대화문 기출", ac:"#1F7A5C", cols:2, items:[
+    {n:"중1", tt:"대화문 기출 중1", ic:"data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20rx=%2222%22%20fill=%22%23FFE3A6%22/%3E%3Ctext%20x=%2242%22%20y=%2276%22%20font-size=%2260%22%20text-anchor=%22middle%22%3E%F0%9F%91%A8%3C/text%3E%3Ctext%20x=%2276%22%20y=%2238%22%20font-size=%2226%22%20text-anchor=%22middle%22%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E", u:BASE+"gichul/m1/"}, {n:"중2", tt:"대화문 기출 중2", ic:"data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20rx=%2222%22%20fill=%22%23CFE1FF%22/%3E%3Ctext%20x=%2242%22%20y=%2276%22%20font-size=%2260%22%20text-anchor=%22middle%22%3E%F0%9F%91%A9%3C/text%3E%3Ctext%20x=%2276%22%20y=%2238%22%20font-size=%2226%22%20text-anchor=%22middle%22%3E%F0%9F%92%AC%3C/text%3E%3C/svg%3E", u:BASE+"gichul/m2/"}]}
+];
+if(SMP)HUB.push({h:"예비고1", ac:"#2F6FD6", cols:1, items:[{n:"H 로드맵", tt:"H 로드맵", u:BASE+"wn/"}]});
+/* kind: auto = 앱 기록에서 자동 연동, self = 학생이 직접 체크 */
+var REGULAR = [
+  {id:"s1",t:"단어시험",kind:"auto"},
+  {id:"s2",t:"문법진도",kind:"auto"},
+  {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"},
+  {id:"s3",t:"V시그널",kind:"auto"},
+  {id:"s4",t:"개별독해책",kind:"auto"},
+  {id:"s5",t:"클카 독해 TEST",kind:"self"},
+  {id:"s6",t:"M1 · M2 리딩",kind:"auto"},
+  {id:"sw",t:"SW 검사받기 (오늘 오답 / 클카 단어테스트 틀린 것 쓰기)",kind:"self"}
+];
+/* 반마다 다른 정규반 항목: 여기 있는 반은 REGULAR 대신 이 목록을 씀 */
+var CLASS_ITEMS = {
+  "M초6A":[
+    {id:"s1",t:"단어시험",kind:"auto"},
+    {id:"s2",t:"문법진도",kind:"auto"},
+    {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"},
+    {id:"s3",t:"V시그널",kind:"auto"},
+    {id:"s4",t:"독해진도",kind:"teacher"},
+    {id:"s5",t:"클카 독해 TEST",kind:"self"},
+    {id:"s6",t:"M1 · M2 리딩",kind:"auto"},
+    {id:"sw",t:"SW 검사받기 (오늘 오답 / 클카 단어테스트 틀린 것 쓰기)",kind:"self"}
+  ],
+  "T중1A":[
+    {id:"s1",t:"단어시험",kind:"auto"},
+    {id:"s6",t:"비단챌 채점",kind:"auto"},
+    {id:"s2",t:"V시그널",kind:"auto"},
+    {id:"s3",t:"개별독해책",kind:"auto"},
+    {id:"s4",t:"보카링크",kind:"score"},
+    {id:"s5",t:"클카 독해 TEST",kind:"self"},
+    {id:"sw",t:"SW 검사받기 (오늘 오답 / 클카 단어테스트 틀린 것 쓰기)",kind:"self"}
+  ]
+};
+/* 모두 끝낸 학생에게만 보이는 칸. 내용은 선생님이 정함 */
+var EXTRA = {t:"마지막 관문", items:[]};
+var CC = null;
+var CARDS = [
+  {id:"hw",label:"숙제",items:[]},
+  {id:"reg",label:"정규반",items:REGULAR},
+  {id:"fri",label:"금요일",items:[]},
+  {id:"sat",label:"토요일 보충",items:[]},
+  {id:"nae",label:"내신",items:[]},
+  {id:"nohw",label:"숙제 안 가져왔을 때",items:[]},
+  {id:"mk",label:"보충 왔을 때",items:[
+    {id:"m1",t:"교과서 필사노트",kind:"self",sub:"교과서 분석 내용 전부 쓰기"},
+    {id:"m2",t:"기출문제 1세트",kind:"self",sub:"자기 학교 먼저 · 다음은 전국"}
+  ]}
+];
+/* 학생별로 빼는 항목: 이름 -> 항목 id 목록 */
+var SKIP = {"윤여름":["s6"],"조서인":["s6"]};
+function cardPick(cls,slot,name,date){
+  var d=date||iso(),v=CC.day&&CC.day[d]&&CC.day[d][name]&&CC.day[d][name][slot];if(v)return v;
+  var rg=CC.rg||[];for(var i=rg.length-1;i>=0;i--){var r=rg[i];if(r.slot===slot&&d>=r.from&&d<=r.to&&r.names.indexOf(name)>-1)return r.card}
+  v=CC.st&&CC.st[name]&&CC.st[name][slot];if(v)return v;
+  v=CC.cls&&CC.cls[cls]&&CC.cls[cls][slot];return v||"";
+}
+function itemsFor(cls,card,name,date){
+  var out;
+  if(CC&&CC.cards){var tid=cardPick(cls,card,name,date),tp=(tid&&tid!=="-")?CC.cards.filter(function(x){return x.id===tid})[0]:null,sk0=(CC.st&&CC.st[name]&&CC.st[name].skip)||[];out=(tp&&tp.items)?tp.items.filter(function(i){return !i.plus}).concat(tp.items.filter(function(i){return i.plus})):[];return sk0.length?out.filter(function(i){return sk0.indexOf(i.id)<0}):out}
+  if(card==="reg") out=CLASS_ITEMS[cls]||REGULAR;
+  else if(card==="fri"&&name&&FRI_BY[name]) out=FRI_BY[name];
+  else{var c=CARDS.filter(function(x){return x.id===card})[0];out=c?c.items:[]}
+  var ex=name&&SKIP[name];
+  return ex?out.filter(function(i){return ex.indexOf(i.id)<0}):out;
+}
+/* 금요일 목록: 학생 이름 -> 목록. 여기 없는 학생은 금요일 칸이 비어 있음 */
+var FRI_A = [
+  {id:"s7",t:"비단챌 채점 · 말하기 테스트",kind:"auto"},
+  {id:"s3",t:"V시그널",kind:"auto"},
+  {id:"f3",t:"문법 워크북 풀기",kind:"self"},
+  {id:"f4",t:"클카 문법 오답노트",kind:"self"},
+  {id:"f5",t:"클카 단어 누적복습",kind:"self"},
+  {id:"f6",t:"클카 독해 TEST",kind:"self"}
+];
+var FRI_BY = {};
+["신도건","김동권","김이한","박윤수","민윤찬","이상윤","김은찬","이연서","이재인","조은유","김예슬","류이안","노예린","김지율","노지훈","이재빈","연휘건"].forEach(function(n){FRI_BY[n]=FRI_A});
+/* ---------- 서버 설정: 선생님 관리 탭에서 바꾼 명단 ---------- */
+var CFGKEY={date:"2000-01-03",name:"_설정",card:"cfg"};
+var CFG={rs:{},u:0}, CFGP=false;
+var ROSTER0=JSON.parse(JSON.stringify(ROSTER)), SKIP0=JSON.parse(JSON.stringify(SKIP)), FRI0=Object.keys(FRI_BY);
+function smpInject(){ROSTER={"M중1B":["샘플1","샘플2"]};GROUPS={}}
+function noS(r){var o={},k;for(k in r)o[k]=Array.isArray(r[k])?r[k].filter(function(x){return !/^샘플/.test(x)}):r[k];return o}
+if(SMP)smpInject();
+function cfgNow(){return {r:noS(ROSTER),s:SKIP,f:Object.keys(FRI_BY),rs:CFG.rs||{},u:CFG.u||0}}
+function cfgApply(c){
+  if(!c||typeof c!=="object"||!c.r||typeof c.r!=="object")return false;
+  var r={},any=false,k;
+  for(k in ROSTER0){var a=c.r[k];r[k]=Array.isArray(a)?a.filter(function(x){return typeof x==="string"&&x&&x!=="열람"}):[];if(r[k].length)any=true}
+  for(k in c.r)if(!(k in r)&&Array.isArray(c.r[k]))r[k]=c.r[k].filter(function(x){return typeof x==="string"&&x&&x!=="열람"});
+  if(!any)return false;
+  ROSTER=r;if(SMP)smpInject();
+  SKIP=(c.s&&typeof c.s==="object"&&!Array.isArray(c.s))?c.s:{};
+  FRI_BY={};(Array.isArray(c.f)?c.f:FRI0).forEach(function(n){FRI_BY[n]=FRI_A});
+  CFG.rs=(c.rs&&typeof c.rs==="object")?c.rs:{};CFG.u=+c.u||0;
+  return true;
+}
+function cfgCache(){try{return JSON.parse(localStorage.getItem("bd-cfg")||"null")}catch(e){return null}}
+function cfgReset(){
+  var n=localStorage.getItem("bd-name");if(!n||n==="열람"||!CFG.rs||!CFG.rs[n])return false;
+  var cur=+localStorage.getItem("bd-rs|"+n)||0;if(+CFG.rs[n]<=cur)return false;
+  localStorage.setItem("bd-rs|"+n,String(CFG.rs[n]));
+  var del=[],i,k;for(i=0;i<localStorage.length;i++){k=localStorage.key(i);if(k.indexOf("bd-chk|"+n+"|")===0||k==="bd-carry|"+n)del.push(k)}
+  del.forEach(function(x){localStorage.removeItem(x)});localStorage.setItem("bd-owner","__reset");
+  return true;
+}
+function cfgFetch(cb){
+  fetch(SRV+"?a=get&date="+CFGKEY.date+"&name="+encodeURIComponent(CFGKEY.name)).then(function(r){return r.json()}).then(function(j){
+    var s=j&&j.ok&&j.chk&&j.chk.cfg&&j.chk.cfg.j;if(!s||CFGP){cb&&cb(false);return}
+    var c;try{c=JSON.parse(s)}catch(e){cb&&cb(false);return}
+    var same=(s===localStorage.getItem("bd-cfg"));
+    if(!cfgApply(c)){cb&&cb(false);return}
+    try{localStorage.setItem("bd-cfg",s)}catch(e){}
+    var rs=cfgReset();cb&&cb(!same||rs);
+  }).catch(function(){cb&&cb(false)});
+}
+function cfgPush(){
+  var s=localStorage.getItem("bd-cfg");if(!s)return;
+  post({a:"put",date:CFGKEY.date,cls:"",name:CFGKEY.name,card:CFGKEY.card,chk:{j:s}}).then(function(){CFGP=false;toast("저장됨")}).catch(function(){CFGP=true;toast("저장 실패, 다시 시도합니다")});
+}
+function cfgSave(){if(SMP)return;CFG.u=Date.now();try{localStorage.setItem("bd-cfg",JSON.stringify(cfgNow()))}catch(e){}CFGP=true;toast("저장 중");cfgPush()}
+cfgApply(cfgCache());
+var TT={t:{},o:[],u:0}, TTK={date:"2000-01-05",name:"_시간표",card:"tt"}, TTP=false;
+var DG={"월수":"월·수·금","화목":"화·목·금"};
+var SLOTS={"월수":[["15:20","16:50"],["17:00","18:30"],["18:40","20:10"],["20:20","22:10"]],"화목":[["15:10","16:40"],["17:00","18:30"],["18:40","20:10"],["20:20","22:10"]]};
+var SWC=["#F6A98C","#E8B000","#2E9E5B","#E8751A","#2B3A8C","#D6336C","#0B8A9B","#5B6B62"];
+var GCOL={"초":"#F6A98C","중1":"#E8B000","중2":"#2E9E5B","중3":"#E8751A","고":"#2B3A8C"};
+function gradeOf(c){var m=String(c).match(/(초|중|고)\s*(\d)/);if(!m)return "";return m[1]==="초"?"초":m[1]==="중"?"중"+m[2]:"고"}
+function colOf(c){var t=TT.t[c];if(t&&t.c)return t.c;return GCOL[gradeOf(c)]||"#5B6B62"}
+function dayOf(c){var t=TT.t[c];if(t&&t.d)return t.d;return /^M/.test(c)?"월수":/^T/.test(c)?"화목":""}
+function tm(s){var p=String(s||"0:0").split(":");return (+p[0]||0)*60+(+p[1]||0)}
+var GN=["","초1","초2","초3","초4","초5","초6","중1","중2","중3","고1","고2","고3"];
+function SYR(){var d=new Date();return d.getMonth()>=2?d.getFullYear():d.getFullYear()-1}
+function gNow(nm){var p=(TT.p||{})[nm];if(!p||!p.g||!p.y)return 0;return p.g+SYR()-p.y}
+function gTxt(nm){var g=gNow(nm);return g>12?"졸업":g<1?"":GN[g]}
+function pTxt(nm){var p=(TT.p||{})[nm],g=gTxt(nm);return [p&&p.s||"",g].filter(Boolean).join(" · ")}
+function setProf(nm,s,g){if(!TT.p)TT.p={};var o=TT.p[nm]||{s:"",g:0,y:0};if(s!==null)o.s=String(s).trim().slice(0,14);if(g!==null){o.g=g;o.y=g?SYR():0}TT.p[nm]=o}
+function schools(){var m={},n;for(n in TT.p)if(TT.p[n].s)m[TT.p[n].s]=1;return Object.keys(m).sort(function(a,b){return a.localeCompare(b,"ko")})}
+function gDef(c){var m=String(c).match(/(초|중)(\d)/);if(!m)return 0;return m[1]==="초"?+m[2]:6+(+m[2])}
+function findCls(nm){for(var c in ROSTER)if(ROSTER[c].indexOf(nm)>-1)return c;return ""}
+function ttNorm(c){
+  var r={t:{},o:[],p:{},u:0},k;if(!c||typeof c!=="object")return r;
+  if(c.t&&typeof c.t==="object")for(k in c.t){var x=c.t[k];if(x&&typeof x==="object")r.t[k]={d:(x.d==="월수"||x.d==="화목")?x.d:"",s:/^\d\d:\d\d$/.test(x.s||"")?x.s:"",e:/^\d\d:\d\d$/.test(x.e||"")?x.e:"",c:/^#[0-9a-fA-F]{6}$/.test(x.c||"")?x.c:""}}
+  if(Array.isArray(c.o))c.o.forEach(function(x){if(x&&typeof x.n==="string"&&x.n)r.o.push({n:x.n,c:typeof x.c==="string"?x.c:"",at:typeof x.at==="string"?x.at:"",sk:Array.isArray(x.sk)?x.sk:[],fr:!!x.fr})});
+  if(c.p&&typeof c.p==="object")for(k in c.p){var q=c.p[k];if(q&&typeof q==="object"){var gg=Math.round(+q.g),yy=Math.round(+q.y);r.p[k]={s:typeof q.s==="string"?q.s.slice(0,14):"",g:gg>=1&&gg<=12?gg:0,y:yy>2000&&yy<2100?yy:0}}}
+  r.u=+c.u||0;return r;
+}
+function ttCache(){try{return JSON.parse(localStorage.getItem("bd-tt")||"null")}catch(e){return null}}
+TT=ttNorm(ttCache());
+function ttFetch(cb){
+  if(TTP){cb&&cb(false);return}
+  fetch(SRV+"?a=get&date="+TTK.date+"&name="+encodeURIComponent(TTK.name)).then(function(r){return r.json()}).then(function(j){
+    var s=j&&j.ok&&j.chk&&j.chk.tt&&j.chk.tt.j;if(!s||TTP){cb&&cb(false);return}
+    var same=(s===localStorage.getItem("bd-tt")),c;try{c=JSON.parse(s)}catch(e){cb&&cb(false);return}
+    TT=ttNorm(c);try{localStorage.setItem("bd-tt",s)}catch(e){}
+    cb&&cb(!same);
+  }).catch(function(){cb&&cb(false)});
+}
+function ttPush(){
+  var s=localStorage.getItem("bd-tt");if(!s)return;
+  post({a:"put",date:TTK.date,cls:"",name:TTK.name,card:TTK.card,chk:{j:s}}).then(function(){
+    return fetch(SRV+"?a=get&date="+TTK.date+"&name="+encodeURIComponent(TTK.name)+"&v="+Date.now()).then(function(r){return r.json()});
+  }).then(function(j){
+    var g=j&&j.ok&&j.chk&&j.chk.tt&&j.chk.tt.j;
+    if(g!==s)throw 0;
+    if(localStorage.getItem("bd-tt")===s){TTP=false;toast("저장됨")}
+  }).catch(function(){TTP=true;toast("저장 실패, 다시 시도합니다")});
+}
+function ttSave(){TT.u=Date.now();try{localStorage.setItem("bd-tt",JSON.stringify(TT))}catch(e){}TTP=true;toast("저장 중");ttPush()}
+setInterval(function(){if(TTP)ttPush()},15000);
+function cardsCache(){try{return JSON.parse(localStorage.getItem("bd-cards")||"null")}catch(e){return null}}
+function cardsApply(c){if(!c||typeof c!=="object"||!Array.isArray(c.cards))return false;CC=c;return true}
+function cardsFetch(cb){
+  fetch(SRV+"?a=get&date=2000-01-04&name="+encodeURIComponent("_카드")).then(function(r){return r.json()}).then(function(j){
+    var s=j&&j.ok&&j.chk&&j.chk.cards&&j.chk.cards.j;if(!s||s===localStorage.getItem("bd-cards")){cb&&cb(false);return}
+    var c;try{c=JSON.parse(s)}catch(e){cb&&cb(false);return}
+    if(!cardsApply(c)){cb&&cb(false);return}
+    try{localStorage.setItem("bd-cards",s)}catch(e){}
+    cb&&cb(true);
+  }).catch(function(){cb&&cb(false)});
+}
+cardsApply(cardsCache());
+setInterval(function(){if(CFGP)cfgPush()},15000);
+var IDLE_MIN = 10;
+function toast(s){var e=document.getElementById("sv");if(!e){e=document.createElement("div");e.id="sv";document.body.appendChild(e)}e.textContent=s;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.opacity=0},1800)}
+var SRV = "https://script.google.com/macros/s/AKfycbyGjwU2UXP8hoRLn0VThkus7bj_ZnGc12ByvFXuFDVtPSz-GmyumnDd2CkLSBWJw81I/exec";
+var T = /[?&]t=1/.test(location.search);
+var PH = false;
+try{if(/[?&]p=0/.test(location.search))localStorage.removeItem("bd-phone");else if(/[?&]p=1/.test(location.search))localStorage.setItem("bd-phone","1");PH=!T&&localStorage.getItem("bd-phone")==="1"}catch(e){}
+if(T){document.title="EM관제실";
+  ["application-name","apple-mobile-web-app-title"].forEach(function(n){var m=document.querySelector('meta[name="'+n+'"]');if(m)m.content="EM관제실"});
+  var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content="#0D1E30";
+  }
+
+function iso(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+function hm(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
+function stampT(m,id){var v=hm();if(m[id])m["t_"+id]=v;else delete m["t_"+id];m.tlt=v;if(!m.tin)m.tin=v}
+function syncQ(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);post(b).catch(function(){qadd(b)})}
+var AL={vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"문장 엑스레이",rd:"독해33권",bd:"비단챌",m1:"M1 리딩",m2:"M2 리딩",gk1:"대화문 기출 중1",gk2:"대화문 기출 중2",dv:"데일리보카",dd:"더블보카",g2v1:"중등 문법 기출"};
+function appLine(k,v){var o={};try{o=JSON.parse(v)}catch(e){}var p=[];if(o.d)p.push(((k==="a_m1"||k==="a_m2")?"Reading ":k==="a_xr"?"분석 ":k==="a_g2v1"?"단원 ":"Day ")+o.d);if(o.m!=null)p.push("실수 "+o.m+"개");if(k!=="a_ve"&&k!=="a_rd"){if(o.p!=null)p.push(o.p+"%");if(o.ok!=null)p.push(o.ok?"통과":"한번 더")}if(o.n)p.push(o.n+"회");if(o.s)p.push(Math.max(1,Math.round(o.s/60))+"분");if(o.t)p.push(o.t);/* 261118: 더블보카는 그날 한 일을 차례로 보여 준다(학습 끝, 시험 점수 …) */var ls2="";if(k==="a_dd"&&Array.isArray(o.l)&&o.l.length)ls2=o.l.map(function(x){return '<div style="padding:2px 0 0 10px;font-size:13px;color:#333">'+esc(String(x.w||""))+(x.t?' <span style="color:#888">'+esc(x.t)+'</span>':'')+'</div>'}).join("");return '<div style="padding:6px 0;border-top:1px solid #eee;font-size:14px">'+esc(AL[k.slice(2)]||k.slice(2))+' <span style="color:#555">'+p.join(" · ")+'</span>'+ls2+'</div>'}
+function post(b){return fetch(SRV,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(b),keepalive:true}).then(function(r){return r.json()}).then(function(j){if(!j||!j.ok)throw 0})}
+function qget(){var a=[];try{a=JSON.parse(ls("bd-q")||"[]")}catch(e){}return a}
+function qkey(b){return b.date+"|"+b.name+"|"+b.card}
+function qadd(b){var a=qget().filter(function(x){return qkey(x)!==qkey(b)});a.push(b);ls("bd-q",JSON.stringify(a.slice(-60)))}
+function qdrop(b){ls("bd-q",JSON.stringify(qget().filter(function(x){return qkey(x)!==qkey(b)})))}
+function flush(){var a=qget();if(!a.length)return;ls("bd-q","[]");a.forEach(function(b){post(b).catch(function(){qadd(b)})})}
+function sync(n,c,card,m){var b={a:"put",date:iso(),cls:c,name:n,card:card,chk:m};qdrop(b);toast("저장 중");post(b).then(function(){toast("저장됨");flush()}).catch(function(){qadd(b);toast("연결 확인 중, 곧 다시 저장")})}
+var PEN={};
+function penSet(n,j){
+  var s=j&&j.ok&&j.chk&&j.chk.pen&&j.chk.pen.j,o=null;try{o=s?JSON.parse(s):null}catch(e){}
+  var c=(o&&o.d===iso()&&o.c&&typeof o.c==="object")?o.c:{};
+  var ch=JSON.stringify(c)!==JSON.stringify(PEN[n]||{});PEN[n]=c;return ch;
+}
+function penPull(n,cb){
+  fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(n)+"&v="+Date.now()).then(function(r){return r.json()}).then(function(j){
+    var ch=penSet(n,j);cb&&cb(ch);
+  }).catch(function(){});
+}
+/* 261118: 페널티를 '무엇 때문에 걸렸는지'(예: 단어 숙제 X)별로 묶어 작은 제목을 달고, 그 아래에 해야 할 일을 보여 준다 */
+var PENNM={w:"단어",g:"문법",b:"비단챌",l:"듣기",v:"보카링크",r:"독해책",m:"문법책"};
+function penWhy(trg){var p=String(trg||"").split(":"),nm=PENNM[p[0]];if(!nm)return "";return nm+" 숙제 "+(p[1]==="T"?"△":"X")}
+function penItems(n){
+  var c=PEN[n]||{},on={},k,m,out=[],seen={};
+  for(k in c){m=k.match(/^(.*?)(\d+)$/);if(m)on[m[1]+":"+c[k]]=(on[m[1]+":"+c[k]]||0)+1}
+  ((CC&&CC.cards)||[]).forEach(function(cd){if(cd.tag!=="페널티")return;(cd.items||[]).forEach(function(it){if(it.trg&&on[it.trg]&&!seen[it.id]){seen[it.id]=1;var o={},q;for(q in it)o[q]=it[q];o.why=penWhy(it.trg);out.push(o)}})});
+  var ord=[];out.forEach(function(o){if(ord.indexOf(o.trg)<0)ord.push(o.trg)});out.sort(function(x,y){return ord.indexOf(x.trg)-ord.indexOf(y.trg)});
+  return out;
+}
+function pull(n,c){
+  /* 261117: "이어서 할 차례"·"지난 시간에 못 끝낸 것"·페널티는 오늘 기록의 답을 기다리지 않고 같이 받기 시작한다(전에는 오늘 기록이 온 뒤에야 받기 시작했다) */
+  try{if(window.__bWatchName)window.__bWatchName(n)}catch(e9){}
+  loadLast(n);carryLoad(n,c);basketLoad(n,c);
+  fetch(SRV+"?a=get&date="+iso()+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+    if(!j||!j.ok)return;var ch=false;
+    for(var card in j.chk){var loc=chk(n,card),srv=j.chk[card],mg={},k;for(k in loc)mg[k]=loc[k];for(k in srv){if(srv[k]&&!mg[k]){mg[k]=srv[k];ch=true}}ls(key(n,card),JSON.stringify(mg))}
+    var dc=defCard(c,n),m2=chk(n,dc);if(!m2.tin){m2.tin=hm();ls(key(n,dc),JSON.stringify(m2));syncQ(n,c,dc,m2)}
+    if(ch&&ls("bd-name")===n)render();
+  }).catch(function(){});
+}
+/* ---------- 선생님 화면 (?t=1) ---------- */
+var TS = {cls:null, date:null, rows:null, open:null, hist:{}, err:"", mode:"r", mo:null, cf:null};
+function tpw(){return ls("bt-pw")||""}
+function dstep(s,n){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]+n);return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+function dlabel(s){var p=s.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return (d.getMonth()+1)+"/"+d.getDate()+"("+"일월화수목금토"[d.getDay()]+")"}
+function tcard(s){return slotOf(s)}
+function mon(s){var p=s.split("-"),w=new Date(+p[0],+p[1]-1,+p[2]).getDay();return dstep(s,w===0?-6:1-w)}
+function dow(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]).getDay()}
+/* 261117: 여러 날짜를 요청 하나(a=days)로 받는다. 전에는 날짜마다 요청을 따로 보내 모두 올 때까지 기다렸다. 서버가 이 요청을 모르면 예전 방식으로 받는다 */
+/* 261122: 선생님 시간표가 이번 주 기록을 읽을 때 구글 서버 대신 Firebase 에서 바로 읽는다(학생 이름 x 날짜를 100개씩 묶어 한 번에).
+   2026-11-11 이전 날짜이거나 어느 단계든 실패하면 예전 방식(구글 서버)으로 받는다. 구글 서버 결과와 Firebase 결과는 이번 주 200건 전부 같음을 확인했다. */
+var FSD0="2026-11-11";
+function fsDays(ds,only){
+  try{
+    var names=[],seen={};Object.keys(ROSTER).forEach(function(c){(ROSTER[c]||[]).forEach(function(n){if(!seen[n]&&!/^샘플/.test(n)){seen[n]=1;names.push(n)}})});if(only&&only.length)names=names.filter(function(n){return only.indexOf(n)>-1});
+    var DBP="projects/h-roadmap/databases/(default)/documents/board/",docs=[],parts=[],i;
+    ds.forEach(function(d){names.forEach(function(n){docs.push(DBP+d+"|"+n)})});
+    for(i=0;i<docs.length;i+=100)parts.push(docs.slice(i,i+100));
+    var ac=window.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},9000):0;
+    return Promise.all(parts.map(function(pd){
+      return fetch("https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:batchGet",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({documents:pd}),signal:ac?ac.signal:undefined}).then(function(r){return r.ok?r.json():null})
+    })).then(function(arr){
+      clearTimeout(tm);
+      var rows={},bad=false;ds.forEach(function(d){rows[d]=[]});
+      arr.forEach(function(a){
+        if(!Array.isArray(a)){bad=true;return}
+        a.forEach(function(x){
+          if(x.found){
+            var k=x.found.name.split("/board/")[1]||"",p=k.indexOf("|"),d=k.slice(0,p),n=k.slice(p+1),f=x.found.fields||{},c={};
+            try{c=JSON.parse((f.chk&&f.chk.stringValue)||"{}")}catch(e){bad=true;return}
+            if(!rows[d]){bad=true;return}
+            rows[d].push({cls:(f.cls&&f.cls.stringValue)||"",name:n,chk:c,t:(f.t&&f.t.stringValue)||""});
+          }else if(!x.missing)bad=true;
+        });
+      });
+      return bad?null:rows;
+    }).catch(function(){clearTimeout(tm);return null});
+  }catch(e){return Promise.resolve(null)}
+}
+function tdays(ds,only){
+  var fs=ds.filter(function(d){return d>=FSD0||d==="2000-01-01"}),rest=ds.filter(function(d){return fs.indexOf(d)<0});
+  if(!fs.length)return tdaysApps(ds);
+  return fsDays(fs,only).then(function(m){
+    if(!m)return tdaysApps(ds);
+    var a=fs.map(function(d){return {d:d,j:{ok:true,rows:m[d]||[]}}});
+    if(!rest.length)return a;
+    return tdaysApps(rest).then(function(b){return a.concat(b)});
+  });
+}
+function tdaysApps(ds){
+  var pw=encodeURIComponent(tpw());
+  var old=function(){return Promise.all(ds.map(function(d){return fetch(SRV+"?a=day&date="+d+"&pw="+pw).then(function(r){return r.json()}).then(function(j){return {d:d,j:j}})}))};
+  return fetch(SRV+"?a=days&dates="+ds.join(",")+"&pw="+pw).then(function(r){return r.json()}).then(function(j){
+    if(j&&j.ok&&j.days)return ds.map(function(d){return {d:d,j:{ok:true,rows:j.days[d]||[]}}});
+    if(j&&j.err==="pw")return ds.map(function(d){return {d:d,j:j}});
+    return old();
+  },function(){return old()});
+}
+var TLN=0,TLAST=Date.now();
+/* 261117 밤(선생님 뜻): 선생님 화면은 1분마다 저절로 읽지 않는다. 선생님이 화면을 만질 때(마지막으로 받은 지 1분이 넘었으면 한 번),
+   화면으로 돌아왔을 때, 오른쪽 아래 "새로 받기"를 눌렀을 때만 새로 받는다. 가만히 켜 둔 화면은 Firebase 를 읽지 않는다 */
+function tfresh(force){
+  if(!T||TS.mode==="m"||!tpw())return;
+  var now=Date.now();if(!force&&now-TLAST<60000)return;
+  TLAST=now;if(force)TLN=4;
+  tload(true);
+  var e=document.getElementById("trf");if(e)e.textContent="새로 받기 · "+hm();
+}
+function tHook(){try{
+  var rb=document.createElement("button");rb.id="trf";rb.type="button";rb.textContent="새로 받기 · "+hm();
+  rb.style.cssText="position:fixed;right:12px;bottom:12px;z-index:50;border:1px solid #cfd8da;background:#fff;color:#1c2b2d;border-radius:999px;padding:9px 14px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.14)";
+  rb.addEventListener("click",function(e){e.stopPropagation();tfresh(true)});
+  document.body.appendChild(rb);
+  document.addEventListener("click",function(e){if(e.target&&e.target.id==="trf")return;tfresh(false)},true);
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")tfresh(false)});
+}catch(e){}}
+function tload(silent){
+  if(TS.mode==="m"){return}
+  if(!TS.date)TS.date=iso();if(!TS.cls)TS.cls=Object.keys(ROSTER)[0];
+  if(!tpw()){TS.rows=null;render();return}
+  var m=mon(TS.date),ds=[],i,td=iso();
+  for(i=0;i<7;i++){var x=dstep(m,i);if(x<=td)ds.push(x)}
+  if(mon(td)===m){var q;for(q=1;q<=4;q++){var xq=dstep(td,-q);if(ds.indexOf(xq)<0)ds.push(xq)}}
+  ds.push("2000-01-01");
+  if(!silent){TS.wk={};TS.rows=null}
+  /* 261117 밤: 1분마다 조용히 새로 받을 때는 이번 주 전체가 아니라 오늘 날짜만 받는다(지난 날짜는 거의 안 바뀜).
+     학생별 최근 기록(2000-01-01)은 5번에 한 번만. 읽기 횟수를 크게 줄인다. 처음 열 때·주를 바꿀 때는 예전처럼 전부 받는다 */
+  var req=ds,part=false;
+  if(silent&&TS.wk&&TS.wk["2000-01-01"]){TLN++;req=ds.filter(function(d){return d===td||(d==="2000-01-01"&&TLN%5===0)});part=true;if(!req.length)return}
+  var only=null;try{if(silent&&TS.mode==="r"&&TS.rv==="c"&&TS.cls&&ROSTER[TS.cls]&&ROSTER[TS.cls].length&&mon(TS.date)===mon(td)&&dow(td)>=1&&dow(td)<=4)only=ROSTER[TS.cls].slice()}catch(e0){only=null}
+  tdays(req,only).then(function(a){
+    var W=silent?{}:TS.wk,bad=false;
+    if(part){for(var k0 in TS.wk)W[k0]=TS.wk[k0]}
+    if(!silent)TS.err="";
+    a.forEach(function(o){
+      if(!o.j.ok){bad=true;if(!silent&&o.j.err==="pw"){ls("bt-pw",null);TS.err="비밀번호가 맞지 않음"}return}
+      var mp={};o.j.rows.forEach(function(x){mp[x.name]=x});if(only&&TS.wk&&TS.wk[o.d]){var bs=TS.wk[o.d];for(var bk in bs){if(!mp[bk])mp[bk]=bs[bk]}}W[o.d]=mp;
+    });
+    if(silent){if(bad||JSON.stringify(W)===JSON.stringify(TS.wk))return;TS.wk=W;TS.rows=W;if(!editing())render();return}
+    TS.rows=TS.wk;render();
+  }).catch(function(){if(silent)return;TS.err="불러오지 못함";TS.rows=TS.wk;render()});
+}
+function trow(cls,name,card){
+  var items=itemsFor(cls,card,name),row=TS.rows&&TS.rows[name],ck=(row&&row.chk&&row.chk[card])||{};
+  var rq=items.filter(function(i){return !i.plus}),n=rq.filter(function(i){return ck[i.id]}).length;
+  return {name:name,items:items,ck:ck,n:n,t:rq.length,seen:!!row,ap:(row&&row.chk&&row.chk.app)||{}};
+}
+function isdone(r){return r.t>0&&r.n>=r.t}
+function aLine(k,v){var o={};try{o=JSON.parse(v)}catch(e){}var p=[];if(o.d)p.push(((k==="a_m1"||k==="a_m2")?"Reading ":k==="a_xr"?"분석 ":k==="a_g2v1"?"단원 ":"Day ")+o.d);else if(o.w)p.push(o.w);else p.push("7문장 기록 전");if(o.m!=null)p.push("실수 "+o.m+"개");if(k!=="a_ve"&&k!=="a_rd"){if(o.p!=null)p.push(o.p+"%");if(o.ok!=null)p.push(o.ok?"통과":"한번 더")}if((k==="a_m1"||k==="a_m2")&&!(+o.n>0)){p.push(Math.max(1,Math.round((+o.s||0)/60))+"분");p.push("미완료")}return '<div style="margin:4px 0;font-size:14px">'+esc(AL[k.slice(2)]||k.slice(2))+' '+p.join(" · ")+'</div>'}
+function oLink(o){return ""}
+function lLine(v){var o={};try{o=JSON.parse(v)}catch(e){}return o.w?'<div style="margin:4px 0;font-size:14px">'+esc(o.w)+oLink(o)+'</div>':""}
+function lastH(nm){
+  var lw=TS.wk&&TS.wk["2000-01-01"],row=lw&&lw[nm],ap=(row&&row.chk&&row.chk.app)||{};
+  var ks=Object.keys(ap).filter(function(k){return k.indexOf("l_")===0});
+  var hs=ks.map(function(k){var o={};try{o=JSON.parse(ap[k])}catch(e){}return o.w?'<div style="font-size:14px;margin:2px 0">'+(o.nx?'<span style="color:#2f8f6b;font-weight:700">다음 '+esc(o.nx)+'</span>':esc(o.w))+oLink(o)+'</div>':""}).join("");
+  return "";
+}
+/* 261118 선생님 화면 3구역: (1) 비단챌 숙제 기록(마지막 수업일~오늘) (2) 오늘 기록 (3) 주중 미완료(독해·비단챌·M1/M2·V시그널, 중1은 보카링크·데일리보카). 오류가 나도 화면 전체는 그대로 */
+var KEYRE=/비단챌|V시그널|독해|M1|M2|보카링크|데일리보카/;
+function hasBdItem(nm){try{var c=clsOf(nm),td=iso();return ["reg","fri"].some(function(cd){return itemsFor(c,cd,nm,td).some(function(i){return /비단챌/.test(String(i.t||""))})})}catch(e){return false}}
+function bdT(nm,td){try{
+  if(!hasBdItem(nm)||!TS.wk)return "";
+  /* 261118 선생님 뜻: 비단챌 숙제는 수업 들어오기 전에 한 것만 숙제로 인정. 월수반 15:20·화목반 15:10·금요일 14:00 이후 기록은 수업 중에 한 것이라 숙제는 △ */
+  var cd=dayOf(clsOf(nm))||"",cut=(/화|목/.test(cd)&&!/월|수/.test(cd))?"15:10":"15:20",ok=[],late=[],i,d;
+  for(i=0;i<=4;i++){
+    d=i?dstep(td,-i):td;
+    var row=TS.wk[d]&&TS.wk[d][nm],ap=(row&&row.chk&&row.chk.app)||{},ob=null;
+    if(i>0){var m0=(row&&row.chk&&row.chk[slotOf(d)])||{};if(m0.tin)break}
+    try{ob=ap.a_bd?JSON.parse(ap.a_bd):null}catch(e0){}
+    if(ob&&(+ob.s>0||+ob.n>0||ob.w)){
+      var L=(Array.isArray(ob.l)&&ob.l.length)?ob.l:[{w:String(ob.w||"비단챌 접속"),t:String(ob.t||"")}],w=dow(d),cls=(w>=1&&w<=4&&cd.indexOf("일월화수목금토".charAt(w))>-1)||w===5,cu=(w===5)?"14:00":cut;
+      L.forEach(function(x){var t=String(x.t||""),it={d:d,w:String(x.w||""),t:t,ac:false},tn=((row&&row.chk&&row.chk[slotOf(d)])||{}).tin||"";if(t&&tn&&t>=tn)it.ac=true;if(cls&&t&&t>=cu){it.ac=true;late.push(it)}else ok.push(it)});
+    }
+  }
+  var ln=function(x,c){return '<div style="margin-top:4px"><span style="font-size:14px;font-weight:700;color:'+c+'">'+esc(x.w)+'</span> <span style="font-size:12px;color:#5b6b62">'+esc(dlabel(x.d)+(x.t?" "+x.t:""))+'</span>'+(x.ac?' <span style="font-size:11px;font-weight:800;color:#fff;background:#8a5a00;border-radius:4px;padding:1px 5px">학원에서</span>':'')+'</div>'};
+  if(!ok.length&&!late.length)return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #c2410c;background:#fff4ec"><div style="font-size:13px;font-weight:800;color:#c2410c">비단챌 숙제 · 수업 전 기록 없음</div></div>';
+  if(!ok.length)return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #b7791f;background:#fff7dc"><div style="font-size:13px;font-weight:800;color:#8a5a00">비단챌 숙제 △ · 학원에서 한 기록만 있음</div>'+late.map(function(x){return ln(x,"#8a5a00")}).join("")+'</div>';
+  return '<div style="margin:8px 0 2px;padding:8px 10px;border-left:4px solid #1f7a5c;background:#effaf5"><div style="font-size:13px;font-weight:800;color:#1f7a5c">비단챌 숙제 · 수업 전 기록</div>'+ok.map(function(x){return ln(x,"#1f6f50")}).join("")+(late.length?'<div style="margin-top:6px;font-size:12px;font-weight:800;color:#8a5a00">학원에서 한 기록 (숙제 아님)</div>'+late.map(function(x){return ln(x,"#8a5a00")}).join(""):"")+'</div>';
+}catch(e){return ""}}
+function carryT(nm,m,td){try{
+  if(!TS.wk)return "";
+  if(/조성니|윤여름/.test(nm))return "";
+  var c=clsOf(nm),end=(mon(td)===m)?td:dstep(m,7),d,by={},order=[],n=0;
+  for(d=m;d<end;d=dstep(d,1)){
+    var row=TS.wk[d]&&TS.wk[d][nm];if(!row||!row.chk)continue;
+    var card=slotOf(d),mk=row.chk[card]||{},ap=row.chk.app||{};
+    if(!mk.tin)continue;
+    itemsFor(c,card,nm,d).forEach(function(it){
+      if(it.plus)return;var t=String(it.t||"");if(!KEYRE.test(t)||/비단챌/.test(t)||mk[it.id])return;
+      if(/보카링크/.test(t)&&ap.a_vl)return;if(/데일리보카/.test(t)&&ap.a_dv)return;
+      if(!by[d]){by[d]=[];order.push(d)}by[d].push(t.replace(/\s*\(.*$/,""));n++;
+    });
+  }
+  var fri=new Date().getDay()===5,pk="bk|"+nm+"|"+m;
+  if(!n)return '<div style="margin-top:8px;font-size:13px;color:#8a8a8a">주중 미완료 없음</div>';
+  return '<details data-pk="'+esc(pk)+'"'+((TS.po&&TS.po[pk]!==undefined)?(TS.po[pk]?' open':''):(fri?' open':''))+' style="margin-top:8px;border-radius:10px;background:'+(fri?'#fff1dc':'#fff8ec')+';border:1px solid #e8c48a;padding:2px 10px"><summary style="cursor:pointer;font-size:14px;font-weight:800;color:#b45309;padding:8px 0">주중 미완료 끝내기 '+n+'</summary>'+order.map(function(x){return '<div style="margin:2px 0 8px"><b style="font-size:13px">'+dlabel(x)+'</b>'+by[x].map(function(t){return '<div style="font-size:14px;margin:2px 0 0 8px">· '+esc(t)+'</div>'}).join("")+'</div>'}).join("")+'</details>';
+}catch(e){return ""}}
+function weekH(nm,m,td,vd){vd=vd||td;
+  var out="",n=0,i,pst=[],ht=false,pd="";
+  for(i=6;i>=0;i--){
+    var d=dstep(m,i);if(d>td)continue;
+    var row=TS.wk[d]&&TS.wk[d][nm],ap=(row&&row.chk&&row.chk.app)||{},ls_=[];
+    Object.keys(ap).forEach(function(k){
+      if(k.indexOf("l_")===0){var x=lLine(ap[k]);if(x)ls_.push([k.slice(2),x])}
+      else if(k.indexOf("a_")===0&&!ap["l_"+k.slice(2)]){var lw0=TS.wk["2000-01-01"]&&TS.wk["2000-01-01"][nm],la=(lw0&&lw0.chk&&lw0.chk.app&&lw0.chk.app["l_"+k.slice(2)])||"",lo={};try{lo=JSON.parse(la||"{}")}catch(e){}ls_.push([k.slice(2),(lo.w&&lo.d===d?lLine(la):aLine(k,ap[k]))])}
+    });
+    if(ls_.length){n++;var gm={},go=[];ls_.forEach(function(p){var an=AL[p[0]]||p[1].replace(/<[^>]+>/g,'').split(' ')[0]||p[0];if(!gm[an]){gm[an]=[];go.push(an)}gm[an].push(p[1])});var dh='<div style="margin-top:8px"><b>'+dlabel(d)+'</b>'+go.map(function(an){return '<div style="margin:6px 0 2px;font-size:14px;font-weight:800"><i style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin:0 7px 2px 1px;vertical-align:middle"></i>'+esc(an)+'</div>'+gm[an].map(function(h){var i=h.indexOf('>')+1,pre=h.slice(0,i),tx=h.slice(i);if(tx.indexOf(an)===0)tx=tx.slice(an.length).replace(/^\s+/,'');return pre+'· '+tx}).join("")}).join("")+'</div>';/* 261118: 오늘 기록만 펼치고 지난 날짜는 "지난 기록"으로 접는다(선생님 뜻: 지난 수업이 같이 떠서 헷갈림) */if(d===vd){out+=dh;ht=true}else pst.push([d,dh])}
+  }
+  if(pst.length){var pk=nm+"|"+m;pd='<details data-pk="'+esc(pk)+'"'+(TS.po&&TS.po[pk]?' open':'')+' style="margin-top:10px;border-top:1px solid #eee;padding-top:6px"><summary style="cursor:pointer;font-size:14px;font-weight:700;color:#555;padding:6px 0">지난 기록 '+pst.length+'일</summary>'+pst.map(function(x){return x[1]}).join("")+'</details>'}
+  return {h:out,n:n,p:pd,t:ht};
+}
+function modeBar(){return '<div class="chips" style="margin:0 0 10px"><button class="chip'+(TS.mode==="r"?' on':'')+'" data-tm="r">기록</button><button class="chip'+(TS.mode==="m"?' on':'')+'" data-tm="m">관리</button></div>'}
+function allItemsOf(cls){return CLASS_ITEMS[cls]||REGULAR}
+function ttRows(){
+  var A=[],c;
+  for(c in ROSTER){var t=TT.t[c]||{};A.push({c:c,d:dayOf(c),s:t.s||"",e:t.e||""})}
+  var timed=A.filter(function(x){return x.d&&x.s}).sort(function(a,b){return tm(a.s)-tm(b.s)}),rows=[];
+  timed.forEach(function(x){var r=rows[rows.length-1];if(r&&tm(x.s)-r.m<=20)r.l.push(x);else rows.push({m:tm(x.s),l:[x]})});
+  return {rows:rows,un:A.filter(function(x){return !(x.d&&x.s)})};
+}
+function nOut(){return TT.o.filter(function(x){return !findCls(x.n)}).length}
+function blk(x){var c=colOf(x.c);return '<button class="blk" '+(TS.mode==="r"?'data-rc':'data-oc')+'="'+esc(x.c)+'" style="--bc:'+c+';--bb:'+c+'1A"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명</span><small>'+x.s+(x.e?'-'+x.e:'')+'</small></button>'}
+function qHtml(){
+  var q=(TS.q||"").trim();if(!q)return "";
+  var L=[],c;
+  for(c in ROSTER)ROSTER[c].forEach(function(n){if(n.indexOf(q)>-1)L.push({n:n,c:c})});
+  TT.o.forEach(function(x){if(x.n.indexOf(q)>-1&&!findCls(x.n))L.push({n:x.n,c:"",o:1})});
+  L.sort(function(a,b){return a.n.localeCompare(b.n,"ko")});
+  if(!L.length)return '<div class="empty">없음</div>';
+  return '<div class="tlist" style="margin-top:8px">'+L.slice(0,30).map(function(x){return '<div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:8px"><span class="nm" style="font-weight:700;font-size:16px;flex:1">'+esc(x.n)+'</span>'+(x.o?'<span class="pl z">퇴원</span><button class="ghost" data-rs="'+esc(x.n)+'">복귀</button>':'<span class="pl">'+esc(x.c)+'</span><button class="ghost" data-qo="'+esc(x.n)+'">열기</button>')+'</div>'}).join("")+'</div>';
+}
+function inkOf(h){var r=parseInt(h.substr(1,2),16),g=parseInt(h.substr(3,2),16),k=parseInt(h.substr(5,2),16);return (r*299+g*587+k*114)/1000>150?"#1b1b1b":"#fff"}
+var CAP=9;
+function wkGrid(){
+  var DAYS=[["월 · 수","월수"],["화 · 목","화목"]],cs=[],c,t,P=0.85,lo=900,hi=1380;
+  for(c in ROSTER){t=TT.t[c]||{};var d=dayOf(c);if(d&&t.s){var s=tm(t.s),e=t.e?tm(t.e):s+90;if(e<=s)e=s+90;cs.push({c:c,d:d,s:s,e:e})}}
+  cs.forEach(function(x){if(x.s<lo)lo=Math.floor(x.s/60)*60;if(x.e>hi)hi=Math.ceil(x.e/60)*60});
+  var H=(hi-lo)*P,at=TS.mode==="r"?"data-rc":"data-oc",h='<div class="wk"><div class="wkh" style="border-left:0"></div>'+DAYS.map(function(x){return '<div class="wkh">'+x[0]+'</div>'}).join("");
+  h+='<div class="wkt" style="height:'+H+'px">';
+  for(var m=lo;m<=hi;m+=60){var hh=m/60;h+='<i style="top:'+((m-lo)*P)+'px">'+(hh>12?hh-12:hh)+'</i>'}
+  h+='</div>';
+  DAYS.forEach(function(dd){
+    var list=cs.filter(function(x){return x.d===dd[1]}).sort(function(a,b){return a.s-b.s}),K=[],cur=null;
+    list.forEach(function(x){
+      if(!cur||x.s>=cur.end){cur={end:x.e,items:[],lanes:[]};K.push(cur)}
+      var li=0;while(cur.lanes[li]!==undefined&&cur.lanes[li]>x.s)li++;
+      cur.lanes[li]=x.e;x.lane=li;cur.items.push(x);if(x.e>cur.end)cur.end=x.e;
+    });
+    K.forEach(function(k){k.items.forEach(function(x){x.n=k.lanes.length})});
+    h+='<div class="wkc" style="height:'+H+'px;background-image:linear-gradient(var(--bd) 1px,transparent 1px);background-size:100% '+(60*P)+'px">';
+    list.forEach(function(x){
+      h+='<button class="wb" '+at+'="'+esc(x.c)+'" style="top:'+((x.s-lo)*P)+'px;height:'+((x.e-x.s)*P)+'px;left:'+(x.lane*100/Math.max(x.n,2))+'%;width:'+(100/Math.max(x.n,2))+'%;--bc:'+colOf(x.c)+';color:'+inkOf(colOf(x.c))+'"><b>'+esc(x.c)+'</b><span>'+ROSTER[x.c].length+'명 ('+(CAP-ROSTER[x.c].length)+')</span></button>';
+    });
+    h+='</div>';
+  });
+  return h+'</div>';
+}
+function mHome(){
+  var h="",R=ttRows();
+  h+='<input class="score" id="qs" type="text" placeholder="이름 검색 (가나다)" value="'+esc(TS.q||"")+'" style="width:100%;text-align:left;font-weight:500"><div id="qres">'+qHtml()+'</div>';
+  
+  h+=wkGrid();
+  if(R.un.length)h+='<div class="h">시간 미정</div><div class="chips">'+R.un.map(function(x){return '<button class="chip" '+(TS.mode==="r"?'data-rc':'data-oc')+'="'+esc(x.c)+'" style="border-left-color:'+colOf(x.c)+'">'+esc(x.c)+' '+ROSTER[x.c].length+'</button>'}).join("")+'</div>';
+  if(TS.mode==="r")return h;
+  h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">반 추가</div><div style="display:flex;gap:8px"><input class="score" id="ncn" type="text" placeholder="반 이름 (예: M중2D)" maxlength="8" style="flex:1;text-align:left"><button class="leave" data-na="1" style="margin:0;width:auto;padding:0 18px">추가</button></div></div>';
+  h+='<a class="ghost" href="/board/hq/cards/" style="display:block;text-align:center;text-decoration:none">카드 · 학생 지정 열기</a>';
+  return h;
+}
+function rowM(nm,cl){
+  var op=TS.mo===nm,sk=SKIP[nm]||[],fr=!!FRI_BY[nm],sel=TS.sel||{},h="";
+  h+='<div class="card" style="padding:12px 14px"><div style="display:flex;align-items:center;gap:8px"><button class="ghost" data-sl="'+esc(nm)+'" style="padding:6px 10px">'+(sel[nm]?'■':'□')+'</button><span class="nm" style="font-weight:700;font-size:17px;flex:1">'+esc(nm)+'</span>'+(pTxt(nm)?'<span class="pl z">'+esc(pTxt(nm))+'</span>':'')+(fr?'<span class="pl">금요일</span>':'')+(sk.length?'<span class="pl z">빼는 항목 '+sk.length+'</span>':'')+'<button class="ghost" data-mo="'+esc(nm)+'">'+(op?'닫기':'열기')+'</button></div>';
+  if(op){
+    h+='<div style="margin-top:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">학교 · 학년</div><input class="score" id="pschool" list="schl" maxlength="14" placeholder="학교" value="'+esc((TT.p[nm]||{}).s||"")+'" style="width:100%;text-align:left;font-weight:500"><datalist id="schl">'+schools().map(function(x){return '<option value="'+esc(x)+'">'}).join("")+'</datalist><div class="chips" style="margin-top:8px">'+GN.slice(1).map(function(x,i){return '<button class="chip'+(gNow(nm)===i+1?' on':'')+'" data-pg="'+(i+1)+'">'+x+'</button>'}).join("")+'</div></div>';
+    h+='<div style="margin-top:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">반 옮기기</div><div class="chips">'+cl.filter(function(c){return c!==TS.cls}).map(function(c){return '<button class="chip" data-mv="'+esc(c)+'">'+esc(c)+'</button>'}).join("")+'</div></div>';
+    if(!CC)h+='<div style="margin-top:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">금요일 목록</div><button class="chip'+(fr?' on':'')+'" data-fr="1">'+(fr?'금요일 목록 있음':'금요일 목록 없음')+'</button></div>';
+    if(!CC)h+='<div style="margin-top:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">오늘의 학습에서 뺄 항목</div><div class="chips" style="flex-wrap:wrap">'+allItemsOf(TS.cls).map(function(i){var off=sk.indexOf(i.id)>-1;return '<button class="chip'+(off?' on':'')+'" data-sk="'+i.id+'">'+esc(i.t.replace(/\s*\(.*$/,""))+(off?' · 뺌':'')+'</button>'}).join("")+'</div></div>';
+    h+='<div style="margin-top:12px"><div style="font-size:13px;color:#666;margin-bottom:6px">리셋 · 퇴원</div><div class="chips" style="flex-wrap:wrap">';
+    h+='<button class="chip" data-rt="today">'+(TS.cf==="today"?'한 번 더 누르면 지움':'오늘 체크 지우기')+'</button>';
+    h+='<button class="chip" data-rt="app">'+(TS.cf==="app"?'한 번 더 누르면 지움':'앱 기록 지우기')+'</button>';
+    h+='<button class="chip" data-rm="1">'+(TS.cf==="rm"?'한 번 더 누르면 퇴원':'퇴원 처리')+'</button></div></div>';
+  }
+  return h+'</div>';
+}
+function mCls(){
+  var c=TS.cls,t=TT.t[c]||{},d=dayOf(c),cl=Object.keys(ROSTER),sel=TS.sel||(TS.sel={}),h="";
+  var ns=Object.keys(sel).filter(function(n){return sel[n]&&ROSTER[c].indexOf(n)>-1});
+  h+='<button class="back" data-tv="t">‹ 시간표</button>';
+  h+='<div class="card" style="border-left:6px solid '+colOf(c)+';padding:12px 14px"><div style="font-size:20px;font-weight:700">'+esc(c)+' <span style="font-size:13px;color:#666">'+ROSTER[c].length+'명</span></div>';
+  h+='<div class="chips" style="margin-top:10px"><button class="chip'+(d==="월수"?' on':'')+'" data-sd="월수">월·수</button><button class="chip'+(d==="화목"?' on':'')+'" data-sd="화목">화·목</button></div>';
+  if(SLOTS[d])h+='<div class="chips" style="margin-top:10px">'+SLOTS[d].map(function(x,i){return '<button class="chip'+(t.s===x[0]&&t.e===x[1]?' on':'')+'" data-sp="'+i+'">'+x[0]+'-'+x[1]+'</button>'}).join("")+'</div>';
+  h+='<div style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="time" id="ts" value="'+(t.s||"")+'" class="score" style="width:120px"> ~ <input type="time" id="te" value="'+(t.e||"")+'" class="score" style="width:120px"></div>';
+  h+='<div class="chips" style="margin-top:10px">'+SWC.map(function(x){return '<button class="sw'+(colOf(c).toLowerCase()===x.toLowerCase()?' on':'')+'" data-sc="'+x+'" style="background:'+x+'"></button>'}).join("")+'<button class="ghost" data-sc="x">기본색</button></div></div>';
+  h+='<div class="chips" style="margin:0"><button class="ghost" data-sa="1">'+(ROSTER[c].length&&ns.length===ROSTER[c].length?'전체 해제':'이 반 전체 선택')+'</button></div>';
+  if(ns.length){
+    h+='<div class="card" style="padding:12px 14px"><div style="font-size:13px;color:#666;margin-bottom:6px">'+ns.length+'명 선택 · 반 옮기기</div><div class="chips">'+cl.filter(function(x){return x!==c}).map(function(x){return '<button class="chip" data-bm="'+esc(x)+'">'+esc(x)+'</button>'}).join("")+'</div><div class="chips" style="margin-top:8px"><button class="chip" data-bo="1">'+(TS.cf==="bo"?'한 번 더 누르면 퇴원':'선택한 학생 퇴원')+'</button></div></div>';
+  }
+  h+='<div class="tlist">'+ROSTER[c].map(function(nm){return rowM(nm,cl)}).join("")+'</div>';
+  return h;
+}
+function mTabs(){
+  if(["n","t","s"].indexOf(TS.v)<0)return "";
+  return '<div class="chips" style="margin:0 0 12px">'+[["n","명부"],["s","학교별"]].map(function(x){return '<button class="chip'+(TS.v===x[0]?' on':'')+'" data-tv="'+x[0]+'">'+x[1]+'</button>'}).join("")+'</div>';
+}
+function lvl(nm){
+  var g=gNow(nm);if(g)return g<=6?0:g<=9?1:2;
+  var m=String(findCls(nm)).match(/(초|중|고)/);return m?(m[1]==="초"?0:m[1]==="중"?1:2):3;
+}
+function clsLbl(c){var d=dayOf(c);return c.replace(/^[MT](?=[초중고])/,"")+(d?" ("+d+")":"")}
+function rList(){
+  var q=(TS.rq||"").trim(),cl=Object.keys(ROSTER),L=[[],[],[],[]],h="",NM=["초등","중등","고등","기타"];
+  cl.forEach(function(c){ROSTER[c].forEach(function(n){if(!q||n.indexOf(q)>-1)L[lvl(n)].push(n)})});
+  L.forEach(function(a,k){
+    if(!a.length)return;
+    a.sort(function(x,y){return x.localeCompare(y,"ko")});
+    h+='<div style="display:flex;align-items:baseline;gap:8px;margin:18px 2px 8px"><span style="font-size:20px;font-weight:800">'+NM[k]+'</span><span style="font-size:13px;color:#666">'+a.length+'명</span></div>';
+    a.forEach(function(n){
+      var c=findCls(n),arm=TS.cf==="rx:"+n;
+      h+='<div class="card" style="padding:10px 12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-weight:700;font-size:17px;min-width:62px">'+esc(n)+'</span><span class="pl z">'+esc(pTxt(n)||"학교 미입력")+'</span><span class="pl" style="margin-left:auto;border-left:4px solid '+colOf(c)+'">'+esc(clsLbl(c))+'</span></div>';
+      h+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap"><select data-mvr="'+esc(n)+'" class="score" style="width:auto;text-align:left;padding:7px 8px;font-size:14px;font-weight:500"><option value="">반 이동</option>'+cl.filter(function(x){return x!==c}).map(function(x){return '<option value="'+esc(x)+'">'+esc(clsLbl(x))+' · '+ROSTER[x].length+'명</option>'}).join("")+'</select><button class="ghost" data-qo="'+esc(n)+'">열기</button></div></div>';
+    });
+  });
+  return h||'<div class="empty">없음</div>';
+}
+function exList(){
+  var q=(TS.exq||"").trim(),a=[],h="";
+  if(!q)return '<div class="empty" style="padding:10px 0">퇴원할 학생 이름 검색</div>';
+  Object.keys(ROSTER).forEach(function(c){ROSTER[c].forEach(function(n){if(n.indexOf(q)>-1)a.push(n)})});
+  a.sort(function(x,y){return x.localeCompare(y,"ko")});
+  if(!a.length)return '<div class="empty" style="padding:10px 0">없음</div>';
+  a.slice(0,8).forEach(function(n){
+    var c=findCls(n),arm=TS.cf==="rx:"+n;
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #eee;flex-wrap:wrap"><span style="font-weight:700;font-size:17px;min-width:62px">'+esc(n)+'</span><span class="pl z">'+esc(pTxt(n)||"학교 미입력")+'</span><span class="pl">'+esc(clsLbl(c))+'</span><button class="ghost" data-rx="'+esc(n)+'" style="margin-left:auto'+(arm?';background:#D6336C;color:#fff':'')+'">'+(arm?'한 번 더 누르면 퇴원':'퇴원')+'</button></div>';
+  });
+  return h;
+}
+function mRoster(){
+  var cl=Object.keys(ROSTER),h='';
+  h+='<button class="ghost" data-tv="t" style="display:block;width:100%;text-align:center;margin:0 0 10px">반 · 시간 편집</button>';
+  h+='<div style="display:flex;gap:8px;margin:0 0 10px"><input class="score" id="rq" type="text" placeholder="이름 검색" value="'+esc(TS.rq||"")+'" style="flex:1;text-align:left;font-weight:500"><button class="leave" data-nwo="1" style="margin:0;width:auto;padding:0 18px">'+(TS.nw?'닫기':'+ 신규')+'</button><button class="leave" data-exo="1" style="margin:0;width:auto;padding:0 18px">'+(TS.ex?'닫기':'− 퇴원')+'</button></div>';
+  if(TS.ex){h+='<div class="card" style="padding:12px 14px"><input class="score" id="exq" type="text" placeholder="퇴원할 학생 이름" value="'+esc(TS.exq||"")+'" style="width:100%;text-align:left;font-weight:500"><div id="exr">'+exList()+'</div></div>'}
+  if(TS.nw){
+    h+='<div class="card" style="padding:12px 14px"><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="score" id="nwn" type="text" maxlength="8" placeholder="이름" style="flex:1;min-width:110px;text-align:left"><input class="score" id="nws" list="schl" maxlength="14" placeholder="학교" style="flex:1;min-width:110px;text-align:left"><select id="nwg" class="score" style="width:auto">'+GN.map(function(x,i){return '<option value="'+i+'">'+(i?x:"학년")+'</option>'}).join("")+'</select></div><datalist id="schl">'+schools().map(function(x){return '<option value="'+esc(x)+'">'}).join("")+'</datalist><select id="nwc" class="score" style="width:100%;text-align:left;margin-top:8px"><option value="">반 선택</option>'+cl.map(function(c){return '<option value="'+esc(c)+'">'+esc(clsLbl(c))+' · '+ROSTER[c].length+'명'+(ROSTER[c].length>=CAP?' (가득)':'')+'</option>'}).join("")+'</select><button class="leave" data-nw="1" style="margin-top:8px">추가</button></div>';
+  }
+  return h+'<div id="rl">'+rList()+'</div>';
+}
+function addStudent(){
+  var g=function(i){return (document.getElementById(i)||{}).value||""};
+  var n=g("nwn").trim(),sc=g("nws").trim(),gv=+g("nwg")||0,c=g("nwc");
+  if(!n||!c||!ROSTER[c]){toast("이름과 반을 골라 주세요");return}
+  if(n==="열람"||n.length>8){toast("쓸 수 없는 이름");return}
+  if(findCls(n)){toast(n+" 이미 있음");return}
+  TT.o=TT.o.filter(function(x){return x.n!==n});
+  ROSTER[c].push(n);setProf(n,sc,gv);
+  cfgSave();ttSave();TS.nw=false;toast(n+" 추가");render();
+}
+function moveStudent(n,c){
+  if(!ROSTER[c]||!findCls(n)||findCls(n)===c)return;
+  var k1=SKIP[n],f1=FRI_BY[n];dropName(n);ROSTER[c].push(n);
+  if(k1)SKIP[n]=k1;if(f1)FRI_BY[n]=f1;
+  cfgSave();toast(n+" → "+clsLbl(c));render();
+}
+function mSch(){
+  var L=[["초등","초"],["중등","중"],["고등","고"]],G={},c,h='<div class="h">학교별</div>';
+  function lv(s){var k=s.slice(-1);return k==="초"?0:k==="중"?1:k==="고"?2:3}
+  for(c in ROSTER)ROSTER[c].forEach(function(n){var s=(TT.p[n]||{}).s||"(학교 미입력)";(G[s]=G[s]||[]).push({n:n,c:c})});
+  [0,1,2,3].forEach(function(k){
+    var ss=Object.keys(G).filter(function(s){return lv(s)===k});if(!ss.length)return;
+    var tot=0;ss.forEach(function(s){tot+=G[s].length});
+    ss.sort(function(a,b){return a.localeCompare(b,"ko")});
+    h+='<div style="display:flex;align-items:baseline;gap:8px;margin:18px 2px 8px"><span style="font-size:20px;font-weight:800">'+(k<3?L[k][0]:"기타")+'</span><span style="font-size:13px;color:#666">'+tot+'명</span></div>';
+    ss.forEach(function(s){
+      G[s].sort(function(a,b){return (gNow(a.n)||99)-(gNow(b.n)||99)||a.n.localeCompare(b.n,"ko")});
+      h+='<div class="card" style="padding:12px 14px"><div style="font-weight:700;font-size:17px;margin-bottom:6px">'+esc(s)+' <span style="font-size:13px;color:#666">'+G[s].length+'명</span></div><div class="chips">'+G[s].map(function(x){return '<button class="chip" data-qo="'+esc(x.n)+'" style="border-left-color:'+colOf(x.c)+'">'+esc(x.n)+(gTxt(x.n)?' '+gTxt(x.n):'')+'</button>'}).join("")+'</div></div>';
+    });
+  });
+  return h;
+}
+function mOut(){
+  var L=TT.o.filter(function(x){return !findCls(x.n)}).sort(function(a,b){return a.n.localeCompare(b.n,"ko")});
+  var h='<button class="back" data-tv="t">‹ 시간표</button><div class="h">퇴원생 '+L.length+'명</div>';
+  if(!L.length)h+='<div class="empty">없음</div>';
+  return h+'<div class="tlist">'+L.map(function(x){return '<div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:8px"><span class="nm" style="font-weight:700;font-size:17px;flex:1">'+esc(x.n)+'</span><span class="pl z">'+esc(x.c||"")+(x.at?' · '+esc(x.at):'')+'</span><button class="ghost" data-rs="'+esc(x.n)+'">복귀</button></div>'}).join("")+'</div>';
+}
+function renderM(){
+  var app=document.getElementById("app"),h="";
+  document.title="EM보드 관리";
+  if(!TS.v)TS.v="n";
+  if(TS.v==="c"&&(!TS.cls||!ROSTER[TS.cls]))TS.v="t";
+  h+='<div class="top"><div class="who">EM보드 관리<small>바꾸면 바로 저장됨</small></div></div>'+modeBar()+mTabs();
+  h+=(TS.note?'<div class="card" style="padding:12px 14px;border-left:6px solid #D6336C"><div style="font-weight:700">'+esc(TS.note)+'</div><button class="ghost" data-nx="1" style="margin-top:8px">확인</button></div>':"")+(TS.v==="n"?mRoster():TS.v==="s"?mSch():TS.v==="o"?mOut():TS.v==="c"?mCls():mHome());
+  app.innerHTML=h;
+}
+function retire(nm){
+  var c=findCls(nm);if(!c)return;
+  TT.o=TT.o.filter(function(x){return x.n!==nm});
+  TT.o.push({n:nm,c:c,at:iso(),sk:(SKIP[nm]||[]).slice(),fr:!!FRI_BY[nm]});
+  dropName(nm);
+}
+function restore(nm){
+  var x=null;TT.o.forEach(function(o){if(o.n===nm)x=o});if(!x)return;
+  if(!findCls(nm)){
+    var c=x.c||Object.keys(ROSTER)[0];if(!ROSTER[c])ROSTER[c]=[];
+    ROSTER[c].push(nm);if(x.sk&&x.sk.length)SKIP[nm]=x.sk.slice();if(x.fr)FRI_BY[nm]=FRI_A;
+    cfgSave();
+  }
+  TT.o=TT.o.filter(function(o){return o.n!==nm});ttSave();
+}
+function addNames(){
+  var el=document.getElementById("addnm"),c=TS.cls;if(!el||!c||!ROSTER[c])return;
+  var a=el.value.split(/[\n,]+/).map(function(x){return x.trim()}).filter(function(x){return x}),ok=0,bad=[],sc=(document.getElementById("addsc")||{}).value||"",gv=+((document.getElementById("addg")||{}).value)||0;
+  a.forEach(function(v){
+    if(v==="열람"||v.length>8){bad.push(v+"(쓸 수 없는 이름)");return}
+    if(findCls(v)){bad.push(v+"(이미 있음)");return}
+    TT.o=TT.o.filter(function(x){return x.n!==v});
+    ROSTER[c].push(v);ok++;setProf(v,sc,gv);
+  });
+  if(ok){cfgSave();ttSave()}
+  toast(ok+"명 추가"+(bad.length?" · 못 넣음: "+bad.join(", "):""));
+  render();
+}
+function selIn(){var c=TS.cls,s=TS.sel||{};return Object.keys(s).filter(function(n){return s[n]&&ROSTER[c]&&ROSTER[c].indexOf(n)>-1})}
+function ttClick(D){
+  var t,k;
+  if(D.nwo){TS.nw=!TS.nw;TS.ex=false;TS.cf=null;render();return true}
+  if(D.exo){TS.ex=!TS.ex;TS.nw=false;TS.exq="";TS.cf=null;render();return true}
+  if(D.nw){addStudent();return true}
+  if(D.rx){
+    if(TS.cf==="rx:"+D.rx){retire(D.rx);TS.note=(TS.note&&TS.note.indexOf("클래스카드에서 정리할 이름")===0?TS.note+", ":"클래스카드에서 정리할 이름 · ")+D.rx;TS.cf=null;TS.exq="";ttSave();cfgSave();render()}
+    else{TS.cf="rx:"+D.rx;render();setTimeout(function(){if(TS.cf==="rx:"+D.rx){TS.cf=null;if(TS.v==="n")render()}},4500)}
+    return true}
+  if(D.tv){TS.v=D.tv;TS.mo=null;TS.cf=null;if(D.tv==="t")TS.sel={};render();return true}
+  if(D.rb){TS.rv="t";render();return true}
+  if(D.vd){TS.vd=D.vd;if(D.vt&&mon(TS.date)!==mon(iso())){TS.date=iso();TS.rows=null;tload();return true}render();window.scrollTo(0,0);return true}
+  if(D.rc){TS.cls=D.rc;TS.vd=null;TS.rv="c";render();TLN=4;tload(true);return true}
+  if(D.sp!==undefined){var sx=(SLOTS[dayOf(TS.cls)]||[])[+D.sp];if(sx){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.d=t.d||dayOf(TS.cls);t.s=sx[0];t.e=sx[1];ttSave();render()}return true}
+  if(D.oc){TS.cls=D.oc;TS.v="c";TS.mo=null;TS.cf=null;TS.sel={};render();return true}
+  if(D.qo&&TS.mode==="r"){var q0=findCls(D.qo);if(q0){TS.cls=q0;TS.vd=null;TS.rv="c";render();TLN=4;tload(true)}return true}
+  if(D.qo){var q=findCls(D.qo);if(q){TS.cls=q;TS.v="c";TS.mo=D.qo;TS.cf=null;TS.sel={};render()}return true}
+  if(D.sd){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.d=D.sd;ttSave();render();return true}
+  if(D.sc!==undefined){t=TT.t[TS.cls]||(TT.t[TS.cls]={d:"",s:"",e:"",c:""});t.c=D.sc==="x"?"":D.sc;ttSave();render();return true}
+  if(D.sl){TS.sel=TS.sel||{};TS.sel[D.sl]=!TS.sel[D.sl];TS.cf=null;render();return true}
+  if(D.sa){var all=ROSTER[TS.cls]||[],sl=TS.sel||(TS.sel={}),on=all.length&&all.every(function(n){return sl[n]});all.forEach(function(n){sl[n]=!on});TS.cf=null;render();return true}
+  if(D.bm){var ns=selIn();ns.forEach(function(n){var k1=SKIP[n],f1=FRI_BY[n];dropName(n);ROSTER[D.bm].push(n);if(k1)SKIP[n]=k1;if(f1)FRI_BY[n]=f1});TS.sel={};TS.cf=null;if(ns.length)cfgSave();render();return true}
+  if(D.bo){if(TS.cf==="bo"){var n2=selIn();n2.forEach(retire);if(n2.length)TS.note="클래스카드에서 정리할 이름 · "+n2.join(", ");TS.sel={};TS.cf=null;if(n2.length){ttSave();cfgSave()}render()}else{TS.cf="bo";render()}return true}
+  if(D.rs){restore(D.rs);render();return true}
+  if(D.na){var el=document.getElementById("ncn"),v=el?el.value.trim():"";if(!v||v.length>8||/[<>"&']/.test(v)||v==="열람"){toast("쓸 수 없는 반 이름");return true}if(ROSTER[v]){toast("이미 있는 반");return true}ROSTER[v]=[];cfgSave();TS.cls=v;TS.v="c";TS.sel={};render();return true}
+  return false;
+}
+function dropName(nm){for(var c in ROSTER){var i=ROSTER[c].indexOf(nm);if(i>-1)ROSTER[c].splice(i,1)}delete SKIP[nm];delete FRI_BY[nm]}
+function clearRec(nm,kind){
+  var c=clsOf(nm),jobs=[];
+  if(kind==="today")["reg","fri","sat","hw","nae","add","extra","app","pen"].forEach(function(cd){jobs.push({a:"put",date:iso(),cls:c,name:nm,card:cd,chk:{}})});
+  else{jobs.push({a:"put",date:"2000-01-01",cls:c,name:nm,card:"app",chk:{}});jobs.push({a:"put",date:"2000-01-02",cls:c,name:nm,card:"app",chk:{}})}
+  CFG.rs[nm]=Date.now();
+  toast("지우는 중");
+  Promise.all(jobs.map(post)).then(function(){cfgSave();toast("지움")}).catch(function(){toast("지우지 못함, 다시 눌러 주세요")});
+}
+function tHome(){var a=document.getElementById("app");a.insertAdjacentHTML("afterbegin",'<a class="back" href="/board/hq/" style="display:block;text-decoration:none;margin-bottom:6px">‹ 메인으로</a>');a.insertAdjacentHTML("beforeend",'<a class="leave" href="/board/hq/" style="display:block;text-align:center;text-decoration:none;margin-top:16px">메인으로</a>')}
+/* 261119 되감기: 반 화면은 '보는 날' 하루치만 보여 준다. 오늘 화면에 지난 기록이 섞이지 않되, 날짜를 누르면 그날 기록을 그대로 다시 본다.
+   이미 받아 둔 주간 기록(TS.wk)에서 골라 보여 주는 것이라 날짜를 눌러도 새로 읽지 않는다. 다른 주·달력으로 갈 때만 그 주 7일을 요청 하나로 받는다 */
+function isClsDay(c,d){var w=dow(d);return w===5||(w>=1&&w<=4&&(dayOf(c)||"").indexOf("일월화수목금토".charAt(w))>-1)}
+function recN(c,d){var n=0,mp=TS.wk&&TS.wk[d];if(!mp)return 0;(ROSTER[c]||[]).forEach(function(nm){var ap=mp[nm]&&mp[nm].chk&&mp[nm].chk.app;if(ap&&Object.keys(ap).some(function(k){return k.indexOf("l_")===0||k.indexOf("a_")===0}))n++});return n}
+function vDays(c,m,td){var L=[],i,d;for(i=0;i<7;i++){d=dstep(m,i);if(d<=td)L.push(d)}
+  if(mon(td)===m)for(i=1;i<=4;i++){d=dstep(td,-i);if(L.indexOf(d)<0)L.push(d)}
+  L=L.filter(function(d){return d===td||dow(d)!==0||recN(c,d)});L.sort();return L}
+function vPick(c,L,td){var i;
+  if(L.indexOf(td)>-1&&(isClsDay(c,td)||recN(c,td)))return td;
+  for(i=L.length-1;i>=0;i--)if(L[i]!==td&&isClsDay(c,L[i])&&recN(c,L[i]))return L[i];
+  for(i=L.length-1;i>=0;i--)if(L[i]!==td&&recN(c,L[i]))return L[i];
+  for(i=L.length-1;i>=0;i--)if(isClsDay(c,L[i]))return L[i];
+  return L.length?L[L.length-1]:td}
+function vBar(c,L,vd,td){
+  var h='<div style="display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch">';
+  L.forEach(function(d){var on=d===vd,cd=isClsDay(c,d),n=recN(c,d),p=d.split("-");
+    h+='<button data-vd="'+d+'" style="flex:0 0 auto;min-width:58px;padding:7px 8px;border-radius:12px;border:1.5px solid '+(on?'#14303f':(cd?'#9fd3d5':'#dde3e5'))+';background:'+(on?'#14303f':(cd?'#eef9f9':'#fff'))+';color:'+(on?'#fff':(cd?'#0b5d61':'#8a9699'))+';font-weight:800;line-height:1.25"><div style="font-size:15px">'+"일월화수목금토".charAt(dow(d))+(d===td?' <span style="font-size:11px">오늘</span>':'')+'</div><div style="font-size:12px;font-weight:600;opacity:.85">'+(+p[1])+'/'+(+p[2])+'</div><div style="font-size:11px;font-weight:700;margin-top:1px;opacity:'+(n?'1':'.45')+'">'+(n?n+'명 기록':'기록 없음')+'</div></button>'});
+  h+='<label style="flex:0 0 auto;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:6px 8px;border-radius:12px;border:1.5px dashed #b9c4c7;font-size:11px;font-weight:700;color:#5b6b6e">다른 날짜<input type="date" id="tjump" max="'+td+'" value="'+vd+'" style="font-size:13px;border:0;background:none;color:#1c2b2d;padding:0"></label></div>';
+  if(vd!==td)h+='<div style="display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:9px 12px;border-radius:12px;background:linear-gradient(90deg,#fff3d6,#ffe9b8);border:1px solid #e6c27a;color:#7a4b00;font-weight:800;font-size:14px"><span style="flex:1">되감기 · '+dlabel(vd)+' 기록</span><button data-vd="'+td+'" data-vt="1" style="border:0;border-radius:10px;background:#7a4b00;color:#fff;font-weight:800;font-size:13px;padding:7px 12px">오늘로</button></div>';
+  else if(!isClsDay(c,td)&&!recN(c,td))h+='<div style="margin:0 0 10px;padding:9px 12px;border-radius:12px;background:#f1f4f5;color:#5b6b6e;font-weight:700;font-size:14px">오늘은 이 반 수업이 없는 날</div>';
+  return h}
+function renderT(){
+  if(TS.mode==="m"){renderM();return}
+  var app=document.getElementById("app"),h="";
+  document.title="EM보드 기록";if(!TS.date)TS.date=iso();if(!TS.cls||!ROSTER[TS.cls])TS.cls=Object.keys(ROSTER)[0];
+  if(!tpw()){
+    h+='<div class="top"><div class="who">EM보드 기록<small>선생님용</small></div></div>'+modeBar();
+    h+='<div class="card"><input class="score" id="tpw" type="password" inputmode="numeric" placeholder="비밀번호" style="width:100%;text-align:left"><button class="leave" data-tl="1" style="margin-top:10px">열기</button>'+(TS.err?'<div class="empty">'+esc(TS.err)+'</div>':'')+'</div>';
+    app.innerHTML=h;return;
+  }
+  var m=mon(TS.date),td=iso();
+  h+='<div class="top"><div class="who">EM보드 기록<small>'+dlabel(m)+' ~ '+dlabel(dstep(m,6))+'</small></div></div>'+modeBar();
+  if(TS.rv!=="c"){h+=mHome();app.innerHTML=h;return}
+  h+='<div class="dnav"><button class="ghost" data-td="-1">‹</button><div class="lb">'+(mon(td)===m?'이번 주':dlabel(m)+' 주')+'</div><button class="ghost" data-td="1">›</button><button class="ghost" data-td="0">이번 주</button></div>';
+  h+='<button class="back" data-rb="1">‹ 시간표</button><div style="font-weight:700;font-size:19px;margin:2px 2px 8px">'+esc(TS.cls)+'</div>';
+  if(TS.err)h+='<div class="empty">'+esc(TS.err)+'</div>';
+  if(!TS.rows){h+='<div class="empty">불러오는 중</div>';app.innerHTML=h;return}
+  var VL=vDays(TS.cls,m,td);if(!TS.vd||VL.indexOf(TS.vd)<0)TS.vd=vPick(TS.cls,VL,td);
+  var vd=TS.vd,live=vd===td,offd=live&&!isClsDay(TS.cls,td);
+  if(!/중3/.test(TS.cls))h+=vBar(TS.cls,VL,vd,td);
+  h+='<div class="tlist">';
+  (/중3/.test(TS.cls)?[]:ROSTER[TS.cls]).forEach(function(nm){
+    var w=weekH(nm,m,td,vd);
+    h+='<div class="card" style="padding:12px 14px"><div style="display:flex;align-items:center;gap:10px"><span class="nm" style="font-weight:700;font-size:17px;flex:1">'+esc(nm)+'</span>'+((offd&&!w.t)?'':'<span class="pl'+(w.t?'':' z')+'">'+(w.t?(live?'오늘 기록':'기록 있음'):'기록 없음')+'</span>')+'</div>';
+    h+=lastH(nm)+((offd&&!w.t)?'':bdT(nm,vd))+'<div style="margin-top:8px;font-size:13px;font-weight:800;color:'+(live?'#1c2b2d':'#7a4b00')+'">'+(live?'오늘':'되감기')+' · '+dlabel(vd)+'</div>'+(w.t?w.h:'<div style="font-size:13px;color:#8a8a8a;margin-top:2px">'+(live?(offd?'수업 없는 날':'아직 기록 없음'):'이 날 기록 없음')+'</div>')+carryT(nm,m,td);
+    h+='</div>';
+  });
+  h+='</div>';
+  var hc=TS.cls||"",hu=/중3/.test(hc)?'/via/wn-t/':(/고등|관리형/.test(hc)?'':'/via/hw/?c='+encodeURIComponent(hc));
+  if(hu)h+='<iframe src="'+hu+'" style="width:100%;height:88vh;border:0;border-radius:12px;margin-top:10px;background:#fff"></iframe>';
+  /* 261118: 맨 아래 숙제 검사까지 내려온 뒤 메인이 아니라 바로 앞 단계(시간표)로 돌아가는 버튼 */
+  h+='<button data-rb="1" style="display:block;width:100%;margin-top:12px;padding:14px;border:1.5px solid #00A1A7;border-radius:12px;background:#fff;color:#00787c;font-size:16px;font-weight:800">‹ 시간표로 돌아가기</button>';
+  app.innerHTML=h;
+}
+document.addEventListener("change",function(e){var x=e.target;if(!T||!x||x.id!=="tjump"||!x.value||x.value>iso())return;TS.vd=x.value;if(mon(x.value)===mon(TS.date)&&TS.wk&&TS.wk[x.value]){render();return}TS.date=x.value;TS.open=null;TS.rows=null;tload()});
+document.addEventListener("click",function(e){
+  if(!T)return;var b=e.target.closest("button");if(!b)return;var D=b.dataset;
+  if(ttClick(D)){}
+  else if(D.tm){TS.mode=D.tm;TS.mo=null;TS.cf=null;if(D.tm==="r"){TS.rows=null;render();tload()}else render()}
+  else if(D.mo!==undefined){TS.mo=TS.mo===D.mo?null:D.mo;TS.cf=null;render()}
+  else if(D.mv){var nm=TS.mo,k0=SKIP[nm],f0=FRI_BY[nm];dropName(nm);ROSTER[D.mv].push(nm);if(k0)SKIP[nm]=k0;if(f0)FRI_BY[nm]=f0;if(FRI0.indexOf(nm)>-1&&false){}TS.cls=D.mv;TS.cf=null;cfgSave();render()}
+  else if(D.fr){var nm2=TS.mo;if(FRI_BY[nm2])delete FRI_BY[nm2];else FRI_BY[nm2]=FRI_A;cfgSave();render()}
+  else if(D.sk){var nm3=TS.mo,a=(SKIP[nm3]||[]).slice(),ix=a.indexOf(D.sk);if(ix>-1)a.splice(ix,1);else a.push(D.sk);if(a.length)SKIP[nm3]=a;else delete SKIP[nm3];cfgSave();render()}
+  else if(D.rt){if(TS.cf===D.rt){TS.cf=null;clearRec(TS.mo,D.rt);render()}else{TS.cf=D.rt;render()}}
+  else if(D.rm){if(TS.cf==="rm"){TS.note="클래스카드에서 정리할 이름 · "+TS.mo;retire(TS.mo);ttSave();TS.mo=null;TS.cf=null;cfgSave();render()}else{TS.cf="rm";render()}}
+  else if(D.add){addNames()}
+  else if(D.pg!==undefined){setProf(TS.mo,null,+D.pg===gNow(TS.mo)?0:+D.pg);ttSave();render()}
+  else if(D.nx!==undefined){TS.note="";render()}
+  else if(D.tl){var v=document.getElementById("tpw").value.trim();if(v){ls("bt-pw",v);TS.err="";tload()}}
+  else if(D.tout){ls("bt-pw",null);TS.rows=null;render()}
+  else if(D.tt){TS.cls=D.tt;TS.open=null;render();TLN=4;tload(true)}
+  else if(D.td!==undefined){TS.date=D.td==="0"?iso():dstep(TS.date,+D.td*7);TS.vd=null;TS.open=null;TS.rows=null;tload()}
+  else if(D.st){TS.open=TS.open===D.st?null:D.st;render()}
+});
+document.addEventListener("toggle",function(e){var el=e.target;if(!T||!el||!el.dataset||!el.dataset.pk)return;if(!TS.po)TS.po={};TS.po[el.dataset.pk]=el.open},true);
+document.addEventListener("change",function(e){var el=e.target;if(T&&el&&el.id==="pschool"&&TS.mo){setProf(TS.mo,el.value,null);ttSave()}});
+document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="rq")return;TS.rq=e.target.value;var el=document.getElementById("rl");if(el)el.innerHTML=rList()});
+document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="exq")return;TS.exq=e.target.value;var el=document.getElementById("exr");if(el)el.innerHTML=exList()});
+document.addEventListener("change",function(e){var el=e.target;if(!T||!el||!el.dataset||!el.dataset.mvr||!el.value)return;moveStudent(el.dataset.mvr,el.value)});
+/* ---------- 상태 ---------- */
+var S = {view:"names", cls:null, card:null};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
+function who(){var n=ls("bd-name"),t=+ls("bd-t")||0;if(LOGIN){if(n==="열람")return n;if(AUTHST!==1)return null;return n||null}if(PH&&n&&n!=="열람"){if(Date.now()-t>120000)touch();return n}if(n&&Date.now()-t>IDLE_MIN*60000){leave();return null}return n}
+function touch(){ls("bd-t",String(Date.now()))}
+/* 261125 로그인: 이름+비번(Firebase 로그인). 로그인이 켜져 있으면 안 쓰면 로그아웃되는 시간제한과 새로고침 로그아웃은 쓰지 않는다. */
+var LOGIN=false,AUTHST=0,AUTHMSG="",AUTHRETRY=0,AWAY_MIN=15;
+try{var _q=new URLSearchParams(location.search);if(_q.get("away"))AWAY_MIN=parseFloat(_q.get("away"));LOGIN=!/[?&]t=1/.test(location.search)&&(!/[?&]s=1(&|$)/.test(location.search)||_q.get("lt")==="1")&&!_q.get("nologin")}catch(e){}
+var BADPW=["1234","0000","1111","2222","3333","4444","5555","6666","7777","8888","9999","12345","123456","1q2w3e4r"];
+function akey(d){d=d||new Date();var x=new Date(d.getTime()-4*3600*1000);return x.getFullYear()+"-"+(x.getMonth()+1)+"-"+x.getDate()}
+function rfind(v){v=String(v||"").replace(/\s+/g,"");var hit=null,c;for(c in ROSTER)ROSTER[c].forEach(function(n){if(!hit&&n!=="열람"&&n.replace(/\s+/g,"")===v)hit={n:n,c:c}});return hit}
+function ovl(id,html){var o=document.getElementById(id);if(!o){o=document.createElement("div");o.id=id;o.style.cssText="position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.78);display:flex;align-items:center;justify-content:center;padding:20px";document.body.appendChild(o)}o.innerHTML='<div class="card" style="max-width:420px;width:100%;text-align:center;padding:26px 18px">'+html+'</div>';return o}
+function ovlOff(id){var o=document.getElementById(id);if(o)o.remove()}
+function authIn(u){
+  if(u&&u.email&&/@vita\.local$/.test(u.email)){
+    var h=rfind(u.displayName);
+    if(!h){if(!AUTHRETRY){AUTHRETRY=1;cfgFetch(function(){authIn(u)});return}AUTHST=2;AUTHMSG="명단에 없는 이름이에요. 선생님께 알려 주세요";try{window.__au.out()}catch(e){}render();return}
+    AUTHST=1;AUTHMSG="";
+    var dk=ls("bd-aday|"+u.uid);if(dk&&dk!==akey()){window.__au.out();return}
+    if(!dk)ls("bd-aday|"+u.uid,akey());
+    var sw=ls("bd-name")!==h.n;
+    if(sw){ls("bd-name",h.n);ls("bd-cls",h.c);touch();try{cfgReset()}catch(e){}S.view="hub";render();pull(h.n,h.c)}
+    else{touch();if(S.view==="names")S.view="hub";render()}
+    if(ls("bd-force|"+u.uid)==="1")pwForm();
+  }else{
+    AUTHST=2;var n=ls("bd-name");if(n&&n!=="열람"){leave()}render()
+  }
+}
+function pwForm(){
+  var o=ovl("pwov",'<div style="font-size:20px;font-weight:700;margin-bottom:6px">나만의 비번 만들기</div><div style="color:#555;font-size:14px;margin-bottom:14px">4자 이상. 이름과 같거나 1234처럼 쉬운 것은 안 돼요</div><input id="pw1" type="password" autocomplete="new-password" placeholder="새 비번" style="width:100%;font-size:20px;padding:12px;border:1px solid var(--bd);border-radius:10px;margin-bottom:8px"><input id="pw2" type="password" autocomplete="new-password" placeholder="한 번 더" style="width:100%;font-size:20px;padding:12px;border:1px solid var(--bd);border-radius:10px"><div id="pwe" style="color:#c0392b;min-height:22px;margin:8px 0"></div><button class="name" id="pwok" style="padding:14px 26px;font-size:17px">바꾸기</button>');
+  document.getElementById("pwok").onclick=function(){
+    var a=document.getElementById("pw1").value,b=document.getElementById("pw2").value,e=document.getElementById("pwe"),nm=ls("bd-name")||"";
+    if(a.length<4){e.textContent="4자 이상으로 해 주세요";return}
+    if(BADPW.indexOf(a)>=0||/^(.)\1+$/.test(a)){e.textContent="너무 쉬운 비번이에요";return}
+    if(a.replace(/\s+/g,"")===nm.replace(/\s+/g,"")){e.textContent="이름과 다르게 해 주세요";return}
+    if(a!==b){e.textContent="두 번이 서로 달라요";return}
+    var uid=window.__au.uid();
+    window.__au.chg(a).then(function(){ls("bd-force|"+uid,null);ovlOff("pwov")}).catch(function(x){e.textContent=(x&&x.code==="auth/requires-recent-login")?"다시 로그인해 주세요":"바꾸지 못했어요"})};
+}
+function doLogin(){
+  var n=(document.getElementById("lgn")||{}).value||"",p=(document.getElementById("lgp")||{}).value||"",er=document.getElementById("lgerr");
+  if(!n.trim()||!p){if(er)er.textContent="이름과 비번을 넣어 주세요";return}
+  if(!window.__au){if(er)er.textContent="잠시 뒤에 다시 눌러 주세요";return}
+  if(er)er.textContent="확인 중…";
+  window.__au.sin(n.trim().replace(/\s+/g,""),p).then(function(c){
+    ls("bd-aday|"+c.user.uid,akey());
+    if(BADPW.indexOf(p)>=0)ls("bd-force|"+c.user.uid,"1")
+  }).catch(function(){var e2=document.getElementById("lgerr");if(e2)e2.textContent="이름이나 비번이 맞지 않아요";var pp=document.getElementById("lgp");if(pp){pp.value="";pp.focus()}})
+}
+function leaveOut(){
+  if(!LOGIN||ls("bd-name")==="열람"){leave();render();return}
+  try{flush()}catch(e){}
+  var nm=ls("bd-name")||"";
+  document.getElementById("app").innerHTML='<div class="card" style="text-align:center;padding:44px 16px;margin-top:40px"><div style="font-size:26px;font-weight:700">기록이 저장되었습니다</div><div style="color:#666;margin-top:10px;font-size:16px">'+esc(nm)+'</div></div>';
+  setTimeout(function(){leave();var p=window.__au?window.__au.out():Promise.resolve();p.then(function(){AUTHST=2;render()},function(){AUTHST=2;render()})},2200)
+}
+document.addEventListener("visibilitychange",function(){
+  if(!LOGIN||AUTHST!==1)return;
+  if(document.visibilityState==="hidden"){ls("bd-hid",String(Date.now()))}
+  else{
+    var t=+ls("bd-hid")||0;ls("bd-hid",null);var nm=ls("bd-name");
+    if(nm&&nm!=="열람"&&window.__au){
+      var dk=ls("bd-aday|"+window.__au.uid());if(dk&&dk!==akey()){window.__au.out();return}
+      if(t&&(Date.now()-t)>AWAY_MIN*60000){
+        ovl("awayov",'<div style="font-size:24px;font-weight:700;margin-bottom:18px">'+esc(nm)+' 맞나요?</div><div style="display:flex;gap:10px;justify-content:center"><button class="name" id="awOther" style="padding:14px 22px;font-size:17px">다른 이름</button><button class="name" id="awSame" style="padding:14px 26px;font-size:17px">맞아요</button></div>');
+        document.getElementById("awSame").onclick=function(){ovlOff("awayov")};
+        document.getElementById("awOther").onclick=function(){ovlOff("awayov");leave();window.__au.out().then(function(){AUTHST=2;render()})}
+      }
+    }
+  }
+});
+function leave(){S.pin=false;ls("bd-name",null);ls("bd-cls",null);ls("bd-t",null);S.view="names"}
+function clsOf(n){if(n==="열람")return "열람";var s=ls("bd-cls");if(s&&ROSTER[s]&&ROSTER[s].indexOf(n)>-1)return s;for(var c in ROSTER)if(ROSTER[c].indexOf(n)>-1)return c;return ""}
+function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d.getMonth()+1)+"/"+d.getDate()+"("+w+")"}
+function key(n,c){var d=new Date();return "bd-chk|"+n+"|"+c+"|"+d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
+function chk(n,c){try{return JSON.parse(ls(key(n,c))||"{}")}catch(e){return {}}}
+function tabList(){var FO=[dayCard(),"reg","fri","sat","hw","nae","nohw","mk"],L=CARDS.map(function(x){return {id:x.id,label:(CC&&CC.sn&&CC.sn[x.id])||x.label}});((CC&&CC.sl)||[]).forEach(function(s){L.push({id:s.id,label:s.name})});return L.map(function(x,i){return [x,i]}).sort(function(a,c){var p=FO.indexOf(a[0].id),q=FO.indexOf(c[0].id);p=p<0?99:p;q=q<0?99:q;return p-q||a[1]-c[1]}).map(function(x){return x[0]})}
+function tabsFor(c,name,card){var L=tabList(),has=function(id){return itemsFor(c,id,name).length};if(has("nae"))return L.filter(function(x){return x.id==="nae"});return L.filter(function(x){return x.id===card||has(x.id)})}
+function groupsAll(){var G={},used={},g,c;for(g in GROUPS){G[g]=GROUPS[g].slice();GROUPS[g].forEach(function(x){used[x]=1})}for(c in ROSTER)if(!used[c]&&ROSTER[c].length)G[c]=[c];return G}
+function hasCard(cls,slot,name){return !!(CC&&CC.cards&&itemsFor(cls,slot,name).length)}
+function dayCard(){var w=new Date().getDay();return w===5?"fri":w===6?"sat":"reg"}
+/* 오늘 학생이 먼저 체크하기 시작한 카드가 있으면 그 카드를 첫 화면으로 (마지막으로 체크한 카드 우선) */
+function startedCard(cls,name){var best="",bt="";try{tabList().forEach(function(x){var id=x.id;if(id==="nae"||!hasCard(cls,id,name))return;var m=chk(name,id),on=false,k;for(k in m){if(k!=="tin"&&k!=="tlt"&&k.indexOf("t_")!==0&&m[k])on=true}if(on){var tt=m.tlt||"";if(!best||tt>bt){best=id;bt=tt}}})}catch(e){}return best}
+function defCard(cls,name){if(name){if(hasCard(cls,"nae",name))return "nae";var s=startedCard(cls,name);if(s)return s}return dayCard()}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var AID={"K":"vk","E":"ve","Y":"vy","X-ray":"xr","독해33권":"rd","M1 리딩":"m1","M2 리딩":"m2","더블보카 코어":"dd","더블보카 프로":"dd","중등 문법 기출":"g2v1","M":"dm","B":"db","H":"dh"};
+function hubHref(g,a,q){
+  if(g.h==="말하기 시험")return a.u+(q?(a.u.indexOf("?")<0?"?":"&")+q:"");
+  var p=a.u.replace("https://nolbada.github.io","");
+  return "go.html?a="+encodeURIComponent(AID[a.n]||"x")+"&t="+encodeURIComponent(a.tt||((g.h==="V시그널"&&a.n.length<3?"V시그널 ":"")+a.n))+"&u="+encodeURIComponent(p);
+}
+var LAST={};
+function loadLast(n){
+  /* 261117: 지난번에 받아 둔 "이어서 할 차례"를 먼저 보여 주고(보여 주기만 한다), 서버 답이 오면 그것으로 바꾼다. 같은 답에서 페널티도 함께 읽는다 */
+  var lk="bd-last|"+n,lc=null;try{lc=JSON.parse(ls(lk)||"null")}catch(e){}
+  if(!lc||typeof lc!=="object")lc={};
+  if(JSON.stringify(lc)!==JSON.stringify(LAST)){LAST=lc;if(ls("bd-name")===n&&!T&&!editing())render()}
+  fetch(SRV+"?a=get&date=2000-01-01&name="+encodeURIComponent(n)+"&v="+Date.now()).then(function(r){return r.json()}).then(function(j){
+    if(!j||!j.ok)return;var ap=(j.chk&&j.chk.app)||{},o={};
+    Object.keys(ap).forEach(function(k){if(k.indexOf("l_")===0){try{o[k]=JSON.parse(ap[k])}catch(e){}}});
+    var pc=penSet(n,j),lch=JSON.stringify(o)!==JSON.stringify(LAST);
+    LAST=o;ls(lk,JSON.stringify(o));
+    if((lch||pc)&&ls("bd-name")===n&&!T&&!editing())render();
+  }).catch(function(){});
+}
+var CARRY=null;
+function slotOf(dt){var p=dt.split("-"),w=new Date(+p[0],+p[1]-1,+p[2]).getDay();return w===5?"fri":w===6?"sat":"reg"}
+function wd5(dt){var p=dt.split("-");return new Date(+p[0],+p[1]-1,+p[2]).getDay()===5}
+function carryLoad(n,c){
+  if(n==="열람"||T)return;
+  var today=iso(),ck="bd-carry|"+n,o=null;
+  try{o=JSON.parse(ls(ck)||"null")}catch(e){}
+  if(o&&o.on===today&&o.bd){CARRY={n:n,d:o.d,items:o.items,bd:o.bd};if(ls("bd-name")===n)render();return}
+  var ds=[],i;for(i=1;i<=4;i++)ds.push(dstep(today,-i));
+  /* 261117: 지난 네 날짜를 요청 하나(a=getm)로 받는다. 서버가 이 요청을 모르면 예전처럼 날짜마다 받는다 */
+  var getOld=function(){return Promise.all(ds.map(function(dt){return fetch(SRV+"?a=get&date="+dt+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).catch(function(){return null})}))};
+  fetch(SRV+"?a=getm&dates="+ds.join(",")+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+    if(j&&j.ok&&j.recs)return ds.map(function(dt){return {ok:true,chk:j.recs[dt]||{}}});
+    return getOld();
+  },function(){return getOld()}).then(function(rs){
+    var res={on:today,d:"",items:[],bd:[]},ok=true;
+    /* 261117: 지난 수업 날부터 어제까지의 비단챌 기록(보드에서 이름을 누르고 연 것)을 모은다. 학생 첫 화면 맨 위 "비단챌 숙제 기록" 칸에 쓴다 */
+    try{for(var b0=0;b0<rs.length;b0++){
+      var jb=rs[b0];if(!jb||!jb.ok)continue;
+      var ab=jb.chk&&jb.chk.app&&jb.chk.app.a_bd,ob=null;try{ob=ab?JSON.parse(ab):null}catch(e0){}
+      if(ob&&(+ob.s>0||+ob.n>0||ob.w))res.bd.push({d:ds[b0],w:String(ob.w||""),s:+ob.s||0,n:+ob.n||0,t:String(ob.t||""),l:Array.isArray(ob.l)?ob.l.slice(-15):null});
+      var mb=(jb.chk&&jb.chk[slotOf(ds[b0])])||{};if(mb.tin)break;
+    }}catch(e1){res.bd=[]}
+    for(var k=0;k<rs.length;k++){
+      var j=rs[k];if(!j||!j.ok){ok=false;continue}
+      var card=slotOf(ds[k]),m=(j.chk&&j.chk[card])||{};
+      if(!m.tin)continue;
+      var cl=clsOf(n);
+      res.d=ds[k];res.items=itemsFor(cl,card,n,ds[k]).filter(function(it){return !m[it.id]&&!it.plus}).map(function(it){return {id:it.id,t:it.t.replace(/\s*\(.*$/,"")}});
+      break;
+    }
+    if(ok)ls(ck,JSON.stringify(res));
+    CARRY={n:n,d:res.d,items:res.items,bd:ok?res.bd:null};
+    if(ls("bd-name")===n)render();
+  });
+}
+/* 261117 밤: 바구니. 이번 주(월요일~어제)에 출석했는데 체크하지 못한 항목을 모아 둔다. 평일 화면에는 그날 것만 보이고,
+   못 한 것은 바구니 타일 하나에 담긴다(금요일에 눈에 띄게). 바구니에서 체크하면 그 항목은 원래 날짜 기록에 "한 것"으로 적힌다(t_bk_<id> 에 체크한 날짜).
+   다음 주 월요일이 되면 바구니는 비어서 새로 시작한다. 오류가 나도 화면 전체에는 영향이 없다 */
+var BASKET=null;
+function bkSave(){try{if(BASKET)ls("bd-bk|"+BASKET.n,JSON.stringify(BASKET))}catch(e){}}
+function basketLoad(n,c){try{
+  if(n==="열람"||T)return;
+  var today=iso(),o=null;try{o=JSON.parse(ls("bd-bk|"+n)||"null")}catch(e){}
+  if(o&&o.on===today&&o.n===n&&Array.isArray(o.items)){BASKET=o;if(ls("bd-name")===n)render();return}
+  var ds=[],d=mon(today),g=0;while(d<today&&g++<7){ds.push(d);d=dstep(d,1)}
+  if(!ds.length){BASKET={n:n,on:today,items:[],recs:{}};bkSave();if(ls("bd-name")===n)render();return}
+  fetch(SRV+"?a=getm&dates="+ds.join(",")+"&name="+encodeURIComponent(n)).then(function(r){return r.json()}).then(function(j){
+    if(!j||!j.ok||!j.recs)return;
+    var res={n:n,on:today,items:[],recs:{}},cl=clsOf(n);
+    ds.forEach(function(dt){
+      var card=slotOf(dt),m=(j.recs[dt]&&j.recs[dt][card])||{};
+      if(!m.tin)return;
+      var left=itemsFor(cl,card,n,dt).filter(function(it){return !it.plus&&!m[it.id]});
+      if(!left.length)return;
+      res.recs[dt]={card:card,m:m};
+      left.forEach(function(it){res.items.push({d:dt,card:card,id:it.id,t:String(it.t||""),sub:String(it.sub||""),done:0})});
+    });
+    BASKET=res;bkSave();
+    if(ls("bd-name")===n)render();
+  }).catch(function(){});
+}catch(e){}}
+function bkLeft(name){return (BASKET&&BASKET.n===name)?BASKET.items.filter(function(x){return !x.done}).length:0}
+function basketTile(name){try{
+  if(!BASKET||BASKET.n!==name||!BASKET.items.length)return "";
+  var n=bkLeft(name),fri=new Date().getDay()===5;
+  if(!n&&!fri)return "";
+  return '<button data-go="basket" style="display:flex;align-items:center;justify-content:space-between;width:100%;margin:10px 0 0;padding:14px 16px;border-radius:16px;text-align:left;border:'+(fri&&n?'0;background:#b45309;color:#fff':'1.5px dashed #d6a25a;background:#fff8ec;color:#7a4a0a')+'"><span><b style="font-size:17px">바구니</b><span style="display:block;font-size:13px;opacity:.85;margin-top:2px">'+(n?(fri?'오늘 비우는 날 · 이번 주에 못 끝낸 것':'이번 주에 못 끝낸 것 · 금요일에 마무리'):'다 비웠어요')+'</span></span><span style="font-size:22px;font-weight:800">'+n+'</span></button>';
+}catch(e){return ""}}
+function basketView(name){
+  var h='<button class="back" data-go="hub">‹ 돌아가기</button><div class="top"><div class="who">바구니<small>이번 주에 못 끝낸 것</small></div></div>',by={},order=[];
+  ((BASKET&&BASKET.n===name)?BASKET.items:[]).forEach(function(x,i){if(!by[x.d]){by[x.d]=[];order.push(x.d)}by[x.d].push(i)});
+  if(!order.length)h+='<div class="card"><div class="empty">바구니가 비어 있어요</div></div>';
+  order.forEach(function(d){
+    h+='<div class="h">'+dlabel(d)+'</div><div class="card">';
+    by[d].forEach(function(i,ix){var x=BASKET.items[i];h+='<button class="item'+(x.done?' done':'')+'" data-bk="'+i+'"><span class="box">'+(x.done?'✓':(ix+1))+'</span><span class="t">'+esc(x.t)+(x.sub?'<small>'+esc(x.sub)+'</small>':'')+'</span></button>'});
+    h+='</div>';
+  });
+  return h+'<button class="back" data-go="hub">‹ 돌아가기</button>';
+}
+function basketToggle(i){
+  var n=ls("bd-name");if(!BASKET||BASKET.n!==n)return;
+  var x=BASKET.items[i];if(!x)return;var r=BASKET.recs[x.d];if(!r)return;
+  x.done=x.done?0:1;
+  if(x.done){r.m[x.id]=1;r.m["t_"+x.id]=hm();r.m["t_bk_"+x.id]=iso()}else{r.m[x.id]=0;delete r.m["t_"+x.id];delete r.m["t_bk_"+x.id]}
+  bkSave();touch();render();
+  var b={a:"put",date:x.d,cls:clsOf(n),name:n,card:x.card,chk:r.m};qdrop(b);toast("저장 중");
+  post(b).then(function(){toast("저장됨");flush()}).catch(function(){qadd(b);toast("연결 확인 중, 곧 다시 저장")});
+}
+/* 261117: 오늘 목록 맨 위 "비단챌 숙제 기록". 이 학생의 오늘 목록에 비단챌이 있을 때만 보인다. 기록을 다 받기 전에는 아무것도 보이지 않는다(잘못 "기록 없음"이 뜨지 않게). 오류가 나도 화면 전체에는 영향이 없다 */
+function bdHtml(name,c1){try{
+  if(!CARRY||CARRY.n!==name||!CARRY.bd)return "";
+  var dc=defCard(c1,name);
+  if(!itemsFor(c1,dc,name).some(function(i){return /비단챌/.test(String(i.t||""))}))return "";
+  var rows=CARRY.bd.slice(),ta=chk(name,"app").a_bd,o=null;
+  try{o=ta?JSON.parse(ta):null}catch(e){}
+  if(o&&(+o.s>0||+o.n>0||o.w))rows.unshift({d:iso(),w:String(o.w||""),s:+o.s||0,n:+o.n||0,t:String(o.t||""),l:Array.isArray(o.l)?o.l.slice(-15):null});
+  if(!rows.length)return '<div class="gc" style="--ac:#c2410c"><div class="gh">비단챌 숙제 기록</div><div style="padding:8px 2px;border-top:1px solid #eee;font-size:17px;font-weight:800;color:#c2410c">비단챌 기록 없음</div></div>';
+  return '<div class="gc" style="--ac:#1f7a5c"><div class="gh">비단챌 숙제 기록</div>'+rows.map(function(r){var mn=r.s>=60?Math.round(r.s/60)+"분":(r.s>0?"1분 미만":"");var ws=(r.l&&r.l.length)?r.l.map(function(x){return String(x.w||"")+(x.t?" ("+x.t+")":"")}):[r.w||"비단챌 접속"];return '<div style="padding:8px 2px;border-top:1px solid #eee">'+ws.map(function(w1){return '<div style="font-size:17px;font-weight:800;color:#1f6f50">'+esc(w1)+'</div>'}).join("")+'<div style="font-size:13px;color:#5b6b62;margin-top:2px">'+esc(dlabel(r.d)+(mn?" · "+mn:"")+(r.t&&!(r.l&&r.l.length)?" · "+r.t:""))+'</div></div>'}).join("")+'</div>';
+}catch(e){return ""}}
+/* 261117: 선생님 요청으로 "지난 시간에 못 끝낸 것" 칸은 보이지 않게 함(화면이 지저분해짐). 되살리려면 아래 CARRY_SHOW 를 true 로. 이 자리는 숙제(비단챌) 기록 칸으로 바꿀 예정 */
+var CARRY_SHOW=false;
+function carryHtml(name,c1){if(!CARRY_SHOW||new Date().getDay()===6)return "";
+  if(!CARRY||CARRY.n!==name||!CARRY.d||!CARRY.items.length)return "";
+  var td=chk(name,defCard(c1)),a=CARRY.items.filter(function(it){return !td[it.id]});
+  if(!a.length)return "";
+  return '<div class="gc" style="--ac:#d97706"><div class="gh">지난 시간에 못 끝낸 것 · '+dlabel(CARRY.d)+'</div>'+a.map(function(it){return '<div style="padding:8px 2px;border-top:1px solid #eee;font-size:17px;font-weight:700">'+esc(it.t)+'</div>'}).join("")+'</div>';
+}
+function lastHtml(){
+  var a=Object.keys(LAST).map(function(k){return LAST[k]}).filter(function(x){return x&&x.w}).sort(function(x,y){return (y.d+y.t)>(x.d+x.t)?1:-1}).slice(0,4);
+  if(!a.length)return "";
+  return '<div class="gc" style="--ac:#2f8f6b"><div class="gh">이어서 할 차례</div>'+a.map(function(x){return '<div style="padding:8px 2px;border-top:1px solid #eee">'+(x.nx?'<div style="font-size:18px;font-weight:800;color:#1f6f50">'+esc(x.nx)+'</div>':'')+(x.nx?'':'<div style="font-size:18px;font-weight:800;color:#1f6f50">'+esc(x.w)+'</div>')+'</div>'}).join("")+'</div>';
+}
+function hubHtml(c1){
+  var o="";
+  HUB.forEach(function(g){
+    var lv0=(gradeOf(c1)||"").charAt(0);
+    var its=g.items.filter(function(a){return !(a.not&&a.not.indexOf(c1)>-1)&&!(a.hl&&lv0&&a.hl.indexOf(lv0)>-1)});
+    if(!its.length)return;
+    var q=(g.h==="V시그널"||g.h==="독해")?"bn="+encodeURIComponent(ls("bd-name")||"")+"&bc="+encodeURIComponent(c1):"";
+    o+='<div class="gc" style="--ac:'+g.ac+'"><div class="gh">'+esc(g.h)+'</div><div class="gg" style="--c:'+Math.min(g.cols,its.length)+'">'+its.map(function(a){return a.u?'<a class="t2" href="'+hubHref(g,a,q)+'">'+(a.ic?'<img class="ic" alt="" src="'+a.ic+'">':'')+esc(a.n)+'</a>':'<span class="t2 off">'+esc(a.n)+'</span>'}).join("")+'</div></div>';
+  });
+  return o;
+}
+/* ---------- 화면 ---------- */
+function render(){
+  if(T){renderT();tHome();return}
+  if(LOGIN&&AUTHST===0){document.getElementById("app").innerHTML="";return}
+  if((TYPE||LOGIN)&&!who()&&!S.conf&&!S.pin){var ex0=document.getElementById(LOGIN?"lgn":"nmin"),ex1=document.getElementById("lgp");if(ex0&&(document.activeElement===ex0||ex0.value||(ex1&&(document.activeElement===ex1||ex1.value))))return}
+  var app=document.getElementById("app"),h="",name=who();
+  if(!name&&S.conf){app.innerHTML='<div class="top"><div class="who">'+esc(S.conf.n)+' 맞나요?</div></div><div class="names"><button class="name" data-conf="ok">맞아요</button><button class="name" data-conf="no">'+(TYPE?"다시 입력할게요":"다시 고를게요")+'</button></div>';return}
+  if(!name){
+    var GA=groupsAll(),grp=(S.cls&&GA[S.cls])?S.cls:Object.keys(GA)[0],list=[];
+    GA[grp].forEach(function(c){ROSTER[c].forEach(function(n){list.push({n:n,c:c})})});
+    list.sort(function(a,b){return a.n.localeCompare(b.n,"ko")});
+    h+='<div class="top"><div class="who">'+(LOGIN?"이름과 비번을 넣어 주세요":TYPE?"이름을 입력해 주세요":"이름을 눌러 주세요")+'<small>'+dstr()+'</small></div></div>';
+    if(LOGIN){GA={};list=[];h+='<div class="card" style="display:flex;flex-direction:column;gap:10px"><input id="lgn" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" placeholder="이름" style="font-size:22px;padding:12px;border:1px solid var(--bd);border-radius:10px"><input id="lgp" type="password" autocomplete="off" enterkeyhint="done" placeholder="비번" style="font-size:22px;padding:12px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-lgok="1" style="padding:14px 20px;font-size:17px">들어가기</button></div><div id="lgerr" style="color:#c0392b;text-align:center;margin-top:10px;min-height:20px">'+esc(AUTHMSG)+'</div>'}
+    else if(TYPE){GA={};list=[];h+='<div class="card" style="display:flex;gap:8px;align-items:center"><input id="nmin" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="이름" style="flex:1;font-size:22px;padding:12px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-nmok="1" style="padding:14px 20px;font-size:17px">확인</button></div><div id="nmerr" style="color:#c0392b;text-align:center;margin-top:10px;min-height:20px"></div>'}
+    h+='<div class="chips">'+Object.keys(GA).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
+    h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
+    if(S.pin)h+='<div class="card" style="margin-top:14px;display:flex;gap:8px;align-items:center"><input id="pinin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="flex:1;font-size:20px;padding:10px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-pinok="1" style="padding:12px 18px;font-size:16px">확인</button></div>';
+    else if(!SMP)h+='<button data-view="1" style="display:block;margin:18px auto 0;border:0;background:none;color:#aaa;font-size:13px;padding:8px 16px">열람</button>';
+  } else if(S.view==="basket"){
+    h+=basketView(name);
+  } else if(S.view==="today"){
+    var c0=clsOf(name),card=hasCard(c0,"nae",name)?"nae":(S.card||defCard(c0,name)),cdItems=itemsFor(c0,card,name),done=chk(name,card),cd={items:cdItems};
+    h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
+    h+='<div class="top"><div class="who">오늘의 학습<small>'+esc(name)+' · '+dstr()+'</small></div></div>';
+    h+='<div class="tabs">'+tabsFor(c0,name,card).map(function(x){return '<button class="tab'+(x.id===card?' on':'')+'" data-card="'+x.id+'">'+x.label+'</button>'}).join("")+'</div>';
+    h+='<div class="card">';
+    if(!cd.items.length) h+='<div class="empty">항목 준비 중</div>';
+    var shp=0;cd.items.forEach(function(it,ix){
+      var d=!!done[it.id],pc=it.plus?' plus':'';
+      if(it.plus&&!shp){shp=1;h+='<div class="plh">플러스</div>'}
+      if(it.kind==="score"){
+        h+='<div class="item'+pc+(d?' done':'')+'"><span class="box">'+(d?'✓':(it.plus?'+':(ix+1)))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span><input class="score" type="number" inputmode="numeric" min="0" max="100" data-score="'+it.id+'" data-card="'+card+'" value="'+(done[it.id]&&done[it.id]!==1?esc(done[it.id]):'')+'" placeholder="점수"></div>';
+        return;
+      }
+          h+='<button class="item'+pc+(d?' done':'')+'" data-it="'+it.id+'" data-card="'+card+'"><span class="box">'+(d?'✓':(it.plus?'+':(ix+1)))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>';
+    });
+    h+='</div>';
+    var ad=(card===defCard(c0,name)&&card!=="nae")?itemsFor(c0,"add",name):[];if(ad.length){var ads=chk(name,"add");h+='<div class="h">추가 숙제</div><div class="card">';ad.forEach(function(it,ix){var d=!!ads[it.id];h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="add"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>'});h+='</div>'}
+    var pn=penItems(name);
+    if(pn.length){var pd=chk(name,"pen");h+='<div class="h pk">페널티</div><div class="card pen">';var pw="";pn.forEach(function(it,ix){var d=!!pd[it.id];if(it.why&&it.why!==pw){pw=it.why;h+='<div class="pwhy">'+esc(it.why)+'</div>'}h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="pen"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>'});h+='</div>'}
+    if(card==="reg" && EXTRA.items.length && cd.items.length && cd.items.filter(function(i){return !i.plus}).every(function(i){return done[i.id]})){
+      var ex=chk(name,"extra");
+      h+='<div class="h">'+EXTRA.t+'</div><div class="card">';
+      EXTRA.items.forEach(function(it,ix){
+        var d=!!ex[it.id];
+        h+='<button class="item'+(d?' done':'')+'" data-it="'+it.id+'" data-card="extra"><span class="box">'+(d?'✓':(ix+1))+'</span><span class="t">'+esc(it.t)+(it.sub?'<small>'+esc(it.sub)+'</small>':'')+'</span></button>';
+      });
+      h+='</div>';
+    }
+    h+='<button class="back" data-go="hub">‹ 돌아가기</button>';
+  } else {
+    var c1=clsOf(name),dcard=defCard(c1,name),cdn=chk(name,dcard),reg=itemsFor(c1,dcard,name).filter(function(i){return !i.plus}),dn=reg.filter(function(i){return cdn[i.id]}).length;
+    h+='<div class="top"><div class="who">'+esc(name)+'<small>'+dstr()+'</small></div>'+(PH?'':'<button class="ghost" data-go="switch">다른 학생</button>')+'</div>';
+    h+='<button class="today" data-go="today"><div><b>오늘의 학습</b></div><div class="n">'+dn+' / '+reg.length+'</div></button>';
+    h+=bdHtml(name,c1);
+    h+=basketTile(name);
+    h+=carryHtml(name,c1);
+    h+=lastHtml();
+    h+=hubHtml(c1);
+    if(!PH)h+='<button class="leave" data-go="leave">저장하고 나가기</button>';
+  }
+  app.innerHTML=h;
+}
+var PINH="a11a5024dd6b9d04a47dae300a1f86f8a126a396432d0ae312a91611bd7e4b6f";
+function tryPin(){
+  var pi=document.getElementById("pinin"),v=pi?pi.value:"";
+  if(!v||!window.crypto||!crypto.subtle)return;
+  crypto.subtle.digest("SHA-256",new TextEncoder().encode("vit|"+v)).then(function(d){
+    var x=Array.prototype.map.call(new Uint8Array(d),function(n){return("0"+n.toString(16)).slice(-2)}).join("");
+    if(x===PINH){S.pin=false;ls("bd-name","열람");ls("bd-cls","열람");touch();S.view="hub";render();pull("열람","열람")}
+    else{if(pi){pi.value="";pi.focus()}}
+  });
+}
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="pinin")tryPin();if(e.key==="Enter"&&e.target&&e.target.id==="nmin")tryName();if(e.key==="Enter"&&e.target&&e.target.id==="lgn"){var pp=document.getElementById("lgp");if(pp)pp.focus()}if(e.key==="Enter"&&e.target&&e.target.id==="lgp")doLogin()});
+document.addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b)return;
+  if(b.dataset.view){S.pin=true;render();var pi=document.getElementById("pinin");if(pi)pi.focus()}
+  else if(b.dataset.lgok){doLogin()}
+  else if(b.dataset.nmok){tryName()}
+  else if(b.dataset.pinok){tryPin()}
+  else if(b.dataset.cls){S.pin=false;S.cls=b.dataset.cls;render()}
+  else if(b.dataset.conf==="no"){S.conf=null;render()}
+  else if(b.dataset.conf==="ok"){var cf=S.conf;S.conf=null;if(cf){ls("bd-name",cf.n);ls("bd-cls",cf.c);touch();cfgReset();S.view="hub";render();pull(cf.n,cf.c)}}
+  else if(b.dataset.name&&PH){S.conf={n:b.dataset.name,c:b.dataset.c};render()}
+  else if(b.dataset.name){ls("bd-name",b.dataset.name);ls("bd-cls",b.dataset.c);touch();cfgReset();S.view="hub";render();pull(b.dataset.name,b.dataset.c)}
+  else if(b.dataset.it){var n=ls("bd-name"),c=b.dataset.card,m=chk(n,c);m[b.dataset.it]=m[b.dataset.it]?0:1;stampT(m,b.dataset.it);ls(key(n,c),JSON.stringify(m));touch();render();sync(n,clsOf(n),c,m)}
+  else if(b.dataset.card){S.card=b.dataset.card;render()}
+  else if(b.dataset.bk!==undefined){basketToggle(+b.dataset.bk)}
+  else if(b.dataset.go==="basket"){S.view="basket";touch();render()}
+  else if(b.dataset.go==="today"){S.view="today";S.card=null;touch();render()}
+  else if(b.dataset.go==="hub"){S.view="hub";render()}
+  else if(b.dataset.go==="switch"||b.dataset.go==="leave"){if(LOGIN)leaveOut();else{leave();render()}}
+});
+var TYPE=!T&&!PH&&!SMP&&!/[?&]list=1/.test(location.search);
+function tryName(){var el=document.getElementById("nmin"),v=el?el.value.replace(/\s+/g,""):"";if(!v)return;var hit=null,c;for(c in ROSTER)ROSTER[c].forEach(function(n){if(!hit&&n!=="열람"&&n.replace(/\s+/g,"")===v)hit={n:n,c:c}});if(!hit){var er=document.getElementById("nmerr");if(er)er.textContent="이름을 다시 확인해 주세요";el.value="";el.focus();return}S.conf={n:hit.n,c:hit.c};render()}
+function applyN(){try{var pm=location.search.match(/[?&]n=([^&]+)/);if(T||!PH||!pm)return false;var pn=decodeURIComponent(pm[1]),pc=clsOf(pn);if(!pc||pc==="열람")return false;if(ls("bd-name")!==pn){ls("bd-name",pn);ls("bd-cls",pc);try{cfgReset()}catch(e){}}touch();S.view="hub";return true}catch(e){return false}}
+applyN();
+if(!LOGIN&&!T&&!PH&&!(/[?&]back=1/.test(location.search)&&who()))leave();
+if(PH&&ls("bd-name")==="열람")leave();
+render();
+cfgFetch(function(ch){if(ch&&!(T&&TS.mode==="m")){if(!who())applyN();render()}});
+ttFetch(function(ch){if(ch&&!editing()&&!(T&&TS.mode==="m"))render()});
+if(T){tload();tHook()}else{setInterval(function(){cfgFetch(function(ch){if(ch&&S.view==="names")render()});ttFetch(function(ch){if(ch&&S.view==="names")render()})},180000);if(who())pull(ls("bd-name"),ls("bd-cls"));flush();setInterval(flush,60000)}
+/* 261117 밤: 지켜보던 문서가 바뀌면(아래 모듈이 알려 줌) 주기적으로 하던 확인을 그 자리에서 한 번 돌린다. 내용은 받아 둔 것을 쓰므로 Firebase 를 다시 읽지 않는다 */
+window.__bChanged=function(kind){try{
+  if(T)return;
+  if(kind==="cfg")cfgFetch(function(ch){if(ch&&S.view==="names")render()});
+  else if(kind==="tt")ttFetch(function(ch){if(ch&&S.view==="names")render()});
+  else if(kind==="cards")cardsTick();
+  else if(kind==="pen"){var n0=ls("bd-name");if(n0&&who()){loadLast(n0);if(!editing())penPull(n0,function(c){if(c)render()})}}
+}catch(e){}};
+function editing(){var a=document.activeElement;return !!(a&&(a.tagName==="INPUT"||a.tagName==="TEXTAREA"))}
+function cardsTick(){cardsFetch(function(ch){if(ch&&!editing()&&!(T&&TS.mode==="m"))render()})}
+cardsTick();
+setInterval(function(){if(document.visibilityState==="visible")cardsTick()},45000);
+setInterval(function(){if(!T&&who()&&S.view==="today"&&document.visibilityState==="visible"&&!editing())penPull(ls("bd-name"),function(c){if(c)render()})},20000);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState!=="visible")return;cardsTick();if(!T&&who()){pull(ls("bd-name"),ls("bd-cls"));if(!editing())render()}});
+document.addEventListener("change",function(e){
+  var i=e.target;if(!i.dataset||!i.dataset.score)return;
+  var n=ls("bd-name"),c=i.dataset.card,m=chk(n,c);
+  if(i.value==="")delete m[i.dataset.score];else m[i.dataset.score]=i.value;stampT(m,i.dataset.score);
+  ls(key(n,c),JSON.stringify(m));touch();render();sync(n,clsOf(n),c,m);
+});
+document.addEventListener("input",function(e){if(!T||!e.target||e.target.id!=="qs")return;TS.q=e.target.value;var el=document.getElementById("qres");if(el)el.innerHTML=qHtml()});
+document.addEventListener("change",function(e){if(!T||!e.target||(e.target.id!=="ts"&&e.target.id!=="te"))return;var c=TS.cls;if(!c||!ROSTER[c])return;var t=TT.t[c]||(TT.t[c]={d:"",s:"",e:"",c:""});if(e.target.id==="ts")t.s=e.target.value||"";else t.e=e.target.value||"";ttSave();render()});
+setInterval(function(){if(ls("bd-name")&&!who())render()},60000);
+</script>
+<script type="module">
+/* 261117 밤: 학생 화면이 20초·45초·3분마다 Firebase 에 묻던 것을 "바뀌면 알려 주기"로 바꾼다.
+   설정·시간표·카드·내 페널티 문서를 지켜보다가 바뀐 내용을 받아 두고(window.__bsnap), 위쪽 가로채기가 그 내용으로 답한다.
+   선생님 화면(?t=1)과 ?snap=0 에서는 쓰지 않는다. 이 부분이 실패하면 예전처럼 주기적으로 읽는다. */
+const W=window;
+if(!/[?&](t=1|snap=0)/.test(location.search)&&W.__bdn){
+  try{
+    const {initializeApp}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
+    const {getFirestore,doc,onSnapshot}=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
+    const db=getFirestore(initializeApp({apiKey:"AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA",projectId:"h-roadmap",appId:"1:575520405083:web:b9f40b64cb0ae3d1a9317e"},"board-snap"));
+    const B=W.__bsnap={live:{},d:{},n:0,err:0},subs={};
+    const watch=(col,id,kind)=>{
+      const key=W.__bdn(col==="board_s",id);
+      if(subs[key])return;
+      subs[key]=onSnapshot(doc(db,col,id),snap=>{
+        if(snap.metadata.fromCache)return;
+        let chk=null;if(snap.exists()){try{chk=JSON.parse(snap.data().chk||"{}")}catch(e){chk={}}}
+        const first=!Object.prototype.hasOwnProperty.call(B.d,key),same=!first&&JSON.stringify(B.d[key])===JSON.stringify(chk);
+        B.d[key]=chk;B.n++;
+        if(!first&&!same&&kind&&W.__bChanged)W.__bChanged(kind);
+      },()=>{B.err++;delete B.d[key];try{subs[key]()}catch(e){}delete subs[key]});
+    };
+    const sentinel=col=>{
+      if(subs["_on:"+col])return;
+      subs["_on:"+col]=onSnapshot(doc(db,col,"_on"),snap=>{if(!snap.metadata.fromCache)B.live[col]=snap.exists()},()=>{B.live[col]=false;delete subs["_on:"+col]});
+    };
+    sentinel("board");
+    watch("board","2000-01-03|_설정","cfg");
+    watch("board","2000-01-05|_시간표","tt");
+    watch("board","2000-01-04|_카드","cards");
+    let penKey="";
+    W.__bWatchName=n=>{
+      n=String(n||"").trim();if(!n||n==="열람"||n.length>12)return;
+      const col=/^샘플/.test(n)?"board_s":"board",id="2000-01-01|"+n,key=W.__bdn(col==="board_s",id);
+      if(key===penKey)return;
+      if(penKey&&subs[penKey]){try{subs[penKey]()}catch(e){}delete subs[penKey];delete B.d[penKey]}
+      penKey=key;sentinel(col);watch(col,id,"pen");
+    };
+    try{W.__bWatchName(localStorage.getItem("bd-name"))}catch(e){}
+  }catch(e){W.__bsnapErr=String(e)}
+}
+</script>
+<script type="module">
+if(window.LOGIN){(async function(){
+  try{
+    var F=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
+    var A=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js");
+    var APP;try{APP=F.getApp()}catch(e){APP=F.initializeApp({apiKey:"AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA",authDomain:"nolbada.github.io",projectId:"h-roadmap",appId:"1:575520405083:web:b9f40b64cb0ae3d1a9317e"})}
+    var AU=A.getAuth(APP);try{await A.setPersistence(AU,A.browserLocalPersistence)}catch(e){}
+    var hex=function(s){var b=new TextEncoder().encode(s),o="";for(var i=0;i<b.length;i++)o+=("0"+b[i].toString(16)).slice(-2);return o};
+    window.__au={
+      sin:function(n,p){return A.signInWithEmailAndPassword(AU,"n"+hex(n)+"@vita.local",p+"#vt")},
+      chg:function(p){return A.updatePassword(AU.currentUser,p+"#vt")},
+      out:function(){return A.signOut(AU)},
+      uid:function(){return AU.currentUser?AU.currentUser.uid:""},
+      tok:function(){return AU.currentUser?AU.currentUser.getIdToken().catch(function(){return""}):Promise.resolve("")}};
+    A.onAuthStateChanged(AU,function(u){window.authIn(u)});
+  }catch(e){window.AUTHST=2;try{window.render()}catch(x){}}
+})();
+setTimeout(function(){if(window.AUTHST===0){window.AUTHST=2;try{window.render()}catch(x){}}},7000);
+}
+</script>
+</body>
+</html>
