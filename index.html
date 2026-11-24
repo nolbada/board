@@ -967,7 +967,7 @@ document.addEventListener("change",function(e){var el=e.target;if(!T||!el||!el.d
 var S = {view:"names", cls:null, card:null};
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
 function who(){var n=ls("bd-name"),t=+ls("bd-t")||0;if(LOGIN){if(n==="열람")return n;if(AUTHST!==1)return null;return n||null}if(PH&&n&&n!=="열람"){if(Date.now()-t>120000)touch();return n}if(n&&Date.now()-t>IDLE_MIN*60000){leave();return null}return n}
-function touch(){ls("bd-t",String(Date.now()))}
+function touch(){ls("bd-t",String(Date.now()+(LOGIN&&ls("bd-name")&&ls("bd-name")!=="열람"?43200000:0)))}
 /* 261125 로그인: 이름+비번(Firebase 로그인). 로그인이 켜져 있으면 안 쓰면 로그아웃되는 시간제한과 새로고침 로그아웃은 쓰지 않는다. */
 var LOGIN=false,AUTHST=0,AUTHMSG="",AUTHRETRY=0,AWAY_MIN=15;
 try{var _q=new URLSearchParams(location.search);if(_q.get("away"))AWAY_MIN=parseFloat(_q.get("away"));LOGIN=!/[?&]t=1/.test(location.search)&&(!/[?&]s=1(&|$)/.test(location.search)||_q.get("lt")==="1")&&!_q.get("nologin")}catch(e){}
