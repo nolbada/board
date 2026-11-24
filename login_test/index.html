@@ -185,7 +185,7 @@ $("bOther").onclick=async function(){$("vAway").classList.add("hide");await sign
 var FN="https://vita-auth-admin-575520405083.asia-northeast3.run.app";
 if(Q.get("setup")==="1"){
   var P=$("vSetup");P.classList.remove("hide");
-  P.innerHTML='<div class="dev"><b>선생님 시험 패널</b><br><button class="btn sub" id="tIn">선생님 구글 로그인</button><button class="btn sub" id="tPing">연결 확인</button><button class="btn sub" id="tMk">샘플 3개 만들기 (처음 비번 1234)</button><button class="btn sub" id="tRs">샘플1 비번을 0000으로 초기화</button><button class="btn sub" id="tDl">샘플 3개 지우기</button><button class="btn sub" id="tCmp">명부와 계정 대조 (읽기만)</button><div id="mkOut" class="dev"></div></div>';
+  P.innerHTML='<div class="dev"><b>선생님 시험 패널</b><br><button class="btn sub" id="tIn">선생님 구글 로그인</button><button class="btn sub" id="tPing">연결 확인</button><button class="btn sub" id="tMk">샘플 3개 만들기 (처음 비번 1234)</button><button class="btn sub" id="tRs">샘플1 비번을 0000으로 초기화</button><button class="btn sub" id="tDl">샘플 3개 지우기</button><button class="btn sub" id="tCmp">명부와 계정 대조 (읽기만)</button><button class="btn sub" id="tAll">계정 없는 재원생 계정 만들기 (처음 비번 1234)</button><div id="mkOut" class="dev"></div></div>';
   var say=function(t){$("mkOut").style.cssText="font-size:15px;color:#0f172a;margin-top:12px;word-break:break-all";$("mkOut").textContent=t};
   var call=async function(o){var t=await AU.currentUser.getIdToken();var r=await fetch(FN,{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+t},body:JSON.stringify(o)});return r.status+" "+(await r.text())};
   $("tCmp").onclick=async function(){say("대조 중...");
@@ -208,6 +208,25 @@ if(Q.get("setup")==="1"){
       L.push("명부에 없거나 퇴원인데 계정이 있는 것 "+extra.length+"건: "+(extra.join(", ")||"없음"));
       $("mkOut").style.whiteSpace="pre-wrap";say(L.join("\n"));
     }catch(e){say("대조 실패 "+(e.code||e.message))}
+  };
+  $("tAll").onclick=async function(){say("준비 중...");
+    try{
+      var r1=JSON.parse((await call({op:"list"})).replace(/^\d+ /,""));
+      var have={};(r1.users||[]).forEach(function(u){have[u.uid]=1});
+      var sn=await getDoc(doc(DB,"hw_c","master"));var RS=JSON.parse(sn.data().j).s||[];
+      var todo=RS.filter(function(x){return x.status!=="off"&&!have[x.id]&&/^[a-z0-9]{8}$/.test(x.id)});
+      var nmC={};RS.forEach(function(x){var n=String(x.name||"").replace(/\s+/g,"");nmC[n]=(nmC[n]||0)+1});
+      var dup=todo.filter(function(x){return nmC[String(x.name||"").replace(/\s+/g,"")]>1});
+      if(dup.length){say("같은 이름이 있어 중단: "+dup.map(function(x){return x.name}).join(", "));return}
+      var ok=0,bad=[];
+      for(var i=0;i<todo.length;i+=5){
+        await Promise.all(todo.slice(i,i+5).map(async function(x){var nm=String(x.name||"").replace(/\s+/g,"");
+          try{var s=await call({op:"create",id:x.id,name:nm});if(/^200 /.test(s))ok++;else bad.push(nm+" "+s)}catch(e){bad.push(nm+" 실패")}}));
+        say("만드는 중 "+Math.min(i+5,todo.length)+"/"+todo.length);
+      }
+      $("mkOut").style.whiteSpace="pre-wrap";
+      say("만들 대상 "+todo.length+"명 / 성공 "+ok+"명 / 실패 "+bad.length+"건"+(bad.length?"\n"+bad.join("\n"):""));
+    }catch(e){say("실패 "+(e.code||e.message))}
   };
   $("tIn").onclick=async function(){try{var c=await signInWithPopup(AU,new GoogleAuthProvider());say("로그인 "+c.user.email)}catch(e){say("로그인 실패 "+(e.code||e.message))}};
   $("tPing").onclick=async function(){say("처리 중... 잠시만요");try{say(await call({op:"ping"}))}catch(e){say("실패 "+(e.code||e.message))}};
