@@ -590,10 +590,9 @@ function bdT(nm,td){try{
   if(!hasBdItem(nm)||!TS.wk)return "";
   /* 261118 선생님 뜻: 비단챌 숙제는 수업 들어오기 전에 한 것만 숙제로 인정. 월수반 15:20·화목반 15:10·금요일 14:00 이후 기록은 수업 중에 한 것이라 숙제는 △ */
   var cd=dayOf(clsOf(nm))||"",cut=(/화|목/.test(cd)&&!/월|수/.test(cd))?"15:10":"15:20",ok=[],late=[],i,d;
-  for(i=0;i<=4;i++){
+  for(i=0;i<=1;i++){
     d=i?dstep(td,-i):td;
     var row=TS.wk[d]&&TS.wk[d][nm],ap=(row&&row.chk&&row.chk.app)||{},ob=null;
-    if(i>0){var m0=(row&&row.chk&&row.chk[slotOf(d)])||{};if(m0.tin)break}
     try{ob=ap.a_bd?JSON.parse(ap.a_bd):null}catch(e0){}
     if(ob&&(+ob.s>0||+ob.n>0||ob.w)){
       var L=(Array.isArray(ob.l)&&ob.l.length)?ob.l:[{w:String(ob.w||"비단챌 접속"),t:String(ob.t||"")}],w=dow(d),cls=(w>=1&&w<=4&&cd.indexOf("일월화수목금토".charAt(w))>-1)||w===5,cu=(w===5)?"14:00":cut;
@@ -1085,11 +1084,11 @@ function carryLoad(n,c){
   },function(){return getOld()}).then(function(rs){
     var res={on:today,d:"",items:[],bd:[]},ok=true;
     /* 261117: 지난 수업 날부터 어제까지의 비단챌 기록(보드에서 이름을 누르고 연 것)을 모은다. 학생 첫 화면 맨 위 "비단챌 숙제 기록" 칸에 쓴다 */
-    try{for(var b0=0;b0<rs.length;b0++){
+    try{for(var b0=0;b0<1&&b0<rs.length;b0++){
       var jb=rs[b0];if(!jb||!jb.ok)continue;
       var ab=jb.chk&&jb.chk.app&&jb.chk.app.a_bd,ob=null;try{ob=ab?JSON.parse(ab):null}catch(e0){}
       if(ob&&(+ob.s>0||+ob.n>0||ob.w))res.bd.push({d:ds[b0],w:String(ob.w||""),s:+ob.s||0,n:+ob.n||0,t:String(ob.t||""),l:Array.isArray(ob.l)?ob.l.slice(-15):null});
-      var mb=(jb.chk&&jb.chk[slotOf(ds[b0])])||{};if(mb.tin)break;
+      
     }}catch(e1){res.bd=[]}
     for(var k=0;k<rs.length;k++){
       var j=rs[k];if(!j||!j.ok){ok=false;continue}
