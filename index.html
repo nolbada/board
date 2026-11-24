@@ -47,7 +47,8 @@
     return of.apply(this,arguments);
   };
   function p1(m,pl){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},4000):0;
-    return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:'+m,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl),keepalive:true,signal:ac?ac.signal:undefined})
+    return (W.__au&&W.__au.tok?W.__au.tok():Promise.resolve('')).then(function(tk){var hd={'Content-Type':'application/json'};if(tk)hd.Authorization='Bearer '+tk;
+    return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:'+m,{method:'POST',headers:hd,body:JSON.stringify(pl),keepalive:true,signal:ac?ac.signal:undefined})})
       .then(function(r){return r.text().then(function(t){clearTimeout(tm);return {c:r.status,b:t}})},function(e){clearTimeout(tm);throw e})}
   function fsPut(p){
     var name=String(p.name||'').trim(),date=String(p.date||''),cls=String(p.cls||''),card=String(p.card||'reg');
@@ -965,8 +966,74 @@ document.addEventListener("change",function(e){var el=e.target;if(!T||!el||!el.d
 /* ---------- 상태 ---------- */
 var S = {view:"names", cls:null, card:null};
 function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
-function who(){var n=ls("bd-name"),t=+ls("bd-t")||0;if(PH&&n&&n!=="열람"){if(Date.now()-t>120000)touch();return n}if(n&&Date.now()-t>IDLE_MIN*60000){leave();return null}return n}
+function who(){var n=ls("bd-name"),t=+ls("bd-t")||0;if(LOGIN){if(n==="열람")return n;if(AUTHST!==1)return null;return n||null}if(PH&&n&&n!=="열람"){if(Date.now()-t>120000)touch();return n}if(n&&Date.now()-t>IDLE_MIN*60000){leave();return null}return n}
 function touch(){ls("bd-t",String(Date.now()))}
+/* 261125 로그인: 이름+비번(Firebase 로그인). 로그인이 켜져 있으면 안 쓰면 로그아웃되는 시간제한과 새로고침 로그아웃은 쓰지 않는다. */
+var LOGIN=false,AUTHST=0,AUTHMSG="",AUTHRETRY=0,AWAY_MIN=15;
+try{var _q=new URLSearchParams(location.search);if(_q.get("away"))AWAY_MIN=parseFloat(_q.get("away"));LOGIN=!/[?&]t=1/.test(location.search)&&(!/[?&]s=1(&|$)/.test(location.search)||_q.get("lt")==="1")&&!_q.get("nologin")}catch(e){}
+var BADPW=["1234","0000","1111","2222","3333","4444","5555","6666","7777","8888","9999","12345","123456","1q2w3e4r"];
+function akey(d){d=d||new Date();var x=new Date(d.getTime()-4*3600*1000);return x.getFullYear()+"-"+(x.getMonth()+1)+"-"+x.getDate()}
+function rfind(v){v=String(v||"").replace(/\s+/g,"");var hit=null,c;for(c in ROSTER)ROSTER[c].forEach(function(n){if(!hit&&n!=="열람"&&n.replace(/\s+/g,"")===v)hit={n:n,c:c}});return hit}
+function ovl(id,html){var o=document.getElementById(id);if(!o){o=document.createElement("div");o.id=id;o.style.cssText="position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.78);display:flex;align-items:center;justify-content:center;padding:20px";document.body.appendChild(o)}o.innerHTML='<div class="card" style="max-width:420px;width:100%;text-align:center;padding:26px 18px">'+html+'</div>';return o}
+function ovlOff(id){var o=document.getElementById(id);if(o)o.remove()}
+function authIn(u){
+  if(u&&u.email&&/@vita\.local$/.test(u.email)){
+    var h=rfind(u.displayName);
+    if(!h){if(!AUTHRETRY){AUTHRETRY=1;cfgFetch(function(){authIn(u)});return}AUTHST=2;AUTHMSG="명단에 없는 이름이에요. 선생님께 알려 주세요";try{window.__au.out()}catch(e){}render();return}
+    AUTHST=1;AUTHMSG="";
+    var dk=ls("bd-aday|"+u.uid);if(dk&&dk!==akey()){window.__au.out();return}
+    if(!dk)ls("bd-aday|"+u.uid,akey());
+    var sw=ls("bd-name")!==h.n;
+    if(sw){ls("bd-name",h.n);ls("bd-cls",h.c);touch();try{cfgReset()}catch(e){}S.view="hub";render();pull(h.n,h.c)}
+    else{touch();if(S.view==="names")S.view="hub";render()}
+    if(ls("bd-force|"+u.uid)==="1")pwForm();
+  }else{
+    AUTHST=2;var n=ls("bd-name");if(n&&n!=="열람"){leave()}render()
+  }
+}
+function pwForm(){
+  var o=ovl("pwov",'<div style="font-size:20px;font-weight:700;margin-bottom:6px">나만의 비번 만들기</div><div style="color:#555;font-size:14px;margin-bottom:14px">4자 이상. 이름과 같거나 1234처럼 쉬운 것은 안 돼요</div><input id="pw1" type="password" autocomplete="new-password" placeholder="새 비번" style="width:100%;font-size:20px;padding:12px;border:1px solid var(--bd);border-radius:10px;margin-bottom:8px"><input id="pw2" type="password" autocomplete="new-password" placeholder="한 번 더" style="width:100%;font-size:20px;padding:12px;border:1px solid var(--bd);border-radius:10px"><div id="pwe" style="color:#c0392b;min-height:22px;margin:8px 0"></div><button class="name" id="pwok" style="padding:14px 26px;font-size:17px">바꾸기</button>');
+  document.getElementById("pwok").onclick=function(){
+    var a=document.getElementById("pw1").value,b=document.getElementById("pw2").value,e=document.getElementById("pwe"),nm=ls("bd-name")||"";
+    if(a.length<4){e.textContent="4자 이상으로 해 주세요";return}
+    if(BADPW.indexOf(a)>=0||/^(.)\1+$/.test(a)){e.textContent="너무 쉬운 비번이에요";return}
+    if(a.replace(/\s+/g,"")===nm.replace(/\s+/g,"")){e.textContent="이름과 다르게 해 주세요";return}
+    if(a!==b){e.textContent="두 번이 서로 달라요";return}
+    var uid=window.__au.uid();
+    window.__au.chg(a).then(function(){ls("bd-force|"+uid,null);ovlOff("pwov")}).catch(function(x){e.textContent=(x&&x.code==="auth/requires-recent-login")?"다시 로그인해 주세요":"바꾸지 못했어요"})};
+}
+function doLogin(){
+  var n=(document.getElementById("lgn")||{}).value||"",p=(document.getElementById("lgp")||{}).value||"",er=document.getElementById("lgerr");
+  if(!n.trim()||!p){if(er)er.textContent="이름과 비번을 넣어 주세요";return}
+  if(!window.__au){if(er)er.textContent="잠시 뒤에 다시 눌러 주세요";return}
+  if(er)er.textContent="확인 중…";
+  window.__au.sin(n.trim().replace(/\s+/g,""),p).then(function(c){
+    ls("bd-aday|"+c.user.uid,akey());
+    if(BADPW.indexOf(p)>=0){ls("bd-force|"+c.user.uid,"1");pwForm()}
+  }).catch(function(){var e2=document.getElementById("lgerr");if(e2)e2.textContent="이름이나 비번이 맞지 않아요";var pp=document.getElementById("lgp");if(pp){pp.value="";pp.focus()}})
+}
+function leaveOut(){
+  if(!LOGIN||ls("bd-name")==="열람"){leave();render();return}
+  try{flush()}catch(e){}
+  var nm=ls("bd-name")||"";
+  document.getElementById("app").innerHTML='<div class="card" style="text-align:center;padding:44px 16px;margin-top:40px"><div style="font-size:26px;font-weight:700">기록이 저장되었습니다</div><div style="color:#666;margin-top:10px;font-size:16px">'+esc(nm)+'</div></div>';
+  setTimeout(function(){leave();var p=window.__au?window.__au.out():Promise.resolve();p.then(function(){AUTHST=2;render()},function(){AUTHST=2;render()})},2200)
+}
+document.addEventListener("visibilitychange",function(){
+  if(!LOGIN||AUTHST!==1)return;
+  if(document.visibilityState==="hidden"){ls("bd-hid",String(Date.now()))}
+  else{
+    var t=+ls("bd-hid")||0;ls("bd-hid",null);var nm=ls("bd-name");
+    if(nm&&nm!=="열람"&&window.__au){
+      var dk=ls("bd-aday|"+window.__au.uid());if(dk&&dk!==akey()){window.__au.out();return}
+      if(t&&(Date.now()-t)>AWAY_MIN*60000){
+        ovl("awayov",'<div style="font-size:24px;font-weight:700;margin-bottom:18px">'+esc(nm)+' 맞나요?</div><div style="display:flex;gap:10px;justify-content:center"><button class="name" id="awOther" style="padding:14px 22px;font-size:17px">다른 이름</button><button class="name" id="awSame" style="padding:14px 26px;font-size:17px">맞아요</button></div>');
+        document.getElementById("awSame").onclick=function(){ovlOff("awayov")};
+        document.getElementById("awOther").onclick=function(){ovlOff("awayov");leave();window.__au.out().then(function(){AUTHST=2;render()})}
+      }
+    }
+  }
+});
 function leave(){S.pin=false;ls("bd-name",null);ls("bd-cls",null);ls("bd-t",null);S.view="names"}
 function clsOf(n){if(n==="열람")return "열람";var s=ls("bd-cls");if(s&&ROSTER[s]&&ROSTER[s].indexOf(n)>-1)return s;for(var c in ROSTER)if(ROSTER[c].indexOf(n)>-1)return c;return ""}
 function dstr(){var d=new Date(),w="일월화수목금토"[d.getDay()];return (d.getMonth()+1)+"/"+d.getDate()+"("+w+")"}
@@ -1128,15 +1195,17 @@ function hubHtml(c1){
 /* ---------- 화면 ---------- */
 function render(){
   if(T){renderT();tHome();return}
-  if(TYPE&&!who()&&!S.conf&&!S.pin){var ex0=document.getElementById("nmin");if(ex0&&(document.activeElement===ex0||ex0.value))return}
+  if(LOGIN&&AUTHST===0){document.getElementById("app").innerHTML="";return}
+  if((TYPE||LOGIN)&&!who()&&!S.conf&&!S.pin){var ex0=document.getElementById(LOGIN?"lgn":"nmin"),ex1=document.getElementById("lgp");if(ex0&&(document.activeElement===ex0||ex0.value||(ex1&&(document.activeElement===ex1||ex1.value))))return}
   var app=document.getElementById("app"),h="",name=who();
   if(!name&&S.conf){app.innerHTML='<div class="top"><div class="who">'+esc(S.conf.n)+' 맞나요?</div></div><div class="names"><button class="name" data-conf="ok">맞아요</button><button class="name" data-conf="no">'+(TYPE?"다시 입력할게요":"다시 고를게요")+'</button></div>';return}
   if(!name){
     var GA=groupsAll(),grp=(S.cls&&GA[S.cls])?S.cls:Object.keys(GA)[0],list=[];
     GA[grp].forEach(function(c){ROSTER[c].forEach(function(n){list.push({n:n,c:c})})});
     list.sort(function(a,b){return a.n.localeCompare(b.n,"ko")});
-    h+='<div class="top"><div class="who">'+(TYPE?"이름을 입력해 주세요":"이름을 눌러 주세요")+'<small>'+dstr()+'</small></div></div>';
-    if(TYPE){GA={};list=[];h+='<div class="card" style="display:flex;gap:8px;align-items:center"><input id="nmin" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="이름" style="flex:1;font-size:22px;padding:12px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-nmok="1" style="padding:14px 20px;font-size:17px">확인</button></div><div id="nmerr" style="color:#c0392b;text-align:center;margin-top:10px;min-height:20px"></div>'}
+    h+='<div class="top"><div class="who">'+(LOGIN?"이름과 비번을 넣어 주세요":TYPE?"이름을 입력해 주세요":"이름을 눌러 주세요")+'<small>'+dstr()+'</small></div></div>';
+    if(LOGIN){GA={};list=[];h+='<div class="card" style="display:flex;flex-direction:column;gap:10px"><input id="lgn" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" placeholder="이름" style="font-size:22px;padding:12px;border:1px solid var(--bd);border-radius:10px"><input id="lgp" type="password" autocomplete="off" enterkeyhint="done" placeholder="비번" style="font-size:22px;padding:12px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-lgok="1" style="padding:14px 20px;font-size:17px">들어가기</button></div><div id="lgerr" style="color:#c0392b;text-align:center;margin-top:10px;min-height:20px">'+esc(AUTHMSG)+'</div>'}
+    else if(TYPE){GA={};list=[];h+='<div class="card" style="display:flex;gap:8px;align-items:center"><input id="nmin" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="이름" style="flex:1;font-size:22px;padding:12px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-nmok="1" style="padding:14px 20px;font-size:17px">확인</button></div><div id="nmerr" style="color:#c0392b;text-align:center;margin-top:10px;min-height:20px"></div>'}
     h+='<div class="chips">'+Object.keys(GA).map(function(g){return '<button class="chip'+(g===grp?' on':'')+'" data-cls="'+g+'">'+g+'</button>'}).join("")+'</div>';
     h+='<div class="names">'+list.map(function(x){return '<button class="name" data-name="'+esc(x.n)+'" data-c="'+x.c+'">'+esc(x.n)+'</button>'}).join("")+'</div>';
     if(S.pin)h+='<div class="card" style="margin-top:14px;display:flex;gap:8px;align-items:center"><input id="pinin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" style="flex:1;font-size:20px;padding:10px;border:1px solid var(--bd);border-radius:10px"><button class="name" data-pinok="1" style="padding:12px 18px;font-size:16px">확인</button></div>';
@@ -1196,10 +1265,11 @@ function tryPin(){
     else{if(pi){pi.value="";pi.focus()}}
   });
 }
-document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="pinin")tryPin();if(e.key==="Enter"&&e.target&&e.target.id==="nmin")tryName()});
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target&&e.target.id==="pinin")tryPin();if(e.key==="Enter"&&e.target&&e.target.id==="nmin")tryName();if(e.key==="Enter"&&e.target&&e.target.id==="lgn"){var pp=document.getElementById("lgp");if(pp)pp.focus()}if(e.key==="Enter"&&e.target&&e.target.id==="lgp")doLogin()});
 document.addEventListener("click",function(e){
   var b=e.target.closest("button");if(!b)return;
   if(b.dataset.view){S.pin=true;render();var pi=document.getElementById("pinin");if(pi)pi.focus()}
+  else if(b.dataset.lgok){doLogin()}
   else if(b.dataset.nmok){tryName()}
   else if(b.dataset.pinok){tryPin()}
   else if(b.dataset.cls){S.pin=false;S.cls=b.dataset.cls;render()}
@@ -1213,13 +1283,13 @@ document.addEventListener("click",function(e){
   else if(b.dataset.go==="basket"){S.view="basket";touch();render()}
   else if(b.dataset.go==="today"){S.view="today";S.card=null;touch();render()}
   else if(b.dataset.go==="hub"){S.view="hub";render()}
-  else if(b.dataset.go==="switch"||b.dataset.go==="leave"){leave();render()}
+  else if(b.dataset.go==="switch"||b.dataset.go==="leave"){if(LOGIN)leaveOut();else{leave();render()}}
 });
 var TYPE=!T&&!PH&&!SMP&&!/[?&]list=1/.test(location.search);
 function tryName(){var el=document.getElementById("nmin"),v=el?el.value.replace(/\s+/g,""):"";if(!v)return;var hit=null,c;for(c in ROSTER)ROSTER[c].forEach(function(n){if(!hit&&n!=="열람"&&n.replace(/\s+/g,"")===v)hit={n:n,c:c}});if(!hit){var er=document.getElementById("nmerr");if(er)er.textContent="이름을 다시 확인해 주세요";el.value="";el.focus();return}S.conf={n:hit.n,c:hit.c};render()}
 function applyN(){try{var pm=location.search.match(/[?&]n=([^&]+)/);if(T||!PH||!pm)return false;var pn=decodeURIComponent(pm[1]),pc=clsOf(pn);if(!pc||pc==="열람")return false;if(ls("bd-name")!==pn){ls("bd-name",pn);ls("bd-cls",pc);try{cfgReset()}catch(e){}}touch();S.view="hub";return true}catch(e){return false}}
 applyN();
-if(!T&&!PH&&!(/[?&]back=1/.test(location.search)&&who()))leave();
+if(!LOGIN&&!T&&!PH&&!(/[?&]back=1/.test(location.search)&&who()))leave();
 if(PH&&ls("bd-name")==="열람")leave();
 render();
 cfgFetch(function(ch){if(ch&&!(T&&TS.mode==="m")){if(!who())applyN();render()}});
@@ -1289,6 +1359,26 @@ if(!/[?&](t=1|snap=0)/.test(location.search)&&W.__bdn){
     };
     try{W.__bWatchName(localStorage.getItem("bd-name"))}catch(e){}
   }catch(e){W.__bsnapErr=String(e)}
+}
+</script>
+<script type="module">
+if(window.LOGIN){(async function(){
+  try{
+    var F=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
+    var A=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js");
+    var APP;try{APP=F.getApp()}catch(e){APP=F.initializeApp({apiKey:"AIzaSyC88G-OjMJOqVqnIVqunzh7fvk91wtKKnA",authDomain:"nolbada.github.io",projectId:"h-roadmap",appId:"1:575520405083:web:b9f40b64cb0ae3d1a9317e"})}
+    var AU=A.getAuth(APP);try{await A.setPersistence(AU,A.browserLocalPersistence)}catch(e){}
+    var hex=function(s){var b=new TextEncoder().encode(s),o="";for(var i=0;i<b.length;i++)o+=("0"+b[i].toString(16)).slice(-2);return o};
+    window.__au={
+      sin:function(n,p){return A.signInWithEmailAndPassword(AU,"n"+hex(n)+"@vita.local",p+"#vt")},
+      chg:function(p){return A.updatePassword(AU.currentUser,p+"#vt")},
+      out:function(){return A.signOut(AU)},
+      uid:function(){return AU.currentUser?AU.currentUser.uid:""},
+      tok:function(){return AU.currentUser?AU.currentUser.getIdToken().catch(function(){return""}):Promise.resolve("")}};
+    A.onAuthStateChanged(AU,function(u){window.authIn(u)});
+  }catch(e){window.AUTHST=2;try{window.render()}catch(x){}}
+})();
+setTimeout(function(){if(window.AUTHST===0){window.AUTHST=2;try{window.render()}catch(x){}}},7000);
 }
 </script>
 </body>
