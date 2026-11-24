@@ -178,14 +178,7 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 <script>
 /* ---------- 설정: 선생님이 고치는 부분 ---------- */
 var SMP=/[?&]s=1(&|$)/.test(location.search);
-var ROSTER = {
-  "M초6A":["윤여름","조서인"],
-  "M초6C":["김동권","김은찬","김이한","민윤찬","박윤수","신도건","이상윤"],
-  "T초6B":["김지율","김태율","노지훈","이재빈","연휘건"],
-  "T초6C":["김예슬","노예린","류이안","이연서","이재인","조은유","연다혜"],
-  "M중1B":["김시원","김윤슬","류아인","박대환","이지성","임건호","정해윤"],
-  "T중1A":["김태건","장도율","조이준","최민준","홍윤제"]
-};
+var ROSTER = {"M초6A":[],"M초6C":[],"T초6B":[],"T초6C":[],"M중1B":[],"T중1A":[]};
 /* 학생에게는 반 이름 대신 요일 묶음만 보임. 반 이름은 내부 구분용 */
 var GROUPS = {
   "월·수·금":["M초6A","M초6C","M중1B"],
@@ -277,7 +270,7 @@ var CARDS = [
   ]}
 ];
 /* 학생별로 빼는 항목: 이름 -> 항목 id 목록 */
-var SKIP = {"윤여름":["s6"],"조서인":["s6"]};
+var SKIP = {};
 function cardPick(cls,slot,name,date){
   var d=date||iso(),v=CC.day&&CC.day[d]&&CC.day[d][name]&&CC.day[d][name][slot];if(v)return v;
   var rg=CC.rg||[];for(var i=rg.length-1;i>=0;i--){var r=rg[i];if(r.slot===slot&&d>=r.from&&d<=r.to&&r.names.indexOf(name)>-1)return r.card}
@@ -302,8 +295,7 @@ var FRI_A = [
   {id:"f5",t:"클카 단어 누적복습",kind:"self"},
   {id:"f6",t:"클카 독해 TEST",kind:"self"}
 ];
-var FRI_BY = {};
-["신도건","김동권","김이한","박윤수","민윤찬","이상윤","김은찬","이연서","이재인","조은유","김예슬","류이안","노예린","김지율","노지훈","이재빈","연휘건"].forEach(function(n){FRI_BY[n]=FRI_A});
+var FRI_BY = {}; [].forEach(function(n){FRI_BY[n]=FRI_A});
 /* ---------- 서버 설정: 선생님 관리 탭에서 바꾼 명단 ---------- */
 var CFGKEY={date:"2000-01-03",name:"_설정",card:"cfg"};
 var CFG={rs:{},u:0}, CFGP=false;
@@ -606,7 +598,7 @@ function bdT(nm,td){try{
 }catch(e){return ""}}
 function carryT(nm,m,td){try{
   if(!TS.wk)return "";
-  if(/조성니|윤여름/.test(nm))return "";
+  if(["2yuryk","2v0prd"].indexOf(function(n){var x=5381,i;for(i=0;i<n.length;i++)x=((x*33)^n.charCodeAt(i))>>>0;return x.toString(36)}(nm))>-1)return "";
   var c=clsOf(nm),end=(mon(td)===m)?td:dstep(m,7),d,by={},order=[],n=0;
   for(d=m;d<end;d=dstep(d,1)){
     var row=TS.wk[d]&&TS.wk[d][nm];if(!row||!row.chk)continue;
