@@ -1009,7 +1009,7 @@ function doLogin(){
   if(er)er.textContent="확인 중…";
   window.__au.sin(n.trim().replace(/\s+/g,""),p).then(function(c){
     ls("bd-aday|"+c.user.uid,akey());
-    if(BADPW.indexOf(p)>=0)ls("bd-force|"+c.user.uid,"1")
+    if(BADPW.indexOf(p)>=0){ls("bd-force|"+c.user.uid,"1");pwForm()}
   }).catch(function(){var e2=document.getElementById("lgerr");if(e2)e2.textContent="이름이나 비번이 맞지 않아요";var pp=document.getElementById("lgp");if(pp){pp.value="";pp.focus()}})
 }
 function leaveOut(){
