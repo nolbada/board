@@ -77,7 +77,7 @@ input{width:100%;font-size:18px;padding:12px;border:1px solid #cbd5e1;border-rad
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,updatePassword,signOut,createUserWithEmailAndPassword,setPersistence,browserLocalPersistence} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,updatePassword,signOut,createUserWithEmailAndPassword,setPersistence,browserLocalPersistence,GoogleAuthProvider,signInWithPopup} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 var Q=new URLSearchParams(location.search);
@@ -91,8 +91,8 @@ var NAME="", CHK={}, SEQ=0;
 
 function hex(s){var b=new TextEncoder().encode(s),o="";for(var i=0;i<b.length;i++)o+=("0"+b[i].toString(16)).slice(-2);return o}
 // Firebase 비밀번호는 최소 6자라서, 학생이 넣는 4자 이상 비번 앞뒤에 고정 글자를 붙여 보낸다(학생은 모름)
-function ap(p){return "nb#"+p+"#26"}
-function mail(n){return hex(n.trim())+"@s.nolbada.test"}
+function ap(p){return p+"#vt"}
+function mail(n){return "n"+hex(n.trim())+"@vita.local"}
 function nameOf(u){return localStorage.getItem("lt_name_"+u.uid)||""}
 // 하루 기준: 새벽 4시에 바뀜
 function dayKey(d){d=d||new Date();var x=new Date(d.getTime()-4*3600*1000);return x.getFullYear()+"-"+(x.getMonth()+1)+"-"+x.getDate()}
@@ -101,6 +101,7 @@ function show(id){["vLogin","vChange","vTodo"].forEach(function(k){$(k).classLis
 await setPersistence(AU,browserLocalPersistence);
 
 onAuthStateChanged(AU,async function(u){
+  if(u&&u.email&&u.email.indexOf("@vita.local")<0){NAME="";show("");return}
   if(!u){NAME="";$("who").textContent="";show("vLogin");return}
   // 하루가 바뀌었으면(새벽 4시 기준) 로그인 정리
   var ld=localStorage.getItem("lt_day_"+u.uid);
@@ -180,18 +181,18 @@ document.addEventListener("visibilitychange",function(){
 $("bSame").onclick=function(){$("vAway").classList.add("hide")};
 $("bOther").onclick=async function(){$("vAway").classList.add("hide");await signOut(AU);location.reload()};
 
-// 시험용 샘플 계정 만들기(?setup=1 일 때만 보임). 실제 전환 때는 서버 함수가 만든다.
+// 선생님 시험 패널(?setup=1): 선생님 구글 계정으로 로그인한 뒤, 이미 배포된 서버 함수(vita-auth-admin)로 샘플 계정을 만들고 초기화하고 지운다.
+var FN="https://vita-auth-admin-575520405083.asia-northeast3.run.app";
 if(Q.get("setup")==="1"){
-  $("vSetup").classList.remove("hide");
-  $("bMk").onclick=async function(){
-    var out=[];
-    for(var n of ["샘플1","샘플2","샘플3"]){
-      try{await createUserWithEmailAndPassword(AU,mail(n),ap("1234"));out.push(n+" 만듦")}
-      catch(e){out.push(n+" "+(e.code||e.message))}
-      await signOut(AU);
-    }
-    $("mkOut").textContent=out.join(" / ");
-  };
+  var P=$("vSetup");P.classList.remove("hide");
+  P.innerHTML='<div class="dev"><b>선생님 시험 패널</b><br><button class="btn sub" id="tIn">선생님 구글 로그인</button><button class="btn sub" id="tPing">연결 확인</button><button class="btn sub" id="tMk">샘플 3개 만들기 (처음 비번 1234)</button><button class="btn sub" id="tRs">샘플1 비번을 0000으로 초기화</button><button class="btn sub" id="tDl">샘플 3개 지우기</button><div id="mkOut" class="dev"></div></div>';
+  var say=function(t){$("mkOut").textContent=t};
+  var call=async function(o){var t=await AU.currentUser.getIdToken();var r=await fetch(FN,{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+t},body:JSON.stringify(o)});return r.status+" "+(await r.text())};
+  $("tIn").onclick=async function(){try{var c=await signInWithPopup(AU,new GoogleAuthProvider());say("로그인 "+c.user.email)}catch(e){say("로그인 실패 "+(e.code||e.message))}};
+  $("tPing").onclick=async function(){try{say(await call({op:"ping"}))}catch(e){say("실패 "+(e.code||e.message))}};
+  $("tMk").onclick=async function(){var o=[];for(var i=1;i<=3;i++){try{o.push(await call({op:"create",id:"tst"+i,name:"샘플"+i}))}catch(e){o.push("실패")}}say(o.join(" | "))};
+  $("tRs").onclick=async function(){try{say(await call({op:"reset",id:"tst1"}))}catch(e){say("실패")}};
+  $("tDl").onclick=async function(){var o=[];for(var i=1;i<=3;i++){try{o.push(await call({op:"delete",id:"tst"+i}))}catch(e){o.push("실패")}}say(o.join(" | "))};
 }
 </script>
 </body>
