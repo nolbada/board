@@ -186,13 +186,13 @@ var FN="https://vita-auth-admin-575520405083.asia-northeast3.run.app";
 if(Q.get("setup")==="1"){
   var P=$("vSetup");P.classList.remove("hide");
   P.innerHTML='<div class="dev"><b>선생님 시험 패널</b><br><button class="btn sub" id="tIn">선생님 구글 로그인</button><button class="btn sub" id="tPing">연결 확인</button><button class="btn sub" id="tMk">샘플 3개 만들기 (처음 비번 1234)</button><button class="btn sub" id="tRs">샘플1 비번을 0000으로 초기화</button><button class="btn sub" id="tDl">샘플 3개 지우기</button><div id="mkOut" class="dev"></div></div>';
-  var say=function(t){$("mkOut").textContent=t};
+  var say=function(t){$("mkOut").style.cssText="font-size:15px;color:#0f172a;margin-top:12px;word-break:break-all";$("mkOut").textContent=t};
   var call=async function(o){var t=await AU.currentUser.getIdToken();var r=await fetch(FN,{method:"POST",headers:{"content-type":"application/json",authorization:"Bearer "+t},body:JSON.stringify(o)});return r.status+" "+(await r.text())};
   $("tIn").onclick=async function(){try{var c=await signInWithPopup(AU,new GoogleAuthProvider());say("로그인 "+c.user.email)}catch(e){say("로그인 실패 "+(e.code||e.message))}};
-  $("tPing").onclick=async function(){try{say(await call({op:"ping"}))}catch(e){say("실패 "+(e.code||e.message))}};
-  $("tMk").onclick=async function(){var o=[];for(var i=1;i<=3;i++){try{o.push(await call({op:"create",id:"tst"+i,name:"샘플"+i}))}catch(e){o.push("실패")}}say(o.join(" | "))};
-  $("tRs").onclick=async function(){try{say(await call({op:"reset",id:"tst1"}))}catch(e){say("실패")}};
-  $("tDl").onclick=async function(){var o=[];for(var i=1;i<=3;i++){try{o.push(await call({op:"delete",id:"tst"+i}))}catch(e){o.push("실패")}}say(o.join(" | "))};
+  $("tPing").onclick=async function(){say("처리 중... 잠시만요");try{say(await call({op:"ping"}))}catch(e){say("실패 "+(e.code||e.message))}};
+  $("tMk").onclick=async function(){say("만드는 중... 최대 20초");var o=[];for(var i=1;i<=3;i++){try{o.push(await call({op:"create",id:"tst"+i,name:"샘플"+i}))}catch(e){o.push("실패")}}say(o.join(" | "))};
+  $("tRs").onclick=async function(){say("초기화 중...");try{say(await call({op:"reset",id:"tst1"}))}catch(e){say("실패")}};
+  $("tDl").onclick=async function(){say("지우는 중...");var o=[];for(var i=1;i<=3;i++){try{o.push(await call({op:"delete",id:"tst"+i}))}catch(e){o.push("실패")}}say(o.join(" | "))};
 }
 </script>
 </body>
