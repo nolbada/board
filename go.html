@@ -102,7 +102,10 @@ var APPS=[
  /* 261118: M1·M2 리딩도 이어하기(기기를 바꿔도 푼 기록·오답노트가 따라옴). 앱이 스스로 두는 주인 표시(m1-owner)까지 함께 옮겨야 앱이 지우지 않는다 */
  {g:"m1",p:/^\/via\/m1-reading\//,k:/^m1-/},
  {g:"m2",p:/^\/via\/m2-reading\//,k:/^m2-/},
- {g:"gi",p:/^\/via\/grammar-inside\/l1\/?$/,k:/^gi-l1-/}
+ {g:"gi",p:/^\/via\/grammar-inside\/l1\/?$/,k:/^gi-l1-/},
+ /* 261125: Link 2 본책·워크북 도우미 (그래머인사이드와 같은 방식) */
+ {g:"l2s",p:/^\/via\/link2-sb\/?$/,k:/^link2-sb-/},
+ {g:"l2w",p:/^\/via\/link2-wb\/?$/,k:/^link2-wb-/}
 ];
 function MEM(){try{return JSON.parse(ss.getItem("__shared_mem")||"{}")||{}}catch(e){return {}}}
 var SD="2000-01-02",CAP=16000,AP=null,CARD={},lastSnap="";
@@ -312,20 +315,20 @@ function scPoll(){try{
 }catch(e){}}
 if(SCI)setInterval(scPoll,2500);
 /* 그래머인사이드 L1: 오늘 푼 단원별 요약(연필 줄 수·힌트·막힘 번호·너무 빠른 문제·시작~마침 시각)을 보드에 남긴다. 앱이 내주는 __gi() 를 5초마다 읽고, 바뀐 것만 30초에 한 번씩 보낸다 */
-var GI={};
+var GI={},GIR=/grammar-inside\/l1\/|link2-(sb|wb)\//,GIP=/link2-sb\//.test(U)?"l2s_":/link2-wb\//.test(U)?"l2w_":"gi_";
 function giSend(force){try{
- if(!/grammar-inside\/l1\//.test(U))return;
+ if(!GIR.test(U))return;
  wins(f.contentWindow,[],0).forEach(function(w){var L=null;try{L=w.__gi&&w.__gi()}catch(e){}
   if(!L)return;
   L.forEach(function(r){var g=GI[r.uk]||(GI[r.uk]={sig:"",at:0});
    if(r.w===g.sig||(!force&&Date.now()-g.at<30000))return;
-   g.sig=r.w;g.at=Date.now();var ks="gi_"+r.uk;
+   g.sig=r.w;g.at=Date.now();var ks=GIP+r.uk;
    obSet(obGet().filter(function(e){return !(e.ks===ks&&e.n===n)}));
    recK(ks,r.w,"",U)})})
 }catch(e){}}
-if(/grammar-inside\/l1\//.test(U)){setInterval(giSend,5000);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")giSend(true)});window.addEventListener("pagehide",function(){giSend(true)});document.getElementById("home").addEventListener("click",function(){giSend(true)})}
+if(GIR.test(U)){setInterval(giSend,5000);document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")giSend(true)});window.addEventListener("pagehide",function(){giSend(true)});document.getElementById("home").addEventListener("click",function(){giSend(true)})}
 /* 그 외 앱(비단챌·어휘 등): 어디서 얼마나 썼는지 */
-var XM=[[/bidanchael\/gibon/,"비단챌 기본"],[/bidanchael\/baljeon/,"비단챌 발전"],[/bidanchael\/simhwa/,"비단챌 심화"],[/bidanchael\/gogyo/,"비단챌 고교"],[/bidanchael\/bochung/,"비단챌 보충"],[/switch-mission-h/,"보카스위치 고교"],[/switch-mission-s/,"보카스위치 수능"],[/wama2000/,"워마"],[/vocalink/,"보카링크"],[/grammar-inside\/l1\//,"그래머인사이드 L1"]];
+var XM=[[/bidanchael\/gibon/,"비단챌 기본"],[/bidanchael\/baljeon/,"비단챌 발전"],[/bidanchael\/simhwa/,"비단챌 심화"],[/bidanchael\/gogyo/,"비단챌 고교"],[/bidanchael\/bochung/,"비단챌 보충"],[/switch-mission-h/,"보카스위치 고교"],[/switch-mission-s/,"보카스위치 수능"],[/wama2000/,"워마"],[/vocalink/,"보카링크"],[/grammar-inside\/l1\//,"그래머인사이드 L1"],[/link2-sb\//,"Link2 본책"],[/link2-wb\//,"Link2 워크북"]];
 var XID=null,XN="";
 XM.forEach(function(x,i){if(x[0].test(U)){XID="x"+i;XN=x[1]}});
 if(!XID&&A==="x"&&U.indexOf("/via/gichul/")!==0){XID="xo";XN=T||"앱"}
