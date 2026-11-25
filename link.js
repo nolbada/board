@@ -328,6 +328,7 @@
 /* 261125: 독해 책(33권) 공통 - 홈으로 고정 버튼을 학생 홈(/vita/)으로 통일하고 초기화 버튼은 숨긴다. 독해 책 주소에서만 동작한다. */
 (function(){try{
   if(!/^\/via\/(1316reading|bricks|hackers|hackersmaster|hackersstarter|readinggraphy|tutorchallenger|tutorjunior|tutorstarter)\d+\//.test(location.pathname))return;
+  try{if(sessionStorage.getItem('vita-in')!=='1')return}catch(e){return}
   var D=document;
   function add(){
     if(D.getElementById('vhome'))return;
