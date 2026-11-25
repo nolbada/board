@@ -334,12 +334,13 @@
   function add(){
     if(D.getElementById('vhome'))return;
     var s=D.createElement('style');
-    s.textContent='.rst{display:none!important}#vhome{position:fixed;top:max(10px,env(safe-area-inset-top,0px));right:12px;z-index:2147483000;background:#1f2937;color:#fff;font:700 14px/1 sans-serif;padding:10px 16px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}';
+    s.textContent='.rst{display:none!important}html{padding-top:calc(46px + env(safe-area-inset-top,0px))!important}#vhome{position:fixed;top:0;left:0;right:0;height:calc(46px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 0 0 16px;box-sizing:border-box;z-index:2147483000;background:#1f2937;color:#fff;font:700 16px/46px sans-serif;text-align:left;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}';
     D.head.appendChild(s);
-    var a=D.createElement('a');a.id='vhome';a.href='/vita/';a.textContent='학습 목록';
+    var a=D.createElement('a');a.id='vhome';a.href='/vita/';a.textContent='← 오늘의 학습';
     a.addEventListener('click',function(e){e.preventDefault();go()});
     D.body.appendChild(a);
   }
   if(D.body)add();else D.addEventListener('DOMContentLoaded',add);
   D.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a'):null;if(a&&a.id!=='vhome'&&a.textContent.trim()==='홈으로'){e.preventDefault();go()}},true);
+function ren(){var l=D.querySelectorAll('a');for(var i=0;i<l.length;i++){if(l[i].id!=='vhome'&&l[i].textContent.trim()==='홈으로')l[i].style.display='none'}}try{new MutationObserver(ren).observe(D.documentElement,{childList:true,subtree:true})}catch(e){}ren();
 }catch(e){}})();
