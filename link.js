@@ -342,5 +342,5 @@
   }
   if(D.body)add();else D.addEventListener('DOMContentLoaded',add);
   D.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a'):null;if(a&&a.id!=='vhome'&&a.textContent.trim()==='홈으로'){e.preventDefault();go()}},true);
-function ren(){var l=D.querySelectorAll('a');for(var i=0;i<l.length;i++){if(l[i].id!=='vhome'&&l[i].textContent.trim()==='홈으로')l[i].style.display='none'}}try{new MutationObserver(ren).observe(D.documentElement,{childList:true,subtree:true})}catch(e){}ren();
+function ren(){var b=D.querySelectorAll('button');for(var j=0;j<b.length;j++){if(/비우기/.test(b[j].textContent))b[j].style.display='none'}var l=D.querySelectorAll('a');for(var i=0;i<l.length;i++){if(l[i].id!=='vhome'&&l[i].textContent.trim()==='홈으로')l[i].style.display='none'}}try{new MutationObserver(ren).observe(D.documentElement,{childList:true,subtree:true})}catch(e){}ren();
 }catch(e){}})();
