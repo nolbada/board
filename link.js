@@ -336,7 +336,7 @@
     var s=D.createElement('style');
     s.textContent='.rst{display:none!important}#vhome{position:fixed;top:max(10px,env(safe-area-inset-top,0px));right:12px;z-index:2147483000;background:#1f2937;color:#fff;font:700 14px/1 sans-serif;padding:10px 16px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}';
     D.head.appendChild(s);
-    var a=D.createElement('a');a.id='vhome';a.href='/vita/';a.textContent='할 일 목록';
+    var a=D.createElement('a');a.id='vhome';a.href='/vita/';a.textContent='학습 목록';
     a.addEventListener('click',function(e){e.preventDefault();go()});
     D.body.appendChild(a);
   }
