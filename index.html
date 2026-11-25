@@ -205,7 +205,7 @@ var HUB = [
   ,{h:"개념 학습", ac:"#2a9d8f", cols:1, items:[
     {n:"그래머콕", tt:"그래머콕", u:"https://nolbada.github.io/via-mid/m/grammarcock/"}]}
   ,{h:"문법교재 도우미", ac:"#2a6f97", cols:2, items:[
-    {n:"그래머인사이드 L1", tt:"그래머인사이드 L1 힌트", u:BASE+"grammar-inside/l1/", hl:["고"]},
+    {n:"그래머인사이드 L1", tt:"그래머인사이드 L1 힌트", u:BASE+"grammar-inside/l1/", hl:["고"], only:["M초6A","M초6C","T초6B","T초6C"]},
     {n:"Link2(교재)", tt:"Link2(교재)", u:BASE+"link2-sb/", hl:["고"]},
     {n:"Link2(WB)", tt:"Link2(WB)", u:BASE+"link2-wb/", hl:["고"]},
     {n:"바푸문 2 도우미", tt:"바푸문 2 도우미", u:BASE+"bapumun2/", hl:["고"]},
@@ -1183,7 +1183,7 @@ function hubHtml(c1){
   var o="";
   HUB.forEach(function(g){
     var lv0=(gradeOf(c1)||"").charAt(0);
-    var its=g.items.filter(function(a){return !(a.not&&a.not.indexOf(c1)>-1)&&!(a.hl&&lv0&&a.hl.indexOf(lv0)>-1)});
+    var its=g.items.filter(function(a){return !(a.not&&a.not.indexOf(c1)>-1)&&!(a.hl&&lv0&&a.hl.indexOf(lv0)>-1)&&!(a.only&&c1!=="열람"&&a.only.indexOf(c1)<0)});
     if(!its.length)return;
     var q=(g.h==="V시그널"||g.h==="독해")?"bn="+encodeURIComponent(ls("bd-name")||"")+"&bc="+encodeURIComponent(c1):"";
     o+='<div class="gc" style="--ac:'+g.ac+'"><div class="gh">'+esc(g.h)+'</div><div class="gg" style="--c:'+Math.min(g.cols,its.length)+'">'+its.map(function(a){return a.u?'<a class="t2" href="'+hubHref(g,a,q)+'">'+(a.ic?'<img class="ic" alt="" src="'+a.ic+'">':'')+esc(a.n)+'</a>':'<span class="t2 off">'+esc(a.n)+'</span>'}).join("")+'</div></div>';
