@@ -324,3 +324,18 @@
   }
   load();
 }catch(e){}})();
+
+/* 261125: 독해 책(33권) 공통 - 홈으로 고정 버튼을 학생 홈(/vita/)으로 통일하고 초기화 버튼은 숨긴다. 독해 책 주소에서만 동작한다. */
+(function(){try{
+  if(!/^\/via\/(1316reading|bricks|hackers|hackersmaster|hackersstarter|readinggraphy|tutorchallenger|tutorjunior|tutorstarter)\d+\//.test(location.pathname))return;
+  var D=document;
+  function add(){
+    if(D.getElementById('vhome'))return;
+    var s=D.createElement('style');
+    s.textContent='.rst{display:none!important}#vhome{position:fixed;top:max(10px,env(safe-area-inset-top,0px));right:12px;z-index:2147483000;background:#1f2937;color:#fff;font:700 14px/1 sans-serif;padding:10px 16px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}';
+    D.head.appendChild(s);
+    var a=D.createElement('a');a.id='vhome';a.href='/vita/';a.textContent='홈으로';D.body.appendChild(a);
+  }
+  if(D.body)add();else D.addEventListener('DOMContentLoaded',add);
+  D.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a'):null;if(a&&a.id!=='vhome'&&a.textContent.trim()==='홈으로'){e.preventDefault();location.href='/vita/'}},true);
+}catch(e){}})();
