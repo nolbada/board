@@ -616,6 +616,31 @@ function carryT(nm,m,td){try{
   if(!n)return '<div style="margin-top:8px;font-size:13px;color:#8a8a8a">주중 미완료 없음</div>';
   return '<details data-pk="'+esc(pk)+'"'+((TS.po&&TS.po[pk]!==undefined)?(TS.po[pk]?' open':''):(fri?' open':''))+' style="margin-top:8px;border-radius:10px;background:'+(fri?'#fff1dc':'#fff8ec')+';border:1px solid #e8c48a;padding:2px 10px"><summary style="cursor:pointer;font-size:14px;font-weight:800;color:#b45309;padding:8px 0">주중 미완료 끝내기 '+n+'</summary>'+order.map(function(x){return '<div style="margin:2px 0 8px"><b style="font-size:13px">'+dlabel(x)+'</b>'+by[x].map(function(t){return '<div style="font-size:14px;margin:2px 0 0 8px">· '+esc(t)+'</div>'}).join("")+'</div>'}).join("")+'</details>';
 }catch(e){return ""}}
+/* 261126: 오늘 기록 맨 위에 활동별 점수를 한 줄로 요약(V시그널 → 독해33 → M1·M2 → 보카링크 → 데일리보카 → 대화문). 자세한 기록은 접어 둔다. 오류가 나도 기존 화면 그대로 */
+var SLB={bd:"비단챌",vk:"V시그널 K",ve:"V시그널 E",vy:"V시그널 Y",xr:"엑스레이",m1:"M1",m2:"M2",vl:"보카링크",dv:"데일리보카",gk1:"대화문",gk2:"대화문",dd:"더블보카"};
+function sJ(s){try{return JSON.parse(s)}catch(e){return null}}
+function sumToks(ap){
+  var out=[];
+  function tk(k){var o=sJ(ap["a_"+k]);if(!o)return;var done=+o.n>0,p=[SLB[k]],wt=String(o.w||""),m,st=done?"":"z";
+    if(k==="bd"){m=wt.match(/(\d+\/\d+)\s*$/);if(done&&m)p.push(m[1]);else if(done)p.push("완료");else p.push("열어봄")}
+    else if(k==="dv"){m=wt.match(/(\d+\/\d+)/);if(o.d)p.push("D"+o.d);if(m)p.push(m[1]);else p.push(done?"완료":"열어봄")}
+    else{if(o.d)p.push((k==="m1"||k==="m2"?"R":k==="xr"?"분석":"D")+o.d);
+      if(o.p!=null)p.push(o.p+"%");
+      if(o.ok!=null&&o.p!=null&&/^(m1|m2|vk|ve|vy)$/.test(k)){p.push(o.ok?"통과":"재도전");if(!o.ok)st="w"}
+      else if(!done)p.push("열어봄");else if(o.p==null)p.push("완료")}
+    out.push({t:p.join(" "),s:st})}
+  function rd(){var best=null,bt="";Object.keys(ap).forEach(function(k){if(k.indexOf("l_rd_")!==0)return;var o=sJ(ap[k]);if(!o||!o.w)return;var ex=/_exit$/.test(k),t=(ex?"1":"0")+String(o.t||"");if(!best||t>bt){best=o;bt=t;best._ex=ex}});if(!best)return;
+    var r=best.w.match(/Exit test (\d+)점 \((\d+\/\d+)\)\s*(통과|재도전)/);
+    if(best._ex&&r)out.push({t:"독해33 Exit "+r[1]+"점 "+r[3],s:r[3]==="통과"?"":"w"});
+    else{var q=best.w.match(/책 문제 제출 (\d+\/\d+)/);out.push({t:"독해33 "+(q?"책문제 "+q[1]:"진행"),s:"z"})}}
+  ["bd","vk","ve","vy","xr"].forEach(tk);rd();["m1","m2","vl","dv","gk1","gk2","dd"].forEach(tk);
+  return out}
+function sumBox(nm,vd,h){try{
+  var row=TS.wk&&TS.wk[vd]&&TS.wk[vd][nm],ap=(row&&row.chk&&row.chk.app)||{},tk=sumToks(ap);
+  if(!tk.length)return h;
+  var cs={"":"background:#e8eef7;color:#1f3a5f","z":"background:#f1f1f1;color:#777","w":"background:#fff1dc;color:#b45309"};
+  return '<div style="margin:6px 0 2px;text-align:left;line-height:2">'+tk.map(function(x){return '<span style="display:inline-block;margin:0 6px 4px 0;padding:3px 9px;border-radius:7px;font-size:14px;font-weight:700;'+cs[x.s]+'">'+esc(x.t)+'</span>'}).join("")+'</div><details data-pk="dt|'+esc(nm)+'|'+vd+'"'+((TS.po&&TS.po["dt|"+nm+"|"+vd])?' open':'')+' style="margin-top:2px"><summary style="cursor:pointer;font-size:13px;font-weight:700;color:#666;padding:6px 0">자세한 기록</summary>'+h+'</details>';
+}catch(e){return h}}
 function weekH(nm,m,td,vd){vd=vd||td;
   var out="",n=0,i,pst=[],ht=false,pd="";
   for(i=6;i>=0;i--){
@@ -921,7 +946,7 @@ function renderT(){
   (/중3/.test(TS.cls)?[]:ROSTER[TS.cls]).forEach(function(nm){
     var w=weekH(nm,m,td,vd);
     h+='<div class="card" style="padding:12px 14px"><div style="display:flex;align-items:center;gap:10px"><span class="nm" style="font-weight:700;font-size:17px;flex:1">'+esc(nm)+'</span>'+((offd&&!w.t)?'':'<span class="pl'+(w.t?'':' z')+'">'+(w.t?(live?'오늘 기록':'기록 있음'):'기록 없음')+'</span>')+'</div>';
-    h+=lastH(nm)+((offd&&!w.t)?'':bdT(nm,vd))+'<div style="margin-top:8px;font-size:13px;font-weight:800;color:'+(live?'#1c2b2d':'#7a4b00')+'">'+(live?'오늘':'되감기')+' · '+dlabel(vd)+'</div>'+(w.t?w.h:'<div style="font-size:13px;color:#8a8a8a;margin-top:2px">'+(live?(offd?'수업 없는 날':'아직 기록 없음'):'이 날 기록 없음')+'</div>')+carryT(nm,m,td);
+    h+=lastH(nm)+((offd&&!w.t)?'':bdT(nm,vd))+'<div style="margin-top:8px;font-size:13px;font-weight:800;color:'+(live?'#1c2b2d':'#7a4b00')+'">'+(live?'오늘':'되감기')+' · '+dlabel(vd)+'</div>'+(w.t?sumBox(nm,vd,w.h):'<div style="font-size:13px;color:#8a8a8a;margin-top:2px">'+(live?(offd?'수업 없는 날':'아직 기록 없음'):'이 날 기록 없음')+'</div>')+carryT(nm,m,td);
     h+='</div>';
   });
   h+='</div>';
