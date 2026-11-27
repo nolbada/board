@@ -3,31 +3,35 @@
 (function(){try{
   var W=window;if(W.__bfs||!W.fetch||!W.Response)return;W.__bfs=1;var of=W.fetch;
   var DB='projects/h-roadmap/databases/(default)/documents/';
-  function dn(smp,key){return DB+(smp?'board_s':'board')+'/'+String(key).replace(/%/g,'%25').replace(/\//g,'%2F')}
+  /* 261127 VITA 분리: VITA 홈으로 들어온 학생(localStorage vita-wn 이 이름과 같음)의 기록은 EM 의 board 가 아니라 vboard 에 읽고 쓴다. 이 학생은 표식(_on) 확인과 서버(Apps Script) 대체 경로를 쓰지 않는다. */
+  function vbOf(n){try{var w=W.localStorage.getItem('vita-wn');return (w&&w===String(n||'').replace(/\s+/g,''))?'v':false}catch(e){return false}}
+  function smpOf(n){return /^샘플/.test(n)?true:vbOf(n)}
+  function fbk(s,a,n){return (!/^샘플/.test(n)&&vbOf(n))?Promise.reject(new TypeError('vboard')):of.apply(s,a)}
+  function dn(smp,key){return DB+(smp==='v'?'vboard':(smp?'board_s':'board'))+'/'+String(key).replace(/%/g,'%25').replace(/\//g,'%2F')}
   function chkOf(x){try{return JSON.parse((x.found.fields.chk&&x.found.fields.chk.stringValue)||'{}')}catch(e){return {}}}
   function ask(names){var ac=W.AbortController?new AbortController():null,tm=ac?setTimeout(function(){ac.abort()},2500):0;
     return of.call(W,'https://firestore.googleapis.com/v1/projects/h-roadmap/databases/(default)/documents:batchGet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({documents:names}),signal:ac?ac.signal:undefined})
       .then(function(r){clearTimeout(tm);return r.ok?r.json():null}).catch(function(){clearTimeout(tm);return null})}
-  var ONX=[0,0];W.__bdn=dn;
+  var ONX=[0,0,9e15];W.__bdn=dn;
   function resp(o){return new W.Response(JSON.stringify(o),{status:200,headers:{'Content-Type':'application/json'}})}
   W.fetch=function(u,o){
     try{
       if(typeof u==='string'&&!o&&u.indexOf('AKfycbyGjwU2U')>0){
         var q=u.split('?')[1]||'',p={};q.split('&').forEach(function(kv){var i=kv.indexOf('=');if(i>0)p[kv.slice(0,i)]=decodeURIComponent(kv.slice(i+1))});
         if((p.a==='get'||p.a==='getm')&&!p.pw){
-          var name=String(p.name||'').trim(),smp=/^샘플/.test(name),ds=p.a==='get'?[String(p.date||'')]:String(p.dates||'').split(','),okd=/^\d{4}-\d{1,2}-\d{1,2}$/,seen={},dup=false;
+          var name=String(p.name||'').trim(),smp=smpOf(name),ds=p.a==='get'?[String(p.date||'')]:String(p.dates||'').split(','),okd=/^\d{4}-\d{1,2}-\d{1,2}$/,seen={},dup=false;
           ds.forEach(function(d){if(seen[d])dup=true;seen[d]=1});
           if(name&&name.length<=12&&ds.length&&ds.length<=12&&!dup&&ds.every(function(d){return okd.test(d)})){
             /* 261117 밤: 이 문서를 "바뀌면 알려 주기"로 지켜보는 중이면(아래 __bsnap) 받아 둔 최신 내용으로 바로 답한다. Firebase 를 다시 읽지 않는다 */
-            if(p.a==='get'&&W.__bsnap){var lk=dn(smp,ds[0]+'|'+name),lc=smp?'board_s':'board';
+            if(p.a==='get'&&W.__bsnap&&smp!=='v'){var lk=dn(smp,ds[0]+'|'+name),lc=smp?'board_s':'board';
               if(W.__bsnap.live[lc]&&Object.prototype.hasOwnProperty.call(W.__bsnap.d,lk))return Promise.resolve(resp({ok:true,chk:W.__bsnap.d[lk]||{},fs:2}))}
             /* 261117 밤: "Firebase 가 원본" 표시(_on)는 한 번 확인하면 10분 동안 다시 읽지 않는다(하루 읽기 횟수를 절반 가까이 줄임) */
-            var sk=smp?1:0,need=!(ONX[sk]>Date.now()),off=need?1:0;
+            var sk=smp==='v'?2:(smp?1:0),need=!(ONX[sk]>Date.now()),off=need?1:0;
             var names=(need?[dn(smp,'_on')]:[]).concat(ds.map(function(d){return dn(smp,d+'|'+name)})),self=this,args=arguments;
             return ask(names).then(function(a){
-              if(!Array.isArray(a)||a.length!==names.length)return of.apply(self,args);
-              var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x;else if(!x.missing)return of.apply(self,args)}
-              if(need){if(!by[names[0]])return of.apply(self,args);ONX[sk]=Date.now()+600000}
+              if(!Array.isArray(a)||a.length!==names.length)return fbk(self,args,name);
+              var by={},i;for(i=0;i<a.length;i++){var x=a[i];if(x.found)by[x.found.name]=x;else if(!x.missing)return fbk(self,args,name)}
+              if(need){if(!by[names[0]])return fbk(self,args,name);ONX[sk]=Date.now()+600000}
               if(p.a==='get'){var g=by[names[off]];return resp({ok:true,chk:g?chkOf(g):{},fs:1})}
               var recs={};ds.forEach(function(d,j){var g2=by[names[j+off]];recs[d]=g2?chkOf(g2):{}});return resp({ok:true,recs:recs,fs:1})});
           }
@@ -38,7 +42,7 @@
       if(typeof u==='string'&&u.indexOf('AKfycbyGjwU2U')>0&&o&&o.method==='POST'&&typeof o.body==='string'&&!W.__bnoput){
         var pb=null;try{pb=JSON.parse(o.body)}catch(e2){}
         if(pb&&pb.a==='put'&&!pb.pw){var s2=this,a2=arguments;
-          return fsPut(pb).then(function(ok){return ok?resp({ok:true,fs:1}):of.apply(s2,a2)},function(){return of.apply(s2,a2)})}
+          return fsPut(pb).then(function(ok){return ok?resp({ok:true,fs:1}):fbk(s2,a2,String(pb.name||'').trim())},function(){return fbk(s2,a2,String(pb.name||'').trim())})}
       }
     }catch(e){}
     return of.apply(this,arguments);
@@ -49,7 +53,7 @@
   function fsPut(p){
     var name=String(p.name||'').trim(),date=String(p.date||''),cls=String(p.cls||''),card=String(p.card||'reg');
     if(!name||name.length>12||!/^\d{4}-\d{1,2}-\d{1,2}$/.test(date))return Promise.resolve(false);
-    var smp=/^샘플/.test(name),sk=smp?1:0,key=dn(smp,date+'|'+name),chk=p.chk||{},tries=0;
+    var smp=smpOf(name),sk=smp==='v'?2:(smp?1:0),key=dn(smp,date+'|'+name),chk=p.chk||{},tries=0;
     function once(){
       var need=!(ONX[sk]>Date.now()),names=(need?[dn(smp,'_on')]:[]).concat([key]);
       return p1('batchGet',{documents:names}).then(function(r){
