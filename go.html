@@ -106,7 +106,10 @@ var APPS=[
  {g:"giw",p:/^\/via\/grammar-inside\/wb\/?$/,k:/^gi-l1-2021-wb/},
  /* 261125: Link 2 본책·워크북 도우미 (그래머인사이드와 같은 방식) */
  {g:"l2s",p:/^\/via\/link2-sb\/?$/,k:/^link2-sb-/},
- {g:"l2w",p:/^\/via\/link2-wb\/?$/,k:/^link2-wb-/}
+ {g:"l2w",p:/^\/via\/link2-wb\/?$/,k:/^link2-wb-/},
+ /* 261127: 클리어 L2 본책·워크북 도우미 */
+ {g:"cls",p:/^\/via\/clear-l2-sb\/?$/,k:/^clear-l2-sb-/},
+ {g:"clw",p:/^\/via\/clear-l2-wb\/?$/,k:/^clear-l2-wb-/}
 ];
 function MEM(){try{return JSON.parse(ss.getItem("__shared_mem")||"{}")||{}}catch(e){return {}}}
 var SD="2000-01-02",CAP=16000,AP=null,CARD={},lastSnap="";
@@ -316,7 +319,7 @@ function scPoll(){try{
 }catch(e){}}
 if(SCI)setInterval(scPoll,2500);
 /* 그래머인사이드 L1: 오늘 푼 단원별 요약(연필 줄 수·힌트·막힘 번호·너무 빠른 문제·시작~마침 시각)을 보드에 남긴다. 앱이 내주는 __gi() 를 5초마다 읽고, 바뀐 것만 30초에 한 번씩 보낸다 */
-var GI={},GIR=/grammar-inside\/(l1|wb)\/|link2-(sb|wb)\//,GIP=/link2-sb\//.test(U)?"l2s_":/link2-wb\//.test(U)?"l2w_":/grammar-inside\/wb\//.test(U)?"giw_":"gi_";
+var GI={},GIR=/grammar-inside\/(l1|wb)\/|link2-(sb|wb)\/|clear-l2-(sb|wb)\//,GIP=/link2-sb\//.test(U)?"l2s_":/link2-wb\//.test(U)?"l2w_":/clear-l2-sb\//.test(U)?"cls_":/clear-l2-wb\//.test(U)?"clw_":/grammar-inside\/wb\//.test(U)?"giw_":"gi_";
 function giSend(force){try{
  if(!GIR.test(U))return;
  wins(f.contentWindow,[],0).forEach(function(w){var L=null;try{L=w.__gi&&w.__gi()}catch(e){}
